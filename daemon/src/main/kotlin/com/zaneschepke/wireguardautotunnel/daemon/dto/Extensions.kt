@@ -21,11 +21,16 @@ fun Backend.Mode.toDto(): BackendMode = when (this) {
     Backend.Mode.Proxy -> BackendMode.PROXY
 }
 
+fun BackendMode.toInternal(): Backend.Mode = when (this) {
+    BackendMode.USERSPACE -> Backend.Mode.Userspace
+    BackendMode.PROXY -> Backend.Mode.Proxy
+}
+
 fun Backend.Status.toDto(): BackendStatus {
-    val activeList = activeTunnels.map { (tunnel, state) ->
+    val activeList = activeTunnels.map { (key, state) ->
         TunnelStatus(
-            id = tunnel.id,
-            name = tunnel.name,
+            id = key.id,
+            name = key.name,
             state = state.toDto()
         )
     }

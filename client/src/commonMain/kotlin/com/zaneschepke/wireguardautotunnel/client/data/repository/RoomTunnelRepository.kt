@@ -55,8 +55,8 @@ class RoomTunnelRepository(private val tunnelConfigDao: TunnelConfigDao) : Tunne
         tunnelConfigDao.deleteByName(name)
     }
 
-    override suspend fun getById(id: Int): Domain? {
-        return tunnelConfigDao.getById(id.toLong())?.toDomain()
+    override suspend fun getById(id: Long): Domain? {
+        return tunnelConfigDao.getById(id)?.toDomain()
     }
 
     override suspend fun getActive(): List<Domain> {

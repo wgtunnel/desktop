@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AutoTunnelSettings(
-    val id: Int = 0,
+    val id: Long = 0,
     val isAutoTunnelEnabled: Boolean = false,
     val isTunnelOnMobileDataEnabled: Boolean = false,
      val trustedNetworkSSIDs: Set<String> = emptySet(),

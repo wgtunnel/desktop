@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.cli.commands.tunnel
 
+import com.zaneschepke.wireguardautotunnel.cli.util.CliUtils
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelImportService
 import kotlinx.coroutines.runBlocking
 import org.koin.java.KoinJavaComponent.inject
@@ -19,49 +20,62 @@ class TunnelImportCommand : Callable<Int> {
     lateinit var input: Input
 
     class Input {
-        @Option(names = ["--file"], description = ["Import config from file"])
+        @Option(names = ["-f", "--file"], description = ["Import config from file."])
         var file: File? = null
 
-        @Option(names = ["--string"], description = ["Import config from string literal"])
+        @Option(names = ["-s", "--string"], description = ["Import config from string literal."])
         var string: String? = null
+
+        @Option(names = ["-"], description = ["Import config from stdin (standard input)."])
+        var stdin: Boolean = false
     }
 
-    @Option(names = ["--name"], description = ["Specify a tunnel name"])
+    @Option(names = ["-n", "--name"], description = ["Specify a custom name for the tunnel."])
     var name: String? = null
 
     override fun call(): Int = runBlocking {
-        val config : String = try {
-            when {
-                input.file != null -> {
-                    val f = input.file!!
-                    if (!f.exists()) {
-                        System.err.println("Error: File does not exist: ${f.absolutePath}")
-                        return@runBlocking 1
-                    }
-                    if (!f.isFile) {
-                        System.err.println("Error: Not a file: ${f.absolutePath}")
-                        return@runBlocking 1
-                    }
-                    f.readText()
-                }
-
-                input.string != null -> input.string!!
-
-                else -> {
-                    System.err.println("Error: No input source provided. Use --file, --string, or - for stdin.")
-                    return@runBlocking 1
-                }
-            }
+        val configString = try {
+            resolveInput()
         } catch (e: Exception) {
-            System.err.println("Error reading input: ${e.message}")
+            CliUtils.printError(e.message ?: "Failed to read input source.")
             return@runBlocking 1
+        } ?: return@runBlocking 1
+
+        val finalName = name ?: input.file?.nameWithoutExtension ?: "imported-tunnel"
+
+        val result = CliUtils.withSpinner("Importing tunnel '$finalName'...") {
+            tunnelImportService.import(configString, finalName)
         }
 
-        val name = name ?: input.file?.nameWithoutExtension
-
-        tunnelImportService.import(config , name)
-
-        return@runBlocking 0
+        result.fold(
+            onSuccess = {
+                CliUtils.printSuccess("Tunnel '$finalName' imported successfully.")
+                0
+            },
+            onFailure = { error ->
+                CliUtils.printError("Import failed: ${error.message}")
+                1
+            }
+        )
     }
 
+    private fun resolveInput(): String? {
+        return when {
+            input.file != null -> {
+                val f = input.file!!
+                if (!f.exists() || !f.isFile) {
+                    CliUtils.printError("File does not exist or is invalid: ${f.absolutePath}")
+                    null
+                } else f.readText()
+            }
+            input.string != null -> input.string!!
+            input.stdin -> {
+                System.`in`.bufferedReader().readText().ifBlank {
+                    CliUtils.printError("Stdin was empty.")
+                    null
+                }
+            }
+            else -> null
+        }
+    }
 }

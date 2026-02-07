@@ -36,10 +36,19 @@ type WindowsFirewall struct {
 	luid uint64
 
 	killSwitchEnabled atomic.Bool
+	persistKillSwitch atomic.Bool
 
 	tunRules        []*wf.Rule
 	localAddrRules  []*wf.Rule
 	permittedRoutes map[netip.Prefix][]*wf.Rule
+}
+
+func (f *WindowsFirewall) SetPersist(enabled bool) {
+	f.persistKillSwitch.Store(enabled)
+}
+
+func (f *WindowsFirewall) IsPersistent() bool {
+	return f.persistKillSwitch.Load()
 }
 
 type weight uint64
@@ -123,59 +132,6 @@ func New(logger *device.Logger) (firewall.Firewall, error) {
 	return f, nil
 }
 
-// addPermissiveRulesForPrefixes is a helper to add permissive rules for a list of prefixes
-func (f *WindowsFirewall) addPermissiveRulesForPrefixes(prefixes []netip.Prefix, namePrefix string) (map[netip.Prefix][]*wf.Rule, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	addedByPrefix := make(map[netip.Prefix][]*wf.Rule)
-	var partialAdds []netip.Prefix // rollback tracking
-	for _, prefix := range prefixes {
-		if prefix.Addr().Is6() && !nettest.SupportsIPv6() {
-			continue
-		}
-		conditions := []*wf.Match{
-			{
-				Field: wf.FieldIPRemoteAddress,
-				Op:    wf.MatchTypeEqual,
-				Value: prefix,
-			},
-		}
-		var p protocol
-		if prefix.Addr().Is4() {
-			p = protocolV4
-		} else {
-			p = protocolV6
-		}
-		rules, err := f.addRules(namePrefix+prefix.String(), weightKnownTraffic, conditions, wf.ActionPermit, p, directionBoth)
-		if err != nil {
-			for _, addedPrefix := range partialAdds {
-				if delErr := f.removeRules(addedByPrefix[addedPrefix]); delErr != nil {
-					f.logger.Errorf("Failed to delete partial rules for %v during rollback: %v", addedPrefix, delErr)
-				}
-			}
-			return nil, fmt.Errorf("add permissive rules for %v: %w", prefix, err)
-		}
-		addedByPrefix[prefix] = rules
-		partialAdds = append(partialAdds, prefix)
-	}
-	return addedByPrefix, nil
-}
-
-// removeRules is a helper to remove a list of rules
-func (f *WindowsFirewall) removeRules(rules []*wf.Rule) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	for _, rule := range rules {
-		if err := f.session.DeleteRule(rule.ID); err != nil {
-			f.logger.Errorf("Failed to delete rule %s: %v", rule.Name, err)
-			// Continue to try deleting others
-		}
-	}
-	return nil
-}
-
 func (f *WindowsFirewall) AllowLocalNetworks(addrs []netip.Prefix) error {
 	// cleanup old local addr rules
 	if err := f.removeRules(f.localAddrRules); err != nil {
@@ -252,30 +208,6 @@ func (f *WindowsFirewall) UpdatePermittedRoutes(newRoutes []netip.Prefix) error 
 
 	f.logger.Verbosef("Updated permitted routes: %v", newRoutes)
 	return nil
-}
-
-// permitDaemon allows the daemon process through firewall
-func (f *WindowsFirewall) permitDaemon(w weight) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	currentFile, err := os.Executable()
-	if err != nil {
-		return err
-	}
-
-	appID, err := wf.AppID(currentFile)
-	if err != nil {
-		return fmt.Errorf("could not get app id for %q: %w", currentFile, err)
-	}
-	conditions := []*wf.Match{
-		{
-			Field: wf.FieldALEAppID,
-			Op:    wf.MatchTypeEqual,
-			Value: appID,
-		},
-	}
-	_, err = f.addRules("unrestricted traffic for daemon", w, conditions, wf.ActionPermit, protocolAll, directionBoth)
-	return err
 }
 
 func (f *WindowsFirewall) BypassTunnel(luid uint64, listenPort uint16) error {
@@ -358,6 +290,59 @@ func (f *WindowsFirewall) RemoveTunnelRules() error {
 	return nil
 }
 
+// addPermissiveRulesForPrefixes is a helper to add permissive rules for a list of prefixes
+func (f *WindowsFirewall) addPermissiveRulesForPrefixes(prefixes []netip.Prefix, namePrefix string) (map[netip.Prefix][]*wf.Rule, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	addedByPrefix := make(map[netip.Prefix][]*wf.Rule)
+	var partialAdds []netip.Prefix // rollback tracking
+	for _, prefix := range prefixes {
+		if prefix.Addr().Is6() && !nettest.SupportsIPv6() {
+			continue
+		}
+		conditions := []*wf.Match{
+			{
+				Field: wf.FieldIPRemoteAddress,
+				Op:    wf.MatchTypeEqual,
+				Value: prefix,
+			},
+		}
+		var p protocol
+		if prefix.Addr().Is4() {
+			p = protocolV4
+		} else {
+			p = protocolV6
+		}
+		rules, err := f.addRules(namePrefix+prefix.String(), weightKnownTraffic, conditions, wf.ActionPermit, p, directionBoth)
+		if err != nil {
+			for _, addedPrefix := range partialAdds {
+				if delErr := f.removeRules(addedByPrefix[addedPrefix]); delErr != nil {
+					f.logger.Errorf("Failed to delete partial rules for %v during rollback: %v", addedPrefix, delErr)
+				}
+			}
+			return nil, fmt.Errorf("add permissive rules for %v: %w", prefix, err)
+		}
+		addedByPrefix[prefix] = rules
+		partialAdds = append(partialAdds, prefix)
+	}
+	return addedByPrefix, nil
+}
+
+// removeRules is a helper to remove a list of rules
+func (f *WindowsFirewall) removeRules(rules []*wf.Rule) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	for _, rule := range rules {
+		if err := f.session.DeleteRule(rule.ID); err != nil {
+			f.logger.Errorf("Failed to delete rule %s: %v", rule.Name, err)
+			// Continue to try deleting others
+		}
+	}
+	return nil
+}
+
 func (f *WindowsFirewall) Disable() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -367,6 +352,30 @@ func (f *WindowsFirewall) Disable() error {
 	f.killSwitchEnabled.Store(false)
 	f.logger.Verbosef("Firewall rules and kill switch cleaned up")
 	return nil
+}
+
+// permitDaemon allows the daemon process through firewall
+func (f *WindowsFirewall) permitDaemon(w weight) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	currentFile, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	appID, err := wf.AppID(currentFile)
+	if err != nil {
+		return fmt.Errorf("could not get app id for %q: %w", currentFile, err)
+	}
+	conditions := []*wf.Match{
+		{
+			Field: wf.FieldALEAppID,
+			Op:    wf.MatchTypeEqual,
+			Value: appID,
+		},
+	}
+	_, err = f.addRules("unrestricted traffic for daemon", w, conditions, wf.ActionPermit, protocolAll, directionBoth)
+	return err
 }
 
 func (f *WindowsFirewall) permitLoopback(w weight) error {

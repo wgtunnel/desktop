@@ -31,11 +31,18 @@ object PermissionsHelper {
     private const val SID_SYSTEM = "*S-1-5-18"
     private const val SID_ADMINISTRATORS = "*S-1-5-32-544"
     private const val SID_USERS = "*S-1-5-32-545"
-    private const val SID_CREATOR_OWNER = "*S-1-3-0"
 
     // windows permission flags
     private const val WIN_DIR_MODIFY_INHERIT = ":(OI)(CI)(M)"
     private const val WIN_FULL_CONTROL_INHERIT = ":(OI)(CI)(F)"
+    private const val WIN_READY_ONLY = ":(R)"
+    private const val WIN_FULL_CONTROL = ":(F)"
+
+    // windows icacls
+    private const val ICACLS = "icacls"
+    private const val WIN_GRANT = "/grant"
+    private const val WIN_GRANT_REPLACE = "/grant:r"
+    private const val WIN_INHERIT_REPLACE = "/inheritance:r"
 
     fun setupDirectoryPermissionsUnix(runtimeDirPath: String) {
         val path = Paths.get(runtimeDirPath)
@@ -68,10 +75,10 @@ object PermissionsHelper {
     fun setupDirectoryPermissionsWindows(runtimeDirPath: String) {
         try {
             val process = ProcessBuilder(
-                "icacls", runtimeDirPath,
-                "/grant", "$SID_USERS$WIN_DIR_MODIFY_INHERIT",
-                "/grant", "$SID_SYSTEM$WIN_FULL_CONTROL_INHERIT",
-                "/grant", "$SID_ADMINISTRATORS$WIN_FULL_CONTROL_INHERIT"
+                ICACLS, runtimeDirPath,
+                WIN_GRANT, "$SID_USERS$WIN_DIR_MODIFY_INHERIT",
+                WIN_GRANT, "$SID_SYSTEM$WIN_FULL_CONTROL_INHERIT",
+                WIN_GRANT, "$SID_ADMINISTRATORS$WIN_FULL_CONTROL_INHERIT"
             ).start()
 
             if (process.waitFor() != 0) {
@@ -172,25 +179,30 @@ object PermissionsHelper {
     }
 
     private fun applyWindowsOwnerOnlyPermissions(path: Path) {
+        val currentUser = System.getProperty("user.name")
+
         try {
             val process = ProcessBuilder(
-                "icacls", path.toString(),
-                "/inheritance:r", // remove inherited perms
-                "/grant:r", "$SID_SYSTEM$WIN_FULL_CONTROL_INHERIT",
-                "/grant:r", "$SID_CREATOR_OWNER$WIN_FULL_CONTROL_INHERIT",
-                "/grant:r", "$SID_ADMINISTRATORS$WIN_FULL_CONTROL_INHERIT"
+                ICACLS, path.toString(),
+                WIN_INHERIT_REPLACE,
+                WIN_GRANT_REPLACE, "$SID_SYSTEM$WIN_READY_ONLY",
+                WIN_GRANT_REPLACE, "$SID_ADMINISTRATORS$WIN_READY_ONLY",
+                WIN_GRANT_REPLACE, "$currentUser$WIN_FULL_CONTROL"
             ).start()
 
-            if (process.waitFor() != 0) {
-                Logger.e { "icacls owner-only failed for $path" }
+            val exitCode = process.waitFor()
+            if (exitCode != 0) {
+                val error = process.errorStream.bufferedReader().use { it.readText() }
+                Logger.e { "icacls IPC key setup failed: $error" }
             }
         } catch (e: Exception) {
-            Logger.e(e) { "Error applying owner-only Windows perms" }
+            Logger.e(e) { "Error applying read-only Windows perms to IPC key" }
         }
     }
+
     private fun logWindowsACLs(path: String) {
         runCatching {
-            val output = ProcessBuilder("icacls", path).start().inputStream.bufferedReader().readText()
+            val output = ProcessBuilder(ICACLS, path).start().inputStream.bufferedReader().readText()
             Logger.i { "Final ACLs for $path: $output" }
         }
     }

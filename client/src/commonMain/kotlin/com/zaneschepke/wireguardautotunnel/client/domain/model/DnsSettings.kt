@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class DnsSettings(
-    val id: Int = 0,
+    val id: Long = 0,
     val dnsProtocol: Int = 0,
     val dnsEndpoint: String? = null,
     val isGlobalTunnelDnsEnabled: Boolean = false,

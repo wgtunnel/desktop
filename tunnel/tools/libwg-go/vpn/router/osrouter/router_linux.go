@@ -37,7 +37,6 @@ type linuxRouter struct {
 	fw          *osfirewall.LinuxFirewall
 	logger      *device.Logger
 	prevConfig  *router.Config
-	weEngagedKS bool
 	v4Full      bool
 	v6Full      bool
 	v6Available bool
@@ -105,21 +104,9 @@ func (r *linuxRouter) Close() error {
 		}
 	}
 
-	// cleanup
+	// cleanup routes and firewall
 	if err := r.Set(nil); err != nil {
 		r.logger.Errorf("cleanup set nil: %v", err)
-	}
-
-	if r.weEngagedKS && r.fw.IsEnabled() {
-		r.logger.Verbosef("Disabling full tunnel kill switch for iface: %s", r.iface)
-		if err := r.fw.Disable(); err != nil {
-			return fmt.Errorf("failed to disable firewall: %w", err)
-		}
-	} else if r.fw.IsEnabled() {
-		r.logger.Verbosef("Removing firewall rules for iface: %s", r.iface)
-		if err := r.fw.RemoveTunnelBypasses(r.iface); err != nil {
-			return fmt.Errorf("failed remove firewall rules for iface %s : %v", r.iface, err)
-		}
 	}
 
 	r.deletePolicyRules(netlink.FAMILY_V4)
@@ -223,25 +210,42 @@ func (r *linuxRouter) updatePrevState(newC *router.Config) {
 }
 
 func (r *linuxRouter) syncFirewallState(newC *router.Config) error {
-	v4Full := hasDefault(newC, true)
-	v6Full := hasDefault(newC, false)
-	requiresKS := v4Full || v6Full
+	requiresKS := newC.HasAnyDefaultRoute()
 
+	if !requiresKS && !r.fw.IsEnabled() {
+		// not full tun and independent ks is not enabled, do nothing
+		return nil
+		// handle cleanup
+	} else if newC.Equal(&router.Config{}) && r.fw.IsEnabled() {
+		// independent fw, just remove the rules
+		if r.fw.IsPersistent() {
+			if err := r.fw.RemoveTunnelBypasses(r.iface); err != nil {
+				return fmt.Errorf("remove tunnel bypasses: %w", err)
+			}
+		} else {
+			if err := r.fw.Disable(); err != nil {
+				return fmt.Errorf("disable firewall: %w", err)
+			}
+		}
+		return nil
+	}
+
+	// enable kill switch for full tun when it isn't already enabled independently
 	if requiresKS && !r.fw.IsEnabled() {
+		// set persist to false as this kill switch is only required for this tun
+		r.fw.SetPersist(false)
 		if err := r.fw.Enable(); err != nil {
 			return fmt.Errorf("enable firewall: %w", err)
 		}
-		r.weEngagedKS = true
-		// add our marks for the tunnel and bootstrap
+	}
+
+	// kill switch is active, set our bypass rules for tun
+	if r.fw.IsEnabled() {
 		if err := r.fw.AddTunnelBypasses(r.iface); err != nil {
 			return fmt.Errorf("add firewall bypasses: %w", err)
 		}
-	} else if !requiresKS && r.weEngagedKS {
-		if err := r.fw.Disable(); err != nil {
-			return fmt.Errorf("disable firewall: %w", err)
-		}
-		r.weEngagedKS = false
 	}
+
 	return nil
 }
 

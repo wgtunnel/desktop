@@ -5,10 +5,6 @@ import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
 import kotlinx.coroutines.flow.Flow
 
 interface TunnelCommandService {
-    suspend fun startTunnel(id: Int): Result<Unit>
-    suspend fun stopTunnel(id: Int): Result<Unit>
-    suspend fun setMode(mode: BackendMode): Result<Unit>
-    suspend fun setKillSwitch(enabled: Boolean): Result<Unit>
-    suspend fun getStatus(): Result<BackendStatus>
-    fun statusFlow(): Flow<BackendStatus>
+    suspend fun startTunnel(id: Long): Result<Unit>
+    suspend fun stopTunnel(id: Long): Result<Unit>
 }

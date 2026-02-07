@@ -12,11 +12,11 @@ class DefaultTunnelImportService(
     private val tunnelRepository: TunnelRepository,
 ) : TunnelImportService {
 
-    override suspend fun import(config: QuickString, name: TunnelName?) {
+    override suspend fun import(config: QuickString, name: TunnelName?) : Result<Unit> = runCatching {
         import(mapOf(config to name))
     }
 
-    override suspend fun import(configs: QuickConfigMap) {
+    override suspend fun import(configs: QuickConfigMap) : Result<Unit>  = runCatching {
         val tunnelConfigs =
             configs.map { (config, name) -> TunnelConfig.fromQuickString(config, name) }
         val existingNames = tunnelRepository.getAll().map { it.name }

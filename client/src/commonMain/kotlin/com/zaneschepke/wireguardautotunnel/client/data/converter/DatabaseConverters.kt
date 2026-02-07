@@ -1,4 +1,4 @@
-package com.zaneschepke.wireguardautotunnel.client.data
+package com.zaneschepke.wireguardautotunnel.client.data.converter
 
 import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
@@ -10,18 +10,18 @@ import kotlinx.serialization.json.Json
 class DatabaseConverters {
     @TypeConverter
     fun listToString(value: List<String>): String {
-        return Json.encodeToString(value)
+        return Json.Default.encodeToString(value)
     }
 
     @TypeConverter
     fun stringToList(value: String): List<String> {
         if (value.isBlank() || value.isEmpty()) return mutableListOf()
         return try {
-            Json.decodeFromString<List<String>>(value)
+            Json.Default.decodeFromString<List<String>>(value)
         } catch (e: Exception) {
             val list = value.split(",").toMutableList()
             val json = listToString(list)
-            Json.decodeFromString<List<String>>(json)
+            Json.Default.decodeFromString<List<String>>(json)
         }
     }
 
@@ -35,11 +35,15 @@ class DatabaseConverters {
         return stringToList(value).toSet()
     }
 
-    @TypeConverter fun toMode(value: Int): AppMode = AppMode.fromValue(value)
+    @TypeConverter
+    fun toMode(value: Int): AppMode = AppMode.fromValue(value)
 
-    @TypeConverter fun fromMode(mode: AppMode): Int = mode.value
+    @TypeConverter
+    fun fromMode(mode: AppMode): Int = mode.value
 
-    @TypeConverter fun toDnsProtocol(value: Int): DnsProtocol = DnsProtocol.fromValue(value)
+    @TypeConverter
+    fun toDnsProtocol(value: Int): DnsProtocol = DnsProtocol.fromValue(value)
 
-    @TypeConverter fun fromDnsProtocol(mode: DnsProtocol): Int = mode.value
+    @TypeConverter
+    fun fromDnsProtocol(mode: DnsProtocol): Int = mode.value
 }

@@ -7,6 +7,9 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.jna.platform)
+
+    implementation(libs.kermit)
+    implementation(libs.logback.classic)
 }
 
 tasks.test {

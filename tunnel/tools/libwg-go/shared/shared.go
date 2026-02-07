@@ -10,23 +10,36 @@ void callStatusCallback(StatusCodeCallback cb, int32_t handle, int32_t status) {
 */
 import "C"
 import (
+	"fmt"
 	"log"
+	"runtime"
 
 	"github.com/amnezia-vpn/amneziawg-go/device"
 )
 
 var tag = "AmneziaWG"
 
+func init() {
+	switch runtime.GOOS {
+	case "linux", "darwin":
+		log.SetFlags(0)
+	case "windows":
+		log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
+	default:
+		log.SetFlags(log.LstdFlags)
+	}
+}
+
 func LogDebug(format string, args ...interface{}) {
-	log.Printf("[DEBUG] %s: "+format+"\n", append([]interface{}{tag}, args...)...)
+	log.Printf("[DEBUG] %s: %s", tag, fmt.Sprintf(format, args...))
 }
 
 func LogWarn(format string, args ...interface{}) {
-	log.Printf("[WARN] %s: "+format+"\n", append([]interface{}{tag}, args...)...)
+	log.Printf("[WARN] %s: %s", tag, fmt.Sprintf(format, args...))
 }
 
 func LogError(format string, args ...interface{}) {
-	log.Printf("[ERROR] %s: "+format+"\n", append([]interface{}{tag}, args...)...)
+	log.Printf("[ERROR] %s: %s", tag, fmt.Sprintf(format, args...))
 }
 
 func NewLogger(prefix string) *device.Logger {

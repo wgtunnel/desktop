@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 object IPC {
+
     const val KEY_FILE = "ipc.key"
     const val USER_FOLDER = ".wgtunnel"
     const val SOCKET_FILE_NAME = "daemon.sock"

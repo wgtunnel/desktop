@@ -36,7 +36,7 @@ lang3 = "3.20.0"
 
 [bundles]
 ktor-client-jvm = ["ktor-client-core-jvm", "ktor-client-cio-jvm", "ktor-client-content-negotiation-jvm", "ktor-serialization-json-jvm", "ktor-client-okhttp", "ktor-client-websockets-jvm"]
-ktor-server-jvm = ["ktor-server-cio-jvm", "ktor-serialization-json-jvm", "ktor-server-content-negotiation-jvm", "ktor-server-core-jvm", "ktor-server-websockets-jvm"]
+ktor-server-jvm = ["ktor-server-cio-jvm", "ktor-serialization-json-jvm", "ktor-server-content-negotiation-jvm", "ktor-server-core-jvm", "ktor-server-websockets-jvm", "ktor-server-double-receive", "ktor-server-host-common", "ktor-server-status-pages"]
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -75,6 +75,9 @@ ktor-server-core-jvm = { module = "io.ktor:ktor-server-core-jvm", version.ref = 
 ktor-server-cio-jvm = { module = "io.ktor:ktor-server-cio-jvm", version.ref = "ktor" }
 ktor-server-content-negotiation-jvm = { module = "io.ktor:ktor-server-content-negotiation-jvm", version.ref = "ktor" }
 ktor-server-websockets-jvm = { module = "io.ktor:ktor-server-websockets-jvm", version.ref = "ktor" }
+ktor-server-double-receive = { module = "io.ktor:ktor-server-double-receive", version.ref = "ktor" }
+ktor-server-host-common = { module = "io.ktor:ktor-server-host-common", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 
 # Ktor Client
 ktor-client-core-jvm = { module = "io.ktor:ktor-client-core-jvm", version.ref = "ktor" }
@@ -82,7 +85,6 @@ ktor-client-cio-jvm = { module = "io.ktor:ktor-client-cio-jvm", version.ref = "k
 ktor-client-content-negotiation-jvm = { module = "io.ktor:ktor-client-content-negotiation-jvm", version.ref = "ktor" }
 ktor-serialization-json-jvm = { module = "io.ktor:ktor-serialization-kotlinx-json-jvm", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
-ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-client-websockets-jvm = { module = "io.ktor:ktor-client-websockets-jvm", version.ref = "ktor" }
 
 # Coroutines

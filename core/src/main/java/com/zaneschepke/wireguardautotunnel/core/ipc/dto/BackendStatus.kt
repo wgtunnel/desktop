@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class BackendStatus(
-    val killSwitchEnabled: Boolean,
-    val mode: BackendMode,
-    val activeTunnels: List<TunnelStatus>
+    val killSwitchEnabled: Boolean = false,
+    val mode: BackendMode = BackendMode.USERSPACE,
+    val activeTunnels: List<TunnelStatus> = emptyList(),
 )

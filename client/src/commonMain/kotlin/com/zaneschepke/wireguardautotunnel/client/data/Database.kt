@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.room.TypeConverters
+import com.zaneschepke.wireguardautotunnel.client.data.converter.AppKeyringConverter
+import com.zaneschepke.wireguardautotunnel.client.data.converter.DatabaseConverters
 import com.zaneschepke.wireguardautotunnel.client.data.dao.AutoTunnelSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.DnsSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.GeneralSettingsDao

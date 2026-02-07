@@ -19,6 +19,7 @@ func setKillSwitch(enabled C.int) C.int {
 	}
 
 	if enabled == 1 {
+		fw.SetPersist(true)
 		err := fw.Enable()
 		if err != nil {
 			logger.Errorf("Failed to enable kill switch: %v", err)
@@ -44,7 +45,7 @@ func getKillSwitchStatus() C.int {
 		return C.int(0)
 	}
 
-	if fw.IsEnabled() {
+	if fw.IsEnabled() && fw.IsPersistent() {
 		return C.int(1)
 	}
 	return C.int(0)

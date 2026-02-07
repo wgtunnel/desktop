@@ -3,15 +3,22 @@ package com.zaneschepke.wireguardautotunnel.daemon
 import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.core.helper.PermissionsHelper
 import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
-import com.zaneschepke.wireguardautotunnel.daemon.plugin.UDSPlugins
-import com.zaneschepke.wireguardautotunnel.daemon.routes.tunnelCommandRoutes
+import com.zaneschepke.wireguardautotunnel.daemon.plugin.hmacShieldPlugin
+import com.zaneschepke.wireguardautotunnel.daemon.routes.backendRoutes
+import com.zaneschepke.wireguardautotunnel.daemon.routes.daemonRoutes
+import com.zaneschepke.wireguardautotunnel.daemon.routes.tunnelRoutes
 import com.zaneschepke.wireguardautotunnel.tunnel.Backend
-import io.ktor.http.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.doublereceive.*
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.uri
+import io.ktor.server.response.respond
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import kotlinx.coroutines.CoroutineScope
@@ -60,16 +67,30 @@ class TunnelDaemon(private val json: Json,
         server = embeddedServer(CIO, configure = {
             unixConnector(socketPath)
         }) {
-            install(ContentNegotiation) {
-                json(json)
+            install(DoubleReceive)
+            install(ContentNegotiation) { json(json) }
+            install(WebSockets) {
+                contentConverter = KotlinxWebsocketSerializationConverter(json)
+                pingPeriodMillis = 20_000
+                timeoutMillis = 20_000
+                maxFrameSize = Long.MAX_VALUE
             }
-            install(WebSockets)
-            routing {
-                get("/status") { call.response.status(HttpStatusCode.OK) }
-                route("/tunnel") {
-                    install(UDSPlugins.hmacShieldPlugin)
-                    tunnelCommandRoutes(json, backend)
+            install(StatusPages) {
+                status(HttpStatusCode.NotFound) { call, status ->
+                    call.respond(status, mapOf("error" to "Route not found", "path" to call.request.uri))
                 }
+
+                // catch all
+                exception<Throwable> { call, cause ->
+                    Logger.e(cause) { "Unhandled exception in daemon" }
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to cause.message))
+                }
+            }
+            install(hmacShieldPlugin)
+            routing {
+                daemonRoutes()
+                tunnelRoutes(backend)
+                backendRoutes(backend)
             }
             monitor.subscribe(ApplicationStarted) {
                 Logger.i { "IPC server started successfully" }

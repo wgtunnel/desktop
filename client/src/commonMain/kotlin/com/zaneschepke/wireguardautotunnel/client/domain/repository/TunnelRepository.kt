@@ -26,7 +26,7 @@ interface TunnelRepository {
 
     suspend fun deleteByName(name: String)
 
-    suspend fun getById(id: Int): TunnelConfig?
+    suspend fun getById(id: Long): TunnelConfig?
 
     suspend fun getActive(): List<TunnelConfig>
 

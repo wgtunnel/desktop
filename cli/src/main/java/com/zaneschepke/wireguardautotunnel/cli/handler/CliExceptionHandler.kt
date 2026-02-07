@@ -1,4 +1,4 @@
-package com.zaneschepke.wireguardautotunnel.cli.commands.handler
+package com.zaneschepke.wireguardautotunnel.cli.handler
 
 import picocli.CommandLine
 import picocli.CommandLine.IExecutionExceptionHandler

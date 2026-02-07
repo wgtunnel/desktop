@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "auto_tunnel_settings")
 data class AutoTunnelSettings(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "is_tunnel_enabled", defaultValue = "0")
     val isAutoTunnelEnabled: Boolean = false,
     @ColumnInfo(name = "trusted_network_ssids", defaultValue = "")

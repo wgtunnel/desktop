@@ -3,7 +3,7 @@ package com.zaneschepke.wireguardautotunnel.tunnel
 import kotlinx.coroutines.flow.StateFlow
 
 interface Tunnel {
-    val id: Int
+    val id: Long
     val name: String
     val features : Set<Feature>
 

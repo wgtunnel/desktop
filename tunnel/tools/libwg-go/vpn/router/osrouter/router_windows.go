@@ -33,7 +33,6 @@ type windowsRouter struct {
 	fw                    *osfirewall.WindowsFirewall
 	logger                *device.Logger
 	prevConfig            *router.Config
-	weEngagedKS           bool
 	v6Available           bool
 	nativeTun             *tun.NativeTun
 	luid                  winipcfg.LUID
@@ -78,38 +77,23 @@ func (r *windowsRouter) Set(c *router.Config) error {
 	}
 
 	// dns
-	prevFull := prevC.HasAnyDefaultRoute()
-	newFull := newC.HasAnyDefaultRoute()
-	if !slices.Equal(newC.DNS, prevC.DNS) || !slices.Equal(newC.SearchDomains, prevC.SearchDomains) || newFull != prevFull {
-		if newFull && r.originalSearchDomains == nil {
+	isPrevFull := prevC.HasAnyDefaultRoute()
+	isNewFull := newC.HasAnyDefaultRoute()
+	if !slices.Equal(newC.DNS, prevC.DNS) || !slices.Equal(newC.SearchDomains, prevC.SearchDomains) || isNewFull != isPrevFull {
+		if isNewFull && r.originalSearchDomains == nil {
 			var err error
 			r.originalSearchDomains, err = r.getGlobalSearchDomains()
 			if err != nil {
 				r.logger.Errorf("Failed to get original search domains: %v", err)
 			}
 		}
-		if err := dns.SetDNS(r.luid, newC.DNS, newC.SearchDomains, newFull, r.logger); err != nil {
+		if err := dns.SetDNS(r.luid, newC.DNS, newC.SearchDomains, isNewFull, r.logger); err != nil {
 			return err
 		}
 	}
 
-	requiresKS := newFull
-	if requiresKS && !r.fw.IsEnabled() {
-		if err := r.fw.Enable(); err != nil {
-			return err
-		}
-		if err := r.fw.BypassTunnel(r.rawLuid, newC.ListenPort); err != nil {
-			return err
-		}
-		//if err := r.fw.AllowLocalNetworks(newC.ExcludedRoutes); err != nil {
-		//	return err
-		//}
-		r.weEngagedKS = true
-	} else if !requiresKS && r.weEngagedKS {
-		if err := r.fw.Disable(); err != nil {
-			return err
-		}
-		r.weEngagedKS = false
+	if err := r.syncFirewallState(newC, isNewFull); err != nil {
+		return err
 	}
 
 	if err := flushCaches(); err != nil {
@@ -120,53 +104,42 @@ func (r *windowsRouter) Set(c *router.Config) error {
 	return nil
 }
 
-// subtractPrefixes returns the list of prefixes that cover "super" minus all "exclusions"
-func subtractPrefixes(super netip.Prefix, exclusions []netip.Prefix) []netip.Prefix {
-	if !super.IsValid() {
+func (r *windowsRouter) syncFirewallState(newC *router.Config, requiresKS bool) error {
+
+	if !requiresKS && !r.fw.IsEnabled() {
+		// not full tun and independent ks is not enabled, do nothing
+		return nil
+	} else if newC.Equal(&router.Config{}) && r.fw.IsEnabled() {
+		// tunnel down: cleanup
+		if r.fw.IsPersistent() {
+			if err := r.fw.RemoveTunnelRules(); err != nil {
+				return fmt.Errorf("remove tunnel bypasses: %w", err)
+			}
+		} else {
+			if err := r.fw.Disable(); err != nil {
+				return fmt.Errorf("disable firewall: %w", err)
+			}
+		}
 		return nil
 	}
 
-	result := []netip.Prefix{super}
-
-	for _, excl := range exclusions {
-		if !excl.IsValid() || excl.Bits() != excl.Addr().BitLen() { // skip non-host
-			continue
+	// enable kill switch for full tun when it isn't already enabled independently
+	if requiresKS && !r.fw.IsEnabled() {
+		// set persist to false as this kill switch is only required for this tun
+		r.fw.SetPersist(false)
+		if err := r.fw.Enable(); err != nil {
+			return fmt.Errorf("enable firewall: %w", err)
 		}
-		if !super.Contains(excl.Addr()) {
-			continue
-		}
-
-		var newResult []netip.Prefix
-		for _, r := range result {
-			if !r.Contains(excl.Addr()) {
-				newResult = append(newResult, r)
-				continue
-			}
-
-			// split the containing prefix
-			current := r
-			for current.Bits() < excl.Bits() {
-				splitBit := current.Bits()
-				lowMask := netip.PrefixFrom(current.Addr(), splitBit+1)
-
-				if lowMask.Contains(excl.Addr()) {
-					// Add the high (sibling) half
-					siblingAddr := flipBit(current.Addr(), splitBit)
-					sibling := netip.PrefixFrom(siblingAddr, splitBit+1)
-					newResult = append(newResult, sibling)
-					current = lowMask // split the the low half
-				} else {
-					// add the low half, continue with high
-					newResult = append(newResult, lowMask)
-					highAddr := flipBit(current.Addr(), splitBit)
-					current = netip.PrefixFrom(highAddr, splitBit+1)
-				}
-			}
-			// drop the matching prefix to excluded
-		}
-		result = newResult
 	}
-	return result
+
+	// If kill switch is active (independent or just enabled), always add tunnel bypasses
+	if r.fw.IsEnabled() {
+		if err := r.fw.BypassTunnel(r.rawLuid, newC.ListenPort); err != nil {
+			return fmt.Errorf("add firewall bypasses: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // getBit returns the value of the i-th bit

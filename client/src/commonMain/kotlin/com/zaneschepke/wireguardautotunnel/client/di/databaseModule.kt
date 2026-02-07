@@ -4,9 +4,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.zaneschepke.wireguardautotunnel.client.data.AppDatabase
-import com.zaneschepke.wireguardautotunnel.client.data.AppKeyringConverter
+import com.zaneschepke.wireguardautotunnel.client.data.converter.AppKeyringConverter
 import com.zaneschepke.wireguardautotunnel.client.data.DatabaseCallback
-import com.zaneschepke.wireguardautotunnel.client.data.DatabaseConverters
+import com.zaneschepke.wireguardautotunnel.client.data.converter.DatabaseConverters
 import com.zaneschepke.wireguardautotunnel.client.data.dao.*
 import com.zaneschepke.wireguardautotunnel.client.data.repository.*
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.*

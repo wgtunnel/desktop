@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TunnelStatus(
-    val id: Int,
+    val id: Long,
     val name: String,
     val state: TunnelState
 )

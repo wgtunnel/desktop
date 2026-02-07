@@ -45,10 +45,19 @@ type LinuxFirewall struct {
 	tunnelPort uint16
 
 	killSwitchEnabled atomic.Bool
+	persistKillSwitch atomic.Bool
 	logger            *device.Logger
 
 	localAddrRules []*nftables.Rule            // For tracking AllowedLocalNetworks rules
 	tunnelRules    map[string][]*nftables.Rule // For tracking iface tunnel bypass rules
+}
+
+func (f *LinuxFirewall) IsPersistent() bool {
+	return f.persistKillSwitch.Load()
+}
+
+func (f *LinuxFirewall) SetPersist(enabled bool) {
+	f.persistKillSwitch.Store(enabled)
 }
 
 func New(logger *device.Logger) (firewall.Firewall, error) {
@@ -148,22 +157,6 @@ func (f *LinuxFirewall) AddTunnelBypasses(iface string) error {
 			f.conn.InsertRule(tunnelBypassRule)
 			newRules = append(newRules, tunnelBypassRule)
 		}
-
-		// Add prefix bypass rules
-		//for _, prefix := range prefixes {
-		//	if prefix.Addr().Is6() && !f.v6Available {
-		//		continue
-		//	}
-		//	rule, err := createRangeRule(table.Filter, outputChain, prefix, expr.VerdictAccept)
-		//	if err != nil {
-		//		return fmt.Errorf("create bypass rule for %v: %w", prefix, err)
-		//	}
-		//	existing, _ = findRule(f.conn, rule)
-		//	if existing == nil {
-		//		f.conn.InsertRule(rule)
-		//		newRules = append(newRules, rule)
-		//	}
-		//}
 	}
 
 	if err := f.conn.Flush(); err != nil {

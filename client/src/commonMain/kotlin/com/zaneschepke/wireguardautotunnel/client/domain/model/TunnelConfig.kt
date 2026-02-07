@@ -6,7 +6,7 @@ import kotlin.collections.get
 
 @Serializable
 data class TunnelConfig(
-    val id: Int = 0,
+    val id: Long = 0,
     val name: String,
     val quickConfig: String,
     val tunnelNetworks: Set<String> = setOf(),
@@ -29,13 +29,6 @@ data class TunnelConfig(
             pingTarget == other.pingTarget &&
             tunnelNetworks == other.tunnelNetworks &&
             isIpv4Preferred == other.isIpv4Preferred
-    }
-
-    override fun hashCode(): Int {
-        var result = id
-        result = 31 * result + name.hashCode()
-        result = 31 * result + quickConfig.hashCode()
-        return result
     }
 
     fun asConfig(): Config {

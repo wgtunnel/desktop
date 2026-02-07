@@ -15,4 +15,7 @@ dependencies {
 
     // Backoff
     implementation(libs.kotlin.retry)
+
+    // Ktor
+    api(libs.ktor.resources)
 }
