@@ -16,39 +16,40 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 
-class UdsDaemonHealthService(
-    private val client: HttpClient
-) : DaemonHealthService {
+class UdsDaemonHealthService(private val client: HttpClient) : DaemonHealthService {
 
     override suspend fun alive(): Boolean {
         return try {
             client.get(Routes.DAEMON_STATUS).status.isSuccess()
         } catch (e: Exception) {
-            Logger.w(e){ "UDS Daemon service not available" }
+            Logger.w(e) { "UDS Daemon service not available" }
             false
         }
     }
 
-    override val alive: Flow<Boolean> = callbackFlow {
-        while (isActive) {
-            try {
-                client.webSocket(Routes.DAEMON_STATUS_WS) {
-                    send(true)
+    override val alive: Flow<Boolean> =
+        callbackFlow {
+                while (isActive) {
                     try {
-                        // suspend until socket closed by server
-                        incoming.receive()
+                        client.webSocket(Routes.DAEMON_STATUS_WS) {
+                            send(true)
+                            try {
+                                // suspend until socket closed by server
+                                incoming.receive()
+                            } catch (_: Exception) {
+                                Logger.w { "Socket closed by server" }
+                                trySend(false)
+                            }
+                        }
                     } catch (_: Exception) {
-                        Logger.w { "Socket closed by server" }
                         trySend(false)
+                        delay(DAEMON_WS_RECONNECT_DELAY_MILLIS)
                     }
                 }
-            } catch (_: Exception) {
-                trySend(false)
-                delay(DAEMON_WS_RECONNECT_DELAY_MILLIS)
+                awaitClose {}
             }
-        }
-        awaitClose {}
-    }.distinctUntilChanged().flowOn(Dispatchers.IO)
+            .distinctUntilChanged()
+            .flowOn(Dispatchers.IO)
 
     companion object {
         const val DAEMON_WS_RECONNECT_DELAY_MILLIS = 3_000L

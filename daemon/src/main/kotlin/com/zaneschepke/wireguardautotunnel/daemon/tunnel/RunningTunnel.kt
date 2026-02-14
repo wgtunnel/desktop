@@ -6,7 +6,7 @@ import com.zaneschepke.wireguardautotunnel.tunnel.Tunnel
 class RunningTunnel(
     override val id: Long,
     override val name: String,
-    override val features: Set<Tunnel.Feature> = emptySet()
+    override val features: Set<Tunnel.Feature> = emptySet(),
 ) : Tunnel {
 
     override fun updateState(state: Tunnel.State) {

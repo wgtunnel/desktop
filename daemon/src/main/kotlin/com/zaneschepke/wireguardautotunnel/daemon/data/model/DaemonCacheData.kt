@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class DaemonCacheData(
     val killSwitch: KillSwitchSettings = KillSwitchSettings(false, false),
-    val startConfigs: Set<String> = emptySet()
+    val startConfigs: Set<String> = emptySet(),
 )

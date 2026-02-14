@@ -1,12 +1,15 @@
-// build.gradle.kts
+import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
+
 plugins {
     alias(libs.plugins.composeHotReload) apply false
     alias(libs.plugins.jetbrainsCompose) apply false
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.conveyor) apply false
-    alias(libs.plugins.moko) apply false
     alias(libs.plugins.buildconfig) apply false
+    alias(libs.plugins.ktfmt)
+    alias(libs.plugins.aboutLibraries)
+    alias(libs.plugins.licensee) apply false
 }
 
 val jvmVersion = libs.versions.jvm.get().toInt()
@@ -27,6 +30,35 @@ allprojects {
         }
     }
 }
+
+subprojects {
+    apply {
+        plugin(rootProject.libs.plugins.ktfmt.get().pluginId)
+        plugin(rootProject.libs.plugins.aboutLibraries.get().pluginId)
+    }
+
+    tasks.register<KtfmtFormatTask>("format") {
+        source = project.fileTree(rootDir)
+        include("**/*.kt")
+        exclude("**/build/**", ".*generated.*", "**/winsw/**", "**/amneziawg-tools/**", "**/.gradle/**")
+    }
+
+    aboutLibraries {
+        collect {
+            all = true
+            includePlatform = true
+        }
+        export {
+            outputFile = file("src/jvmMain/composeResources/files/aboutlibraries.json")
+            prettyPrint = true
+        }
+    }
+
+    ktfmt {
+        kotlinLangStyle()
+    }
+}
+
 
 registerConveyorTask(
     taskName = "buildLinuxDeb",

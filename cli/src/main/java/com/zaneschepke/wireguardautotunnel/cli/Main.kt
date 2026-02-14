@@ -16,9 +16,7 @@ fun main(args: Array<String>) {
     Logger.setMinSeverity(Severity.Debug)
     Logger.setTag("CLI")
 
-    val koinApp = startKoin {
-        modules(databaseModule, serviceModule)
-    }
+    val koinApp = startKoin { modules(databaseModule, serviceModule) }
 
     try {
         val commandLine = CommandLine(CliRoot::class.java)

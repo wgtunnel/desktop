@@ -5,12 +5,12 @@ import com.zaneschepke.wireguardautotunnel.daemon.data.model.DaemonCacheData
 import com.zaneschepke.wireguardautotunnel.daemon.data.model.KillSwitchSettings
 import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.file.storeOf
-import kotlinx.io.files.Path
-import kotlinx.serialization.json.Json
-import org.apache.commons.lang3.SystemUtils
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermissions
+import kotlinx.io.files.Path
+import kotlinx.serialization.json.Json
+import org.apache.commons.lang3.SystemUtils
 
 class KStoreDaemonCacheRepository(
     private val baseCacheDir: java.nio.file.Path = getCacheBaseDir()
@@ -29,8 +29,10 @@ class KStoreDaemonCacheRepository(
     }
 
     init {
-        Files.createDirectories(baseCacheDir)
-        setSecurePermissions(baseCacheDir)
+        if (Files.notExists(baseCacheDir)) {
+            Files.createDirectories(baseCacheDir)
+            setSecurePermissions(baseCacheDir)
+        }
     }
 
     private fun getStore(): KStore<DaemonCacheData> {
@@ -49,35 +51,37 @@ class KStoreDaemonCacheRepository(
 
         setSecurePermissions(storePathNio)
 
-        return storeOf(
-            file = storeKPath,
-            default = DaemonCacheData()
-        )
+        return storeOf(file = storeKPath, default = DaemonCacheData())
     }
-
 
     private fun setSecurePermissions(path: java.nio.file.Path) {
         val os = System.getProperty("os.name").lowercase()
         try {
             if (!os.contains("win")) {
                 val isDirectory = Files.isDirectory(path)
-                val permsString = if (isDirectory) "rwx------" else "rw-------" // 700 for dirs, 600 for files
+                val permsString =
+                    if (isDirectory) "rwx------" else "rw-------" // 700 for dirs, 600 for files
                 val perms = PosixFilePermissions.fromString(permsString)
                 Files.setPosixFilePermissions(path, perms)
             } else {
-                val process = ProcessBuilder(
-                    "icacls", path.toString(),
-                    "/inheritance:r",          // remove inherited permissions
-                    "/grant:r", "SYSTEM:(F)",   // full control to system
-                    "/grant:r", "Administrators:(F)" // full control to admin
-                ).start()
+                val process =
+                    ProcessBuilder(
+                            "icacls",
+                            path.toString(),
+                            "/inheritance:r", // remove inherited permissions
+                            "/grant:r",
+                            "SYSTEM:(F)", // full control to system
+                            "/grant:r",
+                            "Administrators:(F)", // full control to admin
+                        )
+                        .start()
                 val exitCode = process.waitFor()
                 if (exitCode != 0) {
-                    Logger.e { "icacls failed with code $exitCode"}
+                    Logger.e { "icacls failed with code $exitCode" }
                 }
             }
         } catch (e: Exception) {
-            Logger.e(e) { "Failed to set permissions"}
+            Logger.e(e) { "Failed to set permissions" }
         }
     }
 
@@ -92,7 +96,7 @@ class KStoreDaemonCacheRepository(
         }
     }
 
-    override suspend fun getStartConfigs(): Set<String>  {
+    override suspend fun getStartConfigs(): Set<String> {
         return getStore().get()?.startConfigs ?: emptySet()
     }
 

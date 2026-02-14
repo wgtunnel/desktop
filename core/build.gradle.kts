@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":parser"))
     implementation(libs.kotlinx.serialization)
     implementation(libs.apache.commons.lang3)
 
@@ -15,7 +16,4 @@ dependencies {
 
     // Backoff
     implementation(libs.kotlin.retry)
-
-    // Ktor
-    api(libs.ktor.resources)
 }

@@ -3,10 +3,14 @@ package com.zaneschepke.wireguardautotunnel.daemon.routes
 import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.KillSwitchRequest
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toDto
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toInternal
+import com.zaneschepke.wireguardautotunnel.parser.ActiveConfig
 import com.zaneschepke.wireguardautotunnel.tunnel.Backend
+import com.zaneschepke.wireguardautotunnel.tunnel.Tunnel
 import com.zaneschepke.wireguardautotunnel.tunnel.util.BackendException
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -14,12 +18,15 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalCoroutinesApi::class)
 fun Route.backendRoutes(backend: Backend) {
 
     post(Routes.BACKEND_MODE) {
@@ -33,13 +40,44 @@ fun Route.backendRoutes(backend: Backend) {
     post(Routes.BACKEND_KILL_SWITCH) {
         val request = call.receive<KillSwitchRequest>()
 
-        Logger.i { "Setting kill switch to enabled: ${request.enable} and bypassLan: ${request.bypassLan}" }
-        backend.setKillSwitch(request.enable).onSuccess {
-            call.respond(HttpStatusCode.OK, "Kill switch set to ${request.enable} successfully")
-        }.onFailure {
-            if(it is BackendException.KillSwitchAlreadyActivate) call.respond(HttpStatusCode.BadRequest, "Kill switch is already in this state.")
-            else call.respond(HttpStatusCode.InternalServerError, "Failed to toggle kill switch")
+        Logger.i {
+            "Setting kill switch to enabled: ${request.enable} and bypassLan: ${request.bypassLan}"
         }
+        backend
+            .setKillSwitch(request.enable)
+            .onSuccess {
+                call.respond(HttpStatusCode.OK, "Kill switch set to ${request.enable} successfully")
+            }
+            .onFailure {
+                if (it is BackendException.StateConflict)
+                    call.respond(HttpStatusCode.BadRequest, it.message)
+                else
+                    call.respond(HttpStatusCode.InternalServerError, "Failed to toggle kill switch")
+            }
+    }
+
+    get(Routes.BACKEND_ACTIVE_CONFIG) {
+        val id =
+            call.parameters["id"]?.toLongOrNull()
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
+
+        backend
+            .getActiveConfig(id)
+            .onSuccess { configStr ->
+                if (configStr == null) {
+                    call.respond(HttpStatusCode.NotFound, "No config available for tunnel $id")
+                } else {
+                    call.respondText(configStr, ContentType.Text.Plain, HttpStatusCode.OK)
+                }
+            }
+            .onFailure { e ->
+                Logger.e(e) { "Failed to get active config for tunnel $id" }
+                if (e is BackendException.StateConflict) {
+                    call.respond(HttpStatusCode.Conflict, e.message)
+                } else {
+                    call.respond(HttpStatusCode.InternalServerError, "Failed to retrieve config")
+                }
+            }
     }
 
     get(Routes.BACKEND_STATUS) {
@@ -51,7 +89,40 @@ fun Route.backendRoutes(backend: Backend) {
         Logger.i { "Client connected to backend status stream" }
         try {
             backend.status
-                .map { it.toDto() }
+                .distinctUntilChanged()
+                .flatMapLatest { status ->
+                    flow {
+                        while (true) {
+                            val tunnelStatuses =
+                                status.activeTunnels.map { (key, state) ->
+                                    val activeConfig =
+                                        if (state is Tunnel.State.Up) {
+                                            backend.getActiveConfig(key.id).getOrNull()?.let { str
+                                                ->
+                                                try {
+                                                    ActiveConfig.parseFromIpc(str)
+                                                } catch (e: Exception) {
+                                                    Logger.e(e) {
+                                                        "Failed to parse active config for tunnel ${key.id}"
+                                                    }
+                                                    null
+                                                }
+                                            }
+                                        } else null
+                                    TunnelStatus(key.id, key.name, state.toDto(), activeConfig)
+                                }
+                            val dto =
+                                BackendStatus(
+                                    status.killSwitchEnabled,
+                                    status.mode.toDto(),
+                                    tunnelStatuses,
+                                )
+                            emit(dto)
+                            delay(3000)
+                        }
+                    }
+                }
+                .distinctUntilChanged()
                 .collect { dto ->
                     Logger.d { "Daemon: Sending status update to WS: $dto" }
                     sendSerialized(dto)

@@ -4,29 +4,36 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.zaneschepke.wireguardautotunnel.client.data.AppDatabase
-import com.zaneschepke.wireguardautotunnel.client.data.converter.AppKeyringConverter
 import com.zaneschepke.wireguardautotunnel.client.data.DatabaseCallback
-import com.zaneschepke.wireguardautotunnel.client.data.converter.DatabaseConverters
-import com.zaneschepke.wireguardautotunnel.client.data.dao.*
-import com.zaneschepke.wireguardautotunnel.client.data.repository.*
-import com.zaneschepke.wireguardautotunnel.client.domain.repository.*
+import com.zaneschepke.wireguardautotunnel.client.data.converter.AppKeyringConverter
+import com.zaneschepke.wireguardautotunnel.client.data.dao.GeneralSettingsDao
+import com.zaneschepke.wireguardautotunnel.client.data.dao.LockdownSettingsDao
+import com.zaneschepke.wireguardautotunnel.client.data.dao.TunnelConfigDao
+import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomLockdownSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomTunnelRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.core.crypto.Crypto
 import com.zaneschepke.wireguardautotunnel.keyring.Keyring
-import kotlinx.coroutines.Dispatchers
-import org.koin.dsl.module
 import java.io.File
 import javax.crypto.SecretKey
+import kotlinx.coroutines.Dispatchers
+import org.koin.dsl.module
 
 val databaseModule = module {
     single<RoomDatabase.Callback> { DatabaseCallback(lazy { get<AppDatabase>() }) }
     single<SecretKey> {
         val dbKey = AppDatabase.DB_SECRET_KEY
         val keyring = Keyring(AppDatabase.DB_KEYRING)
-        val encodedSecret = keyring.get(dbKey) ?: run {
-            val secret = Crypto.generateRandomBase64EncodedAesKey()
-            keyring.put(dbKey, secret)
-            secret
-        }
+        val encodedSecret =
+            keyring.get(dbKey)
+                ?: run {
+                    val secret = Crypto.generateRandomBase64EncodedAesKey()
+                    keyring.put(dbKey, secret)
+                    secret
+                }
         Crypto.decodeKey(encodedSecret)
     }
     single<AppDatabase> {
@@ -38,22 +45,16 @@ val databaseModule = module {
             .setDriver(BundledSQLiteDriver())
             .fallbackToDestructiveMigration(true)
             .addCallback(get())
-            .addTypeConverter(DatabaseConverters())
             .addTypeConverter(AppKeyringConverter())
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
     }
 
     single<TunnelConfigDao> { get<AppDatabase>().tunnelConfigDao() }
-    single<AutoTunnelSettingsDao> { get<AppDatabase>().autoTunnelSettingsDao() }
-    single<DnsSettingsDao> { get<AppDatabase>().dnsSettingsDao() }
     single<LockdownSettingsDao> { get<AppDatabase>().lockdownSettingsDao() }
-    single<ProxySettingsDao> { get<AppDatabase>().proxySettingsDao() }
     single<GeneralSettingsDao> { get<AppDatabase>().generalSettingsDao() }
 
     single<TunnelRepository>() { RoomTunnelRepository(get()) }
-    single<AutoTunnelSettingsRepository>() { RoomAutoTunnelSettingsRepository(get()) }
-    single<DnsSettingsRepository>() { RoomDnsSettingsRepository(get()) }
     single<LockdownSettingsRepository>() { RoomLockdownSettingsRepository(get()) }
-    single<ProxySettingsRepository>() { RoomProxySettingsRepository(get()) }
+    single<GeneralSettingRepository>() { RoomSettingsRepository(get()) }
 }

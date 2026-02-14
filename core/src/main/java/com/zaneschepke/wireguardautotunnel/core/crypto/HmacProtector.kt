@@ -8,9 +8,7 @@ import kotlin.math.abs
 object HmacProtector {
     private const val ALGORITHM = "HmacSHA256"
 
-    /**
-     * Generates a signature based on the secret key, a timestamp, and payload.
-     */
+    /** Generates a signature based on the secret key, a timestamp, and payload. */
     fun generateSignature(key: String, timestamp: Long, payload: String?): String {
         val mac = Mac.getInstance(ALGORITHM)
         mac.init(SecretKeySpec(key.toByteArray(), ALGORITHM))
@@ -19,8 +17,8 @@ object HmacProtector {
     }
 
     /**
-     * Verifies the signature by comparing it with a freshly generated one.
-     * Checks if the timestamp is within a 30-second window.
+     * Verifies the signature by comparing it with a freshly generated one. Checks if the timestamp
+     * is within a 30-second window.
      */
     fun verify(key: String, timestamp: Long, signature: String, payload: String?): Boolean {
         val now = System.currentTimeMillis() / 1000

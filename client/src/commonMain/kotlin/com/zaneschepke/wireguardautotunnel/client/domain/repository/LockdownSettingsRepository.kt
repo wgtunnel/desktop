@@ -6,7 +6,13 @@ import kotlinx.coroutines.flow.Flow
 interface LockdownSettingsRepository {
     suspend fun upsert(lockdownSettings: LockdownSettings)
 
+    suspend fun updateEnabled(enabled: Boolean)
+
+    suspend fun updateBypassLan(enabled: Boolean)
+
+    suspend fun updateRestoreOnBoot(enabled: Boolean)
+
     val flow: Flow<LockdownSettings>
 
-    suspend fun getLockdownSettings(): LockdownSettings
+    suspend fun get(): LockdownSettings
 }

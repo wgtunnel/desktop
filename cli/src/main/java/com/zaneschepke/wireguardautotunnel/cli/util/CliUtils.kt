@@ -32,6 +32,7 @@ object CliUtils {
     }
 
     fun clearLine() = print("\u001b[2K\r")
+
     fun cursorUp(n: Int) = print("\u001b[${n}A")
 
     suspend fun <T> withSpinner(message: String, block: suspend () -> T): T {

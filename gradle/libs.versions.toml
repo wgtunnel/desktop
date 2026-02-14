@@ -7,7 +7,7 @@ compose-plugin = "1.11.0-alpha01"
 junit = "4.13.2"
 kotlin = "2.3.0"
 kotlinx-coroutines = "1.10.2"
-material3 = "1.10.0-alpha05"
+material3 = "1.11.0-alpha01"
 serialization = "1.9.0"
 cryptoRand = "0.6.0"
 curve25519Kotlin = "0.0.8"
@@ -19,8 +19,24 @@ desktopJvm = "1.11.0-alpha01"
 jnaPlatform = "5.18.1"
 buildconfig = "6.0.7"
 retry = "2.0.2"
+aboutLibraries = "14.0.0-b01"
+ktfmt = "0.25.0"
+licensee = "1.14.1"
+compose-multiplatform-lifecycle = "2.10.0-alpha07"
+orbitCompose = "11.0.0"
+sonner = "0.3.9"
+materialKolor = "4.1.1"
+nativeTray = "1.1.0"
 
-moko = "0.25.2"
+# Files
+kmpIo = "0.3.0"
+filekit = "0.12.0"
+
+# UI
+localina = "1.0.0-alpha3"
+materialIcons = "1.7.3"
+navigation3 = "1.1.0-alpha01"
+reorderable = "3.0.0"
 
 # Logging
 logbackClassic = "1.5.24"
@@ -37,6 +53,13 @@ lang3 = "3.20.0"
 [bundles]
 ktor-client-jvm = ["ktor-client-core-jvm", "ktor-client-cio-jvm", "ktor-client-content-negotiation-jvm", "ktor-serialization-json-jvm", "ktor-client-okhttp", "ktor-client-websockets-jvm"]
 ktor-server-jvm = ["ktor-server-cio-jvm", "ktor-serialization-json-jvm", "ktor-server-content-negotiation-jvm", "ktor-server-core-jvm", "ktor-server-websockets-jvm", "ktor-server-double-receive", "ktor-server-host-common", "ktor-server-status-pages"]
+
+# UI
+navigation3 = ["androidx-navigation3-runtime", "jetbrains-navigation3-ui"]
+jetbrains-lifecycle = ["jetbrains-lifecycle-viewmodel-navigation3", "jetbrains-lifecycle-viewmodel-compose", "jetbrains-lifecycle-runtime-compose"]
+compose-icons = ["compose-material-icons-core", "compose-material-icons-extended"]
+filekit = [ "filekit-core", "filekit-dialogs", "filekit-dialogs-compose" ]
+orbit-mvi = ["orbit-compose", "orbit-viewmodel", "orbit-core"]
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -62,6 +85,7 @@ curve25519-kotlin = { module = "io.github.andreypfau:curve25519-kotlin", version
 
 # DI
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 
 # Targets
 desktop-jvm-linux-x64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-linux-x64", version.ref = "desktopJvm" }
@@ -109,12 +133,46 @@ kstore-file = { module = "io.github.xxfast:kstore-file", version.ref = "kstore" 
 
 # Util
 apache-commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "lang3" }
-
-# Resources
-moko-core = { module = "dev.icerock.moko:resources", version.ref = "moko" }
-moko-compose = { module = "dev.icerock.moko:resources-compose", version.ref = "moko" }
-
 kotlin-retry = { module = "com.michael-bull.kotlin-retry:kotlin-retry", version.ref = "retry" }
+
+# Localization
+localina = { module = "io.github.sudarshanmhasrup.localina:localina", version.ref = "localina" }
+
+# Licenses
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
+aboutlibraries-compose-core = { module = "com.mikepenz:aboutlibraries-compose-core", version.ref = "aboutLibraries" }
+aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
+
+# Lifecyle
+jetbrains-lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "compose-multiplatform-lifecycle" }
+jetbrains-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "compose-multiplatform-lifecycle" }
+jetbrains-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "compose-multiplatform-lifecycle" }
+
+# UI
+sonner = { module = "io.github.dokar3:sonner", version.ref = "sonner" }
+material-kolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
+reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+compose-native-tray = { module = "io.github.kdroidfilter:composenativetray", version.ref = "nativeTray" }
+
+# Icons
+compose-material-icons-core = { group = "org.jetbrains.compose.material", name = "material-icons-core", version.ref = "materialIcons" }
+compose-material-icons-extended = { group = "org.jetbrains.compose.material", name = "material-icons-extended", version.ref = "materialIcons" }
+
+# Orbit
+orbit-compose = { module = "org.orbit-mvi:orbit-compose", version.ref = "orbitCompose" }
+orbit-core = { module = "org.orbit-mvi:orbit-core", version.ref = "orbitCompose" }
+orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orbitCompose" }
+
+# Nav
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
+jetbrains-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+
+# Files
+kmp-io = { module = "io.github.skolson:kmp-io", version.ref = "kmpIo" }
+filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
+filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
+filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
+
 
 [plugins]
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
@@ -125,5 +183,8 @@ serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref 
 conveyor = { id = "dev.hydraulic.conveyor",  version.ref =  "conveyor" }
 room = { id = "androidx.room", version.ref = "androidx-room" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-moko = { id = "dev.icerock.mobile.multiplatform-resources", version.ref = "moko" }
 buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig"}
+ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
+licensee = { id = "app.cash.licensee", version.ref = "licensee" }
+aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
+resources = { id = "org.jetbrains.compose.resources", version.ref = "kotlin" }

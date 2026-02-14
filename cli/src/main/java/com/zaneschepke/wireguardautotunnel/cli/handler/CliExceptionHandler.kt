@@ -8,7 +8,7 @@ class CliExceptionHandler : IExecutionExceptionHandler {
     override fun handleExecutionException(
         ex: Exception,
         commandLine: CommandLine,
-        parseResult: ParseResult
+        parseResult: ParseResult,
     ): Int {
         commandLine.err.println(
             commandLine.colorScheme.errorText("Error completing command: ${ex.message}")

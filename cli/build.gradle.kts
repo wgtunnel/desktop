@@ -22,28 +22,18 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
 }
 
-kapt {
-    arguments {
-        arg("project", "${project.group}/${project.name}")
-    }
-}
+kapt { arguments { arg("project", "${project.group}/${project.name}") } }
 
-tasks.named<Sync>("installDist") {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
+tasks.named<Sync>("installDist") { duplicatesStrategy = DuplicatesStrategy.EXCLUDE }
 
-application {
-    mainClass.set("com.zaneschepke.wireguardautotunnel.cli.MainKt")
-}
+application { mainClass.set("com.zaneschepke.wireguardautotunnel.cli.MainKt") }
 
 tasks.withType<Jar> {
     manifest {
         attributes(
             "Implementation-Title" to project.name,
             "Implementation-Version" to libs.versions.app.get(),
-            "Main-Class" to application.mainClass.get()
+            "Main-Class" to application.mainClass.get(),
         )
     }
 }
-
-

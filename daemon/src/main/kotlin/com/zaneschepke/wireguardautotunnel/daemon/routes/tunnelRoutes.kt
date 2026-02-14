@@ -13,34 +13,49 @@ import io.ktor.server.routing.*
 
 fun Route.tunnelRoutes(backend: Backend) {
 
-    post(Routes.Tunnels.START_TEMPLATE){
-        val id = call.parameters["id"]?.toLongOrNull()
-            ?: return@post call.respond(HttpStatusCode.BadRequest, "Invalid ID")
+    post(Routes.Tunnels.START_TEMPLATE) {
+        val id =
+            call.parameters["id"]?.toLongOrNull()
+                ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
         val request = call.receive<StartTunnelRequest>()
 
         Logger.i { "Starting tunnel (${request.name})" }
 
         val tunnel = RunningTunnel(id, request.name)
 
-        backend.start(tunnel, request.quickConfig).onSuccess {
-            call.respond(HttpStatusCode.OK, "Tunnel ${request.name} started")
-        }.onFailure {
-            if (it is BackendException.TunnelAlreadyActive) call.respond(HttpStatusCode.Conflict, "Tunnel ${request.name} already active")
-            else call.respond(HttpStatusCode.InternalServerError, "Failed to start tunnel ${request.name}")
-        }
+        backend
+            .start(tunnel, request.quickConfig)
+            .onSuccess { call.respond(HttpStatusCode.OK, "Tunnel ${request.name} started") }
+            .onFailure {
+                if (it is BackendException.StateConflict)
+                    call.respond(HttpStatusCode.Conflict, it.message)
+                else
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        it.message
+                            ?: "Failed to start tunnel ${request.name} due to internal error.",
+                    )
+            }
     }
 
     post(Routes.Tunnels.STOP_TEMPLATE) {
-        val id = call.parameters["id"]?.toIntOrNull()
-            ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
+        val id =
+            call.parameters["id"]?.toIntOrNull()
+                ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
 
-        backend.stop(id.toLong()).onSuccess {
-            call.respond(HttpStatusCode.OK, "Tunnel $id stopped")
-        }.onFailure {
-            when (it) {
-                is BackendException.TunnelNotActive -> call.respond(HttpStatusCode.Conflict, "Tunnel $id not active")
-                else -> call.respond(HttpStatusCode.InternalServerError, "Failed to stop tunnel")
+        backend
+            .stop(id.toLong())
+            .onSuccess { call.respond(HttpStatusCode.OK, "Tunnel $id stopped") }
+            .onFailure {
+                when (it) {
+                    is BackendException.StateConflict ->
+                        call.respond(HttpStatusCode.Conflict, it.message)
+                    else ->
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            "Failed to stop tunnel $id due to internal error.",
+                        )
+                }
             }
-        }
     }
 }

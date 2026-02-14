@@ -16,11 +16,12 @@ class CliExecutionStrategy(private val defaultStrategy: IExecutionStrategy) : IE
             return@runBlocking defaultStrategy.execute(parseResult)
         }
 
-        val isAlive = try {
-            daemonHealthService.alive()
-        } catch (e: Exception) {
-            false
-        }
+        val isAlive =
+            try {
+                daemonHealthService.alive()
+            } catch (e: Exception) {
+                false
+            }
 
         if (!isAlive) {
             CliUtils.printError("WG Tunnel daemon is not reachable.")

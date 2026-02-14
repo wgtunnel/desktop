@@ -3,8 +3,10 @@ package com.zaneschepke.wireguardautotunnel.parser.util
 import java.net.InetAddress
 
 object NetworkUtils {
-    private val hostnameRegex = Regex("^(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$")
-
+    private val hostnameRegex =
+        Regex(
+            "^(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$"
+        )
 
     fun isValidIp(ip: String): Boolean {
         val sanitized = ip.removeSurrounding("[", "]")
@@ -43,14 +45,12 @@ object NetworkUtils {
         return isValidIp(entry) || isValidHostname(entry)
     }
 
-
     fun isValidHostname(host: String): Boolean {
         val cleaned = host.removeSurrounding("[", "]")
         return hostnameRegex.matches(cleaned) && cleaned.length <= 253
     }
 
     fun isValidBase64(str: String): Boolean {
-        // WireGuard keys are always 44 chars (32 bytes encoded)
         if (str.length != 44 || !str.endsWith("=")) return false
         val base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
         return str.all { it in base64Chars }

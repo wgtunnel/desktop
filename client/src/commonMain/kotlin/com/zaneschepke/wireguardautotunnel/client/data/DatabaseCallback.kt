@@ -7,9 +7,7 @@ import androidx.sqlite.execSQL
 class DatabaseCallback(private val databaseProvider: Lazy<AppDatabase>) : RoomDatabase.Callback() {
     override fun onCreate(connection: SQLiteConnection) {
         super.onCreate(connection)
-        connection.execSQL("INSERT INTO proxy_settings DEFAULT VALUES")
+        connection.execSQL("INSERT INTO lockdown_settings DEFAULT VALUES")
         connection.execSQL("INSERT INTO general_settings DEFAULT VALUES")
-        connection.execSQL("INSERT INTO auto_tunnel_settings DEFAULT VALUES")
-        connection.execSQL("INSERT INTO dns_settings DEFAULT VALUES")
     }
 }

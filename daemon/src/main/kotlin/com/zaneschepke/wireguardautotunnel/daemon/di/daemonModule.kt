@@ -7,7 +7,6 @@ import com.zaneschepke.wireguardautotunnel.daemon.data.KStoreDaemonCacheReposito
 import com.zaneschepke.wireguardautotunnel.tunnel.AmneziaBackend
 import com.zaneschepke.wireguardautotunnel.tunnel.Backend
 import kotlinx.serialization.json.Json
-import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 val daemonModule = module {

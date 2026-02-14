@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class LockdownSettings(
-    val id: Long = 0L,
+    val id: Long = 1L,
+    val enabled: Boolean = false,
+    val restoreOnBoot: Boolean = false,
     val bypassLan: Boolean = false,
-    val metered: Boolean = false,
-    val dualStack: Boolean = false,
 )

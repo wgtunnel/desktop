@@ -4,8 +4,8 @@ import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
 import com.zaneschepke.wireguardautotunnel.client.data.model.EncryptedField
 import com.zaneschepke.wireguardautotunnel.core.crypto.Crypto
-import org.koin.java.KoinJavaComponent
 import javax.crypto.SecretKey
+import org.koin.java.KoinJavaComponent
 
 @ProvidedTypeConverter
 class AppKeyringConverter {

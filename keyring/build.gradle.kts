@@ -1,10 +1,6 @@
-plugins {
-    kotlin("jvm")
-}
+plugins { kotlin("jvm") }
 
-dependencies {
-    implementation(libs.jna.platform)
-}
+dependencies { implementation(libs.jna.platform) }
 
 tasks.register<Exec>("buildGoLibs") {
     val libDir = "tools/keyring-go"
@@ -12,24 +8,23 @@ tasks.register<Exec>("buildGoLibs") {
     description = "Builds Go shared libs using Makefile"
     workingDir = file(libDir)
 
-    inputs.dir(file(libDir))
+    inputs
+        .dir(file(libDir))
         .withPropertyName("goSourceDir")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
-    outputs.dir(file("src/main/resources"))
-        .withPropertyName("outputResourcesDir")
+    outputs.dir(file("src/main/resources")).withPropertyName("outputResourcesDir")
 
     commandLine("make", "all")
 }
 
-tasks.named("processResources") {
-    dependsOn("buildGoLibs")
-}
+tasks.named("processResources") { dependsOn("buildGoLibs") }
 
-val cleanGoLibs = tasks.register<Exec>("cleanGoLibs") {
-    workingDir = file("tools/keyring-go")
-    commandLine("make", "clean")
-}
+val cleanGoLibs =
+    tasks.register<Exec>("cleanGoLibs") {
+        workingDir = file("tools/keyring-go")
+        commandLine("make", "clean")
+    }
 
 tasks.named<Delete>("clean") {
     dependsOn(cleanGoLibs)

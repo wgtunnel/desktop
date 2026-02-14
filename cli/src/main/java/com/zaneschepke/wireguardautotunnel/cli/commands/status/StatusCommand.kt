@@ -1,34 +1,39 @@
 package com.zaneschepke.wireguardautotunnel.cli.commands.status
 
-import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.cli.util.CliUtils
 import com.zaneschepke.wireguardautotunnel.cli.util.CliUtils.renderAnsi
 import com.zaneschepke.wireguardautotunnel.client.service.BackendCommandService
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.Callable
 import kotlinx.coroutines.runBlocking
 import org.koin.java.KoinJavaComponent.inject
 import picocli.CommandLine.*
-import java.time.format.DateTimeFormatter
-import java.util.concurrent.Callable
 
 @Command(
     name = "status",
     description = ["View backend status and active tunnels."],
-    mixinStandardHelpOptions = true
+    mixinStandardHelpOptions = true,
 )
 class StatusCommand : Callable<Int> {
     private val backendService: BackendCommandService by inject(BackendCommandService::class.java)
 
-    override fun call(): Int = runBlocking {
-        fetchSnapshot()
-    }
+    override fun call(): Int = runBlocking { fetchSnapshot() }
 
     private suspend fun fetchSnapshot(): Int {
-        return backendService.getStatus().fold(
-            onSuccess = { renderStatus(it); 0 },
-            onFailure = { CliUtils.printError("Error: ${it.message}"); 1 }
-        )
+        return backendService
+            .getStatus()
+            .fold(
+                onSuccess = {
+                    renderStatus(it)
+                    0
+                },
+                onFailure = {
+                    CliUtils.printError("Error: ${it.message}")
+                    1
+                },
+            )
     }
 
     private fun renderStatus(status: BackendStatus, isLive: Boolean = false) {
@@ -47,9 +52,7 @@ class StatusCommand : Callable<Int> {
                 append("@|faint No active tunnels.|@$clear\n")
             } else {
                 append("@|bold Active Tunnels:|@$clear\n")
-                status.activeTunnels.forEach {
-                    append("  @|green ●|@ ${it.name}$clear\n")
-                }
+                status.activeTunnels.forEach { append("  @|green ●|@ ${it.name}$clear\n") }
             }
         }
         println(output.renderAnsi())

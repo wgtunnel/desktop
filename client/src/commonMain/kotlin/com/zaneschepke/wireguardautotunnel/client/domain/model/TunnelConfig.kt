@@ -1,35 +1,17 @@
 package com.zaneschepke.wireguardautotunnel.client.domain.model
 
 import com.zaneschepke.wireguardautotunnel.parser.Config
-import kotlinx.serialization.Serializable
 import kotlin.collections.get
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class TunnelConfig(
     val id: Long = 0,
     val name: String,
     val quickConfig: String,
-    val tunnelNetworks: Set<String> = setOf(),
-    val isPrimaryTunnel: Boolean = false,
     val active: Boolean = false,
-    val pingTarget: String? = null,
-    val isEthernetTunnel: Boolean = false,
-    val isIpv4Preferred: Boolean = true,
     val position: Int = 0,
 ) {
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is TunnelConfig) return false
-        return id == other.id &&
-            name == other.name &&
-            quickConfig == other.quickConfig &&
-            isPrimaryTunnel == other.isPrimaryTunnel &&
-            isEthernetTunnel == other.isEthernetTunnel &&
-            pingTarget == other.pingTarget &&
-            tunnelNetworks == other.tunnelNetworks &&
-            isIpv4Preferred == other.isIpv4Preferred
-    }
 
     fun asConfig(): Config {
         return Config.parseQuickString(quickConfig)
@@ -37,14 +19,9 @@ data class TunnelConfig(
 
     companion object {
 
-        fun generateRandom8Digits(): String {
-            val digits = ('0'..'9').toList()
-            return (1..8).map { digits.random() }.joinToString("")
-        }
+        const val DEFAULT_TUNNEL_NAME = "tunnel"
 
-        private fun generateDefaultTunnelName(config: Config? = null): String {
-            return config?.peers[0]?.host ?: generateRandom8Digits()
-        }
+        val Empty = TunnelConfig(name = DEFAULT_TUNNEL_NAME, quickConfig = "")
 
         fun configFromQuick(quick: String): Config {
             return Config.parseQuickString(quick)
@@ -57,10 +34,11 @@ data class TunnelConfig(
 
         private fun tunnelConfFromConfig(config: Config, name: String? = null): TunnelConfig {
             return TunnelConfig(
-                name = name ?: generateDefaultTunnelName(config),
+                name = name ?: DEFAULT_TUNNEL_NAME,
                 quickConfig = config.asQuickString(),
             )
         }
+
         private const val IPV6_ALL_NETWORKS = "::/0"
         private const val IPV4_ALL_NETWORKS = "0.0.0.0/0"
         val ALL_IPS = listOf(IPV4_ALL_NETWORKS, IPV6_ALL_NETWORKS)

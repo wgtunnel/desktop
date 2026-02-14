@@ -1,16 +1,20 @@
 package com.zaneschepke.wireguardautotunnel.parser
 
 import com.zaneschepke.wireguardautotunnel.parser.crypto.Key
+import com.zaneschepke.wireguardautotunnel.parser.util.ConfigFormatter
 import com.zaneschepke.wireguardautotunnel.parser.util.getBool
 import com.zaneschepke.wireguardautotunnel.parser.util.getInt
 import com.zaneschepke.wireguardautotunnel.parser.util.getList
+import com.zaneschepke.wireguardautotunnel.parser.util.getLong
+import kotlin.io.encoding.Base64
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Config(
     @SerialName("Interface") val `interface`: InterfaceSection,
-    @SerialName("Peer") val peers: List<PeerSection> = emptyList()
+    @SerialName("Peer") val peers: List<PeerSection> = emptyList(),
+    val headerComments: List<String> = emptyList(),
 ) {
 
     @Throws(ConfigParseException::class)
@@ -19,47 +23,13 @@ data class Config(
         peers.forEachIndexed { index, peer -> peer.validate(index) }
     }
 
-    fun asQuickString(): String = buildString {
-        appendLine("[Interface]")
-        appendLine("PrivateKey = ${`interface`.privateKey}")
-        `interface`.address?.let { appendLine("Address = $it") }
-        `interface`.dns?.let { appendLine("DNS = $it") }
-        `interface`.listenPort?.let { appendLine("ListenPort = $it") }
-        `interface`.mtu?.let { appendLine("MTU = $it") }
-        `interface`.fwMark?.let { appendLine("FwMark = $it") }
-        `interface`.table?.let { appendLine("Table = $it") }
-        `interface`.saveConfig?.let { appendLine("SaveConfig = $it") }
-
-        // AmneziaWG
-        `interface`.jC?.let { appendLine("Jc = $it") }
-        `interface`.jMin?.let { appendLine("Jmin = $it") }
-        `interface`.jMax?.let { appendLine("Jmax = $it") }
-        `interface`.s1?.let { appendLine("S1 = $it") }
-        `interface`.s2?.let { appendLine("S2 = $it") }
-        `interface`.s3?.let { appendLine("S3 = $it") }
-        `interface`.s4?.let { appendLine("S4 = $it") }
-        `interface`.h1?.let { appendLine("H1 = $it") }
-        `interface`.h2?.let { appendLine("H2 = $it") }
-        `interface`.h3?.let { appendLine("H3 = $it") }
-        `interface`.h4?.let { appendLine("H4 = $it") }
-        `interface`.i1?.let { appendLine("I1 = $it") }
-        `interface`.i2?.let { appendLine("I2 = $it") }
-        `interface`.i3?.let { appendLine("I3 = $it") }
-        `interface`.i4?.let { appendLine("I4 = $it") }
-        `interface`.i5?.let { appendLine("I5 = $it") }
-
-        `interface`.includedApplications?.let { appendLine("IncludedApplications = ${it.joinToString(",")}") }
-        `interface`.excludedApplications?.let { appendLine("ExcludedApplications = ${it.joinToString(",")}") }
-
-        peers.forEach { peer ->
-            append("\n[Peer]\n")
-            appendLine("PublicKey = ${peer.publicKey}")
-            peer.endpoint?.let { appendLine("Endpoint = $it") }
-            peer.allowedIPs?.let { appendLine("AllowedIPs = $it") }
-            peer.presharedKey?.let { appendLine("PresharedKey = $it") }
-            peer.persistentKeepalive?.let { appendLine("PersistentKeepalive = $it") }
-        }
-    }.trim()
+    fun asQuickString(): String =
+        buildString {
+                headerComments.forEach { appendLine(it) }
+                ConfigFormatter.appendInterfaceSection(this, `interface`)
+                peers.forEach { ConfigFormatter.appendPeerSection(this, it) }
+            }
+            .trim()
 
     fun rotateInterfaceKey(): Config {
         val privateKey = Key.generatePrivateKey()
@@ -68,75 +38,134 @@ data class Config(
     }
 
     companion object {
-        @Throws(ConfigParseException::class)
         fun parseQuickString(configString: String): Config {
             val interfaceMap = mutableMapOf<String, String>()
-            val peerMaps = mutableListOf<MutableMap<String, String>>()
-            var currentSection: MutableMap<String, String>? = null
+            val peerMaps = mutableListOf<Pair<MutableMap<String, String>, List<String>>>()
 
-            configString.lines().forEach { line ->
-                val trimmed = line.split("#", ";")[0].trim()
-                if (trimmed.isEmpty()) return@forEach
+            val headerComments = mutableListOf<String>()
+            val currentCommentBuffer = mutableListOf<String>()
+            var interfaceComments = listOf<String>()
 
-                if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-                    currentSection = when (trimmed.substring(1, trimmed.length - 1).lowercase()) {
-                        "interface" -> interfaceMap
-                        "peer" -> mutableMapOf<String, String>().also { peerMaps.add(it) }
-                        else -> null // ignore unknown
+            var currentSectionMap: MutableMap<String, String>? = null
+            var isFirstSectionFound = false
+
+            // normalize and trim
+            val normalizedConfig = configString.replace("\r\n", "\n").replace("\r", "\n").trim()
+
+            normalizedConfig.lines().forEach { line ->
+                val raw = line.trim()
+                if (raw.isEmpty()) return@forEach
+
+                // handle comments
+                if (raw.startsWith("#") || raw.startsWith(";")) {
+                    if (!isFirstSectionFound) {
+                        headerComments.add(raw)
+                    } else {
+                        currentCommentBuffer.add(raw)
                     }
                     return@forEach
                 }
 
-                val parts = trimmed.split("=", limit = 2)
+                // Handle Section Headers
+                if (raw.startsWith("[") && raw.endsWith("]")) {
+                    isFirstSectionFound = true
+                    val sectionName = raw.substring(1, raw.length - 1).lowercase()
+
+                    when (sectionName) {
+                        "interface" -> {
+                            currentSectionMap = interfaceMap
+                            interfaceComments = currentCommentBuffer.toList()
+                            currentCommentBuffer.clear()
+                        }
+                        "peer" -> {
+                            val newPeerMap = mutableMapOf<String, String>()
+                            peerMaps.add(newPeerMap to currentCommentBuffer.toList())
+                            currentSectionMap = newPeerMap
+                            currentCommentBuffer.clear()
+                        }
+                        else -> currentSectionMap = null
+                    }
+                    return@forEach
+                }
+
+                val parts = raw.split("=", limit = 2)
                 if (parts.size == 2) {
-                    currentSection?.put(parts[0].trim(), parts[1].trim())
+                    val key = parts[0].trim()
+                    var value = parts[1].trim()
+                    // remove whitespaces
+                    if (
+                        key in
+                            listOf(
+                                "PrivateKey",
+                                "PublicKey",
+                                "PresharedKey",
+                                "H1",
+                                "H2",
+                                "H3",
+                                "H4",
+                            )
+                    ) {
+                        value = value.replace(Regex("\\s+"), "")
+                    }
+                    currentSectionMap?.put(key, value)
                 }
             }
 
-            if (interfaceMap.isEmpty()) throw ConfigParseException(ErrorType.MISSING_REQUIRED_FIELD, "Interface")
-
             return Config(
-                `interface` = buildInterface(interfaceMap),
-                peers = peerMaps.map { buildPeer(it) }
-            ).also { it.validate() }
+                headerComments = headerComments,
+                `interface` = buildInterface(interfaceMap, interfaceComments),
+                peers = peerMaps.map { (map, comments) -> buildPeer(map, comments) },
+            )
         }
 
-        private fun buildInterface(m: Map<String, String>) = InterfaceSection(
-            privateKey = m["PrivateKey"] ?: "",
-            address = m["Address"],
-            dns = m["DNS"],
-            listenPort = m.getInt("ListenPort", "Interface"),
-            mtu = m.getInt("MTU", "Interface"),
-            fwMark = m.getInt("FwMark", "Interface"),
-            table = m["Table"],
-            saveConfig = m.getBool("SaveConfig", "Interface"),
-            jC = m.getInt("Jc", "Interface"),
-            jMin = m.getInt("Jmin", "Interface"),
-            jMax = m.getInt("Jmax", "Interface"),
-            s1 = m.getInt("S1", "Interface"),
-            s2 = m.getInt("S2", "Interface"),
-            s3 = m.getInt("S3", "Interface"),
-            s4 = m.getInt("S4", "Interface"),
-            h1 = m["H1"], h2 = m["H2"], h3 = m["H3"], h4 = m["H4"],
-            i1 = m["I1"], i2 = m["I2"], i3 = m["I3"], i4 = m["I4"], i5 = m["I5"],
-            includedApplications = m.getList("IncludedApplications"),
-            excludedApplications = m.getList("ExcludedApplications")
-        )
+        internal fun buildInterface(m: Map<String, String>, comments: List<String>) =
+            InterfaceSection(
+                comments = comments,
+                privateKey = m["PrivateKey"] ?: "",
+                address = m["Address"],
+                dns = m["DNS"],
+                listenPort = m.getInt("ListenPort", "Interface"),
+                mtu = m.getInt("MTU", "Interface"),
+                fwMark = m.getInt("FwMark", "Interface"),
+                table = m["Table"],
+                saveConfig = m.getBool("SaveConfig", "Interface"),
+                jC = m.getInt("Jc", "Interface"),
+                jMin = m.getInt("Jmin", "Interface"),
+                jMax = m.getInt("Jmax", "Interface"),
+                s1 = m.getInt("S1", "Interface"),
+                s2 = m.getInt("S2", "Interface"),
+                s3 = m.getInt("S3", "Interface"),
+                s4 = m.getInt("S4", "Interface"),
+                h1 = m["H1"],
+                h2 = m["H2"],
+                h3 = m["H3"],
+                h4 = m["H4"],
+                i1 = m["I1"],
+                i2 = m["I2"],
+                i3 = m["I3"],
+                i4 = m["I4"],
+                i5 = m["I5"],
+                includedApplications = m.getList("IncludedApplications"),
+                excludedApplications = m.getList("ExcludedApplications"),
+            )
 
-        private fun buildPeer(m: Map<String, String>) = PeerSection(
-            publicKey = m["PublicKey"] ?: "",
-            allowedIPs = m["AllowedIPs"],
-            endpoint = m["Endpoint"],
-            presharedKey = m["PresharedKey"],
-            persistentKeepalive = m.getInt("PersistentKeepalive", "Peer")
-        )
+        private fun buildPeer(m: Map<String, String>, comments: List<String>) =
+            PeerSection(
+                publicKey = m["PublicKey"] ?: "",
+                allowedIPs = m["AllowedIPs"],
+                endpoint = m["Endpoint"],
+                presharedKey = m["PresharedKey"],
+                persistentKeepalive = m.getInt("PersistentKeepalive", "Peer"),
+                comments = comments,
+            )
 
         fun parseEndpoint(endpoint: String): Pair<String?, String?> {
             var host: String
             var portStr: String?
             if (endpoint.startsWith("[")) {
                 val endBracket = endpoint.lastIndexOf("]")
-                if (endBracket == -1 || !endpoint.substring(endBracket + 1).startsWith(":")) return null to null
+                if (endBracket == -1 || !endpoint.substring(endBracket + 1).startsWith(":"))
+                    return null to null
                 host = endpoint.take(endBracket + 1)
                 portStr = endpoint.substring(endBracket + 2)
             } else {
@@ -147,6 +176,31 @@ data class Config(
             }
             return host to portStr
         }
+
+        internal fun hexToBase64(hex: String): String {
+            if (hex.length != 64 || !hex.matches(Regex("[0-9a-fA-F]{64}"))) {
+                throw ConfigParseException(ErrorType.INVALID_HEX_KEY, "key", hex)
+            }
+            val bytes = ByteArray(32)
+            for (i in 0 until 32) {
+                val chunk = hex.substring(i * 2, i * 2 + 2)
+                bytes[i] = chunk.toInt(16).toByte()
+            }
+            return Base64.encode(bytes)
+        }
+
+        internal fun buildActivePeer(m: Map<String, String>) =
+            ActivePeer(
+                publicKey = m["PublicKey"] ?: "",
+                allowedIPs = m["AllowedIPs"],
+                endpoint = m["Endpoint"],
+                presharedKey = m["PresharedKey"],
+                persistentKeepalive = m.getInt("PersistentKeepalive", "Peer"),
+                lastHandshakeSeconds = m.getLong("LastHandshakeSeconds", "Peer"),
+                lastHandshakeNanos = m.getLong("LastHandshakeNanos", "Peer"),
+                txBytes = m.getLong("TxBytes", "Peer"),
+                rxBytes = m.getLong("RxBytes", "Peer"),
+            )
 
         internal fun generatePublicKeyFromPrivate(privateBase64: String): String {
             val privateKey = Key.fromBase64(privateBase64)

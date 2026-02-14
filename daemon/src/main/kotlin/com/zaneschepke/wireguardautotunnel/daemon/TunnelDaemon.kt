@@ -21,19 +21,20 @@ import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
+import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.apache.commons.lang3.SystemUtils
-import java.io.File
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.atomic.AtomicBoolean
 
-class TunnelDaemon(private val json: Json,
-                   private val backend: Backend,
-                   private val cacheRepository: DaemonCacheRepository,
-                   private val socketPath: String
+class TunnelDaemon(
+    private val json: Json,
+    private val backend: Backend,
+    private val cacheRepository: DaemonCacheRepository,
+    private val socketPath: String,
 ) {
     private var server: EmbeddedServer<*, *>? = null
     private val running = AtomicBoolean(false)
@@ -46,7 +47,6 @@ class TunnelDaemon(private val json: Json,
         shutdownLatch.await() // block main thread until stop()
     }
 
-
     fun startUdsServer() {
         if (!running.compareAndSet(false, true)) return
 
@@ -57,50 +57,59 @@ class TunnelDaemon(private val json: Json,
         runtimeDir.mkdirs()
 
         when {
-            SystemUtils.IS_OS_WINDOWS -> PermissionsHelper.setupDirectoryPermissionsWindows(runtimeDir.absolutePath)
-            SystemUtils.IS_OS_UNIX -> PermissionsHelper.setupDirectoryPermissionsUnix(runtimeDir.absolutePath)
+            SystemUtils.IS_OS_WINDOWS ->
+                PermissionsHelper.setupDirectoryPermissionsWindows(runtimeDir.absolutePath)
+            SystemUtils.IS_OS_UNIX ->
+                PermissionsHelper.setupDirectoryPermissionsUnix(runtimeDir.absolutePath)
         }
 
-        socketFile.delete()  // delete old socket if exists
+        socketFile.delete() // delete old socket if exists
 
+        server =
+            embeddedServer(CIO, configure = { unixConnector(socketPath) }) {
+                    install(DoubleReceive)
+                    install(ContentNegotiation) { json(json) }
+                    install(WebSockets) {
+                        contentConverter = KotlinxWebsocketSerializationConverter(json)
+                        pingPeriodMillis = 20_000
+                        timeoutMillis = 20_000
+                        maxFrameSize = Long.MAX_VALUE
+                    }
+                    install(StatusPages) {
+                        status(HttpStatusCode.NotFound) { call, status ->
+                            call.respond(
+                                status,
+                                mapOf("error" to "Route not found", "path" to call.request.uri),
+                            )
+                        }
 
-        server = embeddedServer(CIO, configure = {
-            unixConnector(socketPath)
-        }) {
-            install(DoubleReceive)
-            install(ContentNegotiation) { json(json) }
-            install(WebSockets) {
-                contentConverter = KotlinxWebsocketSerializationConverter(json)
-                pingPeriodMillis = 20_000
-                timeoutMillis = 20_000
-                maxFrameSize = Long.MAX_VALUE
-            }
-            install(StatusPages) {
-                status(HttpStatusCode.NotFound) { call, status ->
-                    call.respond(status, mapOf("error" to "Route not found", "path" to call.request.uri))
+                        // catch all
+                        exception<Throwable> { call, cause ->
+                            Logger.e(cause) { "Unhandled exception in daemon" }
+                            call.respond(
+                                HttpStatusCode.InternalServerError,
+                                mapOf("error" to cause.message),
+                            )
+                        }
+                    }
+                    install(hmacShieldPlugin)
+                    routing {
+                        daemonRoutes()
+                        tunnelRoutes(backend)
+                        backendRoutes(backend)
+                    }
+                    monitor.subscribe(ApplicationStarted) {
+                        Logger.i { "IPC server started successfully" }
+                    }
                 }
-
-                // catch all
-                exception<Throwable> { call, cause ->
-                    Logger.e(cause) { "Unhandled exception in daemon" }
-                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to cause.message))
-                }
-            }
-            install(hmacShieldPlugin)
-            routing {
-                daemonRoutes()
-                tunnelRoutes(backend)
-                backendRoutes(backend)
-            }
-            monitor.subscribe(ApplicationStarted) {
-                Logger.i { "IPC server started successfully" }
-            }
-        }.start(wait = false)
+                .start(wait = false)
 
         scope.launch {
             when {
-                SystemUtils.IS_OS_UNIX -> PermissionsHelper.setupSocketPermissionsWithPollUnix(socketPath)
-                SystemUtils.IS_OS_WINDOWS -> PermissionsHelper.setupSocketPermissionsWithPollWindows(socketPath)
+                SystemUtils.IS_OS_UNIX ->
+                    PermissionsHelper.setupSocketPermissionsWithPollUnix(socketPath)
+                SystemUtils.IS_OS_WINDOWS ->
+                    PermissionsHelper.setupSocketPermissionsWithPollWindows(socketPath)
             }
         }
 
@@ -112,7 +121,6 @@ class TunnelDaemon(private val json: Json,
             Logger.d { "Got start configs of size ${startConfigs.size}" }
         }
     }
-
 
     fun stop() {
         if (!running.compareAndSet(true, false)) return

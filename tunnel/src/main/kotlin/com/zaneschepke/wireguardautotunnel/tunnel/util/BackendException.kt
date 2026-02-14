@@ -1,12 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.tunnel.util
 
-
 sealed class BackendException : Exception() {
+    class StateConflict(override val message: String) : BackendException()
 
-    data class PermissionDenied(val permission: String) : BackendException()
-    class TunnelAlreadyActive : BackendException()
-    class TunnelNotActive : BackendException()
-    class KillSwitchSetFailed : BackendException()
-    class KillSwitchAlreadyActivate : BackendException()
-    class TunnelStartFailed : BackendException()
+    class InternalError(override val message: String) : BackendException()
 }

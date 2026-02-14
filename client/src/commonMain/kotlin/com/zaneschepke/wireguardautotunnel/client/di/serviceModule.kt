@@ -5,7 +5,6 @@ import com.zaneschepke.wireguardautotunnel.client.data.service.DefaultTunnelImpo
 import com.zaneschepke.wireguardautotunnel.client.data.service.UdsBackendCommandService
 import com.zaneschepke.wireguardautotunnel.client.data.service.UdsDaemonHealthService
 import com.zaneschepke.wireguardautotunnel.client.data.service.UdsTunnelCommandService
-import com.zaneschepke.wireguardautotunnel.client.domain.error.BackendError
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import com.zaneschepke.wireguardautotunnel.client.service.BackendCommandService
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonHealthService
@@ -38,15 +37,13 @@ val serviceModule = module {
         }
     }
     single {
-        val json : Json = get()
+        val json: Json = get()
         HttpClient(CIO) {
             defaultRequest {
                 contentType(ContentType.Application.Json)
                 accept(ContentType.Application.Json)
             }
-            install(ContentNegotiation) {
-                json(json)
-            }
+            install(ContentNegotiation) { json(json) }
             install(WebSockets) {
                 contentConverter = KotlinxWebsocketSerializationConverter(json)
                 pingIntervalMillis = 20_000
@@ -55,17 +52,24 @@ val serviceModule = module {
             expectSuccess = true
             HttpResponseValidator {
                 handleResponseExceptionWithRequest { cause, _ ->
-                    val exception = cause as? ClientRequestException ?: return@handleResponseExceptionWithRequest
+                    val exception =
+                        cause as? ClientRequestException
+                            ?: return@handleResponseExceptionWithRequest
                     val response = exception.response
 
                     val bodyText = response.bodyAsText()
-                    Logger.d { "Client: Received error response - status=${response.status}, body='$bodyText'" }
-
-                    val error = when (response.status) {
-                        HttpStatusCode.Conflict -> BackendError.AlreadyActive
-                        else -> BackendError.GeneralError(bodyText)
+                    Logger.d {
+                        "Client: Received error response - status=${response.status}, body='$bodyText'"
                     }
-                    throw ClientException.BackendException(error)
+
+                    throw when (response.status) {
+                        HttpStatusCode.NotFound,
+                        HttpStatusCode.BadRequest -> ClientException.BadRequestException(bodyText)
+                        HttpStatusCode.InternalServerError ->
+                            ClientException.BadRequestException(bodyText)
+                        HttpStatusCode.Conflict -> ClientException.ConflictException(bodyText)
+                        else -> ClientException.UnknownError(bodyText)
+                    }
                 }
             }
             install("UnixSocket") {
@@ -84,11 +88,12 @@ val serviceModule = module {
                     val timestamp = System.currentTimeMillis() / 1000
 
                     // extract body string without destroying the payload
-                    val bodyString = when (payload) {
-                        is TextContent -> payload.text
-                        is EmptyContent -> ""
-                        else -> ""
-                    }
+                    val bodyString =
+                        when (payload) {
+                            is TextContent -> payload.text
+                            is EmptyContent -> ""
+                            else -> ""
+                        }
 
                     val signature = HmacProtector.generateSignature(secret, timestamp, bodyString)
 
@@ -103,11 +108,7 @@ val serviceModule = module {
     }
     single<DaemonHealthService> { UdsDaemonHealthService(get()) }
     single<TunnelCommandService> { UdsTunnelCommandService(get(), tunnelRepository = get()) }
-    single<BackendCommandService> {
-        UdsBackendCommandService(get(), get())
-    }
+    single<BackendCommandService> { UdsBackendCommandService(get(), get(), get()) }
 
-    single<TunnelImportService> {
-        DefaultTunnelImportService(get())
-    }
+    single<TunnelImportService> { DefaultTunnelImportService(get()) }
 }

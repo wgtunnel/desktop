@@ -7,14 +7,10 @@ import io.ktor.server.websocket.*
 import kotlinx.coroutines.awaitCancellation
 
 fun Route.daemonRoutes() {
-    get(Routes.DAEMON_STATUS) {
-        call.response.status(HttpStatusCode.OK)
-    }
+    get(Routes.DAEMON_STATUS) { call.response.status(HttpStatusCode.OK) }
     webSocket(Routes.DAEMON_STATUS_WS) {
         try {
             awaitCancellation()
-        } finally {
-
-        }
+        } finally {}
     }
 }

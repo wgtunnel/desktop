@@ -19,21 +19,22 @@ import picocli.CommandLine.Command
     optionListHeading = "@|bold,underline Options:|@%n",
     commandListHeading = "@|bold,underline Commands:|@%n",
     usageHelpAutoWidth = true,
-    subcommands = [TunnelCommand::class, KillSwitchCommand::class, StatusCommand::class]
+    subcommands = [TunnelCommand::class, KillSwitchCommand::class, StatusCommand::class],
 )
 class CliRoot : Runnable {
     override fun run() {
         // always show help for no command
         CommandLine(this).usage(System.out)
     }
-    companion object {
-        const val BANNER: String = (""
-                + "██╗    ██╗ ██████╗     ████████╗██╗   ██╗███╗   ██╗███╗   ██╗███████╗██╗     \n"
-                + "██║    ██║██╔════╝     ╚══██╔══╝██║   ██║████╗  ██║████╗  ██║██╔════╝██║     \n"
-                + "██║ █╗ ██║██║  ███╗       ██║   ██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██║     \n"
-                + "██║███╗██║██║   ██║       ██║   ██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██║     \n"
-                + "╚███╔███╔╝╚██████╔╝       ██║   ╚██████╔╝██║ ╚████║██║ ╚████║███████╗███████╗\n"
-                + " ╚══╝╚══╝  ╚═════╝        ╚═╝    ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚══════╝\n")
 
+    companion object {
+        const val BANNER: String =
+            ("" +
+                "██╗    ██╗ ██████╗     ████████╗██╗   ██╗███╗   ██╗███╗   ██╗███████╗██╗     \n" +
+                "██║    ██║██╔════╝     ╚══██╔══╝██║   ██║████╗  ██║████╗  ██║██╔════╝██║     \n" +
+                "██║ █╗ ██║██║  ███╗       ██║   ██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██║     \n" +
+                "██║███╗██║██║   ██║       ██║   ██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██║     \n" +
+                "╚███╔███╔╝╚██████╔╝       ██║   ╚██████╔╝██║ ╚████║██║ ╚████║███████╗███████╗\n" +
+                " ╚══╝╚══╝  ╚═════╝        ╚═╝    ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚══════╝\n")
     }
 }

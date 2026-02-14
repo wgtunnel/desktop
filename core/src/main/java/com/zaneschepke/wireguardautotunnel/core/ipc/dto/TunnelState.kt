@@ -4,5 +4,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class TunnelState {
-    DOWN, STARTING, HEALTHY, HANDSHAKE_FAILURE, RESOLVING_DNS, UNKNOWN
+    DOWN,
+    STARTING,
+    HEALTHY,
+    HANDSHAKE_FAILURE,
+    RESOLVING_DNS,
+    UNKNOWN,
 }

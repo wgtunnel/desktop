@@ -7,11 +7,7 @@ suspend fun TunnelRepository.saveTunnelsUniquely(
     tunnels: List<TunnelConfig>,
     existingNames: List<String>,
 ) {
-    val uniqueTunnels =
-        generateUniquelyNamedConfigs(
-            tunnels,
-            existingNames
-        )
+    val uniqueTunnels = generateUniquelyNamedConfigs(tunnels, existingNames)
     saveAll(uniqueTunnels)
 }
 

@@ -9,9 +9,7 @@ class Keyring(private val service: String) {
 
     fun put(name: String, value: String) {
         val result = native.storeSecret(service, name, value)
-        check(result == 1) {
-            "Failed to store secret: $name"
-        }
+        check(result == 1) { "Failed to store secret: $name" }
     }
 
     fun get(name: String): String? {

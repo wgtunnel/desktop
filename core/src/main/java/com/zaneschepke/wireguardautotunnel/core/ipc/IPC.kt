@@ -3,10 +3,10 @@ package com.zaneschepke.wireguardautotunnel.core.ipc
 import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.core.crypto.Crypto
 import com.zaneschepke.wireguardautotunnel.core.helper.PermissionsHelper
-import org.apache.commons.lang3.SystemUtils
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
+import org.apache.commons.lang3.SystemUtils
 
 object IPC {
 
@@ -37,7 +37,7 @@ object IPC {
     }
 
     // should be called by client ONLY
-    fun getIPCSecret() : String {
+    fun getIPCSecret(): String {
         val ipcFile = File(System.getProperty("user.home"), "${IPC.USER_FOLDER}/${IPC.KEY_FILE}")
         if (!ipcFile.parentFile.exists()) ipcFile.parentFile.mkdirs()
 

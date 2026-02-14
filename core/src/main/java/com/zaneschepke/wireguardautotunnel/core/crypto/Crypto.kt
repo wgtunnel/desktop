@@ -20,13 +20,13 @@ object Crypto {
         return Base64.encode(bytes)
     }
 
-    fun generateRandomAESKey() : SecretKey {
+    fun generateRandomAESKey(): SecretKey {
         val keyBytes = ByteArray(32)
         random.nextBytes(keyBytes)
         return SecretKeySpec(keyBytes, KEY_ALGORITHM)
     }
 
-    fun generateRandomBase64EncodedAesKey() : String {
+    fun generateRandomBase64EncodedAesKey(): String {
         return Base64.encode(generateRandomAESKey().encoded)
     }
 

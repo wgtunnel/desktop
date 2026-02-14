@@ -5,12 +5,15 @@
 package com.zaneschepke.wireguardautotunnel.parser.crypto
 
 import io.github.andreypfau.curve25519.x25519.X25519
-import org.kotlincrypto.random.CryptoRand
 import kotlin.experimental.and
 import kotlin.experimental.or
+import org.kotlincrypto.random.CryptoRand
 
 class KeyFormatException : Exception {
-    constructor(format: Key.Format, type: Key.Type) : super("Invalid key format: $format, type: $type")
+    constructor(
+        format: Key.Format,
+        type: Key.Type,
+    ) : super("Invalid key format: $format, type: $type")
 }
 
 class Key private constructor(private val key: ByteArray) {
@@ -40,8 +43,12 @@ class Key private constructor(private val key: ByteArray) {
         var ret = 0
         var i = 0
         while (i < key.size / 4) {
-            ret = ret xor ((key[i * 4 + 0].toInt() shr 0) + (key[i * 4 + 1].toInt() shr 8) +
-                    (key[i * 4 + 2].toInt() shr 16) + (key[i * 4 + 3].toInt() shr 24))
+            ret =
+                ret xor
+                    ((key[i * 4 + 0].toInt() shr 0) +
+                        (key[i * 4 + 1].toInt() shr 8) +
+                        (key[i * 4 + 2].toInt() shr 16) +
+                        (key[i * 4 + 3].toInt() shr 24))
             i++
         }
         return ret
@@ -102,30 +109,42 @@ class Key private constructor(private val key: ByteArray) {
             var value = 0
             for (i in 0 until 4) {
                 val c = src[i + srcOffset].code
-                value = value or (-1 +
-                        ((((('A'.code - 1) - c) and (c - ('Z'.code + 1))) ushr 8) and (c - 64)) +
-                        ((((('a'.code - 1) - c) and (c - ('z'.code + 1))) ushr 8) and (c - 70)) +
-                        ((((('0'.code - 1) - c) and (c - ('9'.code + 1))) ushr 8) and (c + 5)) +
-                        (((('+'.code - 1) - c) and (c - ('+'.code + 1))) ushr 8 and 63) +
-                        (((('/'.code - 1) - c) and (c - ('/'.code + 1))) ushr 8 and 64)
-                        ) shl (18 - 6 * i)
+                value =
+                    value or
+                        (-1 +
+                            ((((('A'.code - 1) - c) and (c - ('Z'.code + 1))) ushr 8) and
+                                (c - 64)) +
+                            ((((('a'.code - 1) - c) and (c - ('z'.code + 1))) ushr 8) and
+                                (c - 70)) +
+                            ((((('0'.code - 1) - c) and (c - ('9'.code + 1))) ushr 8) and (c + 5)) +
+                            (((('+'.code - 1) - c) and (c - ('+'.code + 1))) ushr 8 and 63) +
+                            (((('/'.code - 1) - c) and (c - ('/'.code + 1))) ushr 8 and 64)) shl
+                        (18 - 6 * i)
             }
             return value
         }
 
         private fun encodeBase64(src: ByteArray, srcOffset: Int, dest: CharArray, destOffset: Int) {
-            val input = byteArrayOf(
-                (src[srcOffset].toInt() shr 2 and 63).toByte(),
-                ((src[srcOffset].toInt() shl 4 or (src[1 + srcOffset].toInt() and 0xff ushr 4)) and 63).toByte(),
-                ((src[1 + srcOffset].toInt() shl 2 or (src[2 + srcOffset].toInt() and 0xff ushr 6)) and 63).toByte(),
-                (src[2 + srcOffset].toInt() and 63).toByte()
-            )
+            val input =
+                byteArrayOf(
+                    (src[srcOffset].toInt() shr 2 and 63).toByte(),
+                    ((src[srcOffset].toInt() shl
+                            4 or
+                            (src[1 + srcOffset].toInt() and 0xff ushr 4)) and 63)
+                        .toByte(),
+                    ((src[1 + srcOffset].toInt() shl
+                            2 or
+                            (src[2 + srcOffset].toInt() and 0xff ushr 6)) and 63)
+                        .toByte(),
+                    (src[2 + srcOffset].toInt() and 63).toByte(),
+                )
             for (i in 0 until 4) {
-                dest[i + destOffset] = (input[i].toInt() + 'A'.code +
-                        (((25 - input[i].toInt()) ushr 8) and 6) -
-                        (((51 - input[i].toInt()) ushr 8) and 75) -
-                        (((61 - input[i].toInt()) ushr 8) and 15) +
-                        (((62 - input[i].toInt()) ushr 8) and 3)).toChar()
+                dest[i + destOffset] =
+                    (input[i].toInt() + 'A'.code + (((25 - input[i].toInt()) ushr 8) and 6) -
+                            (((51 - input[i].toInt()) ushr 8) and 75) -
+                            (((61 - input[i].toInt()) ushr 8) and 15) +
+                            (((62 - input[i].toInt()) ushr 8) and 3))
+                        .toChar()
             }
         }
     }
@@ -133,11 +152,11 @@ class Key private constructor(private val key: ByteArray) {
     enum class Format(val length: Int) {
         BASE64(44),
         BINARY(32),
-        HEX(64)
+        HEX(64),
     }
 
     enum class Type {
         LENGTH,
-        CONTENTS
+        CONTENTS,
     }
 }

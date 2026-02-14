@@ -32,19 +32,16 @@ dependencies {
     implementation(libs.apache.commons.lang3)
 }
 
-application {
-    mainClass.set("com.zaneschepke.wireguardautotunnel.daemon.MainKt")
-}
+application { mainClass.set("com.zaneschepke.wireguardautotunnel.daemon.MainKt") }
 
-tasks.test {
-    useJUnitPlatform()
-}
+tasks.test { useJUnitPlatform() }
 
-val cleanDotNet = tasks.register<Exec>("cleanDotNet") {
-    group = "build"
-    workingDir = file("winsw/src")
-    commandLine("dotnet", "clean", "-c", "Release")
-}
+val cleanDotNet =
+    tasks.register<Exec>("cleanDotNet") {
+        group = "build"
+        workingDir = file("winsw/src")
+        commandLine("dotnet", "clean", "-c", "Release")
+    }
 
 tasks.named<Delete>("clean") {
     dependsOn(cleanDotNet)
@@ -56,9 +53,7 @@ tasks.named<Delete>("clean") {
     delete(file("winsw/artifacts"))
 }
 
-tasks.named("installDist") {
-    dependsOn("buildWinSW")
-}
+tasks.named("installDist") { dependsOn("buildWinSW") }
 
 tasks.register<Exec>("buildWinSW") {
     val winSwDir = "winsw/src/WinSW"
@@ -66,22 +61,32 @@ tasks.register<Exec>("buildWinSW") {
     description = "Build Windows service wrapper."
     workingDir = file(winSwDir)
 
-    inputs.files(
-        fileTree(winSwDir) {
-            include("**/*.cs", "**/*.csproj", "**/appsettings.json")
-            exclude("bin/**", "obj/**")
-        }
-    ).withPropertyName("winSwSourceFiles")
+    inputs
+        .files(
+            fileTree(winSwDir) {
+                include("**/*.cs", "**/*.csproj", "**/appsettings.json")
+                exclude("bin/**", "obj/**")
+            }
+        )
+        .withPropertyName("winSwSourceFiles")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
-    outputs.dir(file("$winSwDir/bin/Release/net7.0-windows/win-x64/publish"))
+    outputs
+        .dir(file("$winSwDir/bin/Release/net7.0-windows/win-x64/publish"))
         .withPropertyName("winSwPublishDir")
 
-    commandLine("dotnet", "publish", "WinSW.csproj",
-        "-f", "net7.0-windows",
-        "-c", "Release",
-        "-r", "win-x64",
-        "--self-contained", "true",
-        "-p:PublishSingleFile=true"
+    commandLine(
+        "dotnet",
+        "publish",
+        "WinSW.csproj",
+        "-f",
+        "net7.0-windows",
+        "-c",
+        "Release",
+        "-r",
+        "win-x64",
+        "--self-contained",
+        "true",
+        "-p:PublishSingleFile=true",
     )
 }

@@ -1,11 +1,8 @@
-import dev.icerock.gradle.MRVisibility
-
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
     alias(libs.plugins.serialization)
-    alias(libs.plugins.moko)
 }
 
 kotlin {
@@ -25,9 +22,6 @@ kotlin {
 
                 implementation(libs.kotlinx.serialization)
 
-                api(libs.moko.core)
-                api(libs.moko.compose)
-
                 // DI
                 implementation(libs.koin.core)
 
@@ -40,17 +34,6 @@ kotlin {
     }
 }
 
-dependencies {
-    "kspJvm"(libs.androidx.room.compiler)
-}
+dependencies { "kspJvm"(libs.androidx.room.compiler) }
 
 room { schemaDirectory("$projectDir/schemas") }
-
-multiplatformResources {
-    resourcesPackage.set("com.zaneschepke.wireguardautotunnel")
-    resourcesClassName.set("SharedRes")
-    resourcesVisibility.set(MRVisibility.Public)
-}
-
-
-

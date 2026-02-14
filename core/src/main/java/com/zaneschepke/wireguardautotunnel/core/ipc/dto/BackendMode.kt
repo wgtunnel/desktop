@@ -4,5 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class BackendMode {
-    USERSPACE, PROXY
+    USERSPACE,
+    PROXY,
 }
