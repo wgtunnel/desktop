@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.client.data.service.UdsDaemonService.Companion.DAEMON_WS_RECONNECT_DELAY_MILLIS
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
+import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
@@ -29,7 +30,12 @@ class UdsBackendService(
     private val client: HttpClient,
     private val json: Json,
     private val lockdownSettingsRepository: LockdownSettingsRepository,
+    private val daemonService: DaemonService,
 ) : BackendService {
+
+    companion object {
+        const val ACTIVE_CONFIG_INTERVAL = 3_000L
+    }
 
     override suspend fun setMode(mode: BackendMode): Result<Unit> = safeDaemonCall {
         client.put(Routes.BACKEND_MODE) { setBody(mode) }
@@ -37,6 +43,15 @@ class UdsBackendService(
 
     override suspend fun setKillSwitch(enabled: Boolean): Result<Unit> {
         lockdownSettingsRepository.updateEnabled(enabled)
+        if (!enabled) {
+            val settings = lockdownSettingsRepository.get()
+            if (settings.bypassLan) {
+                setKillSwitchLanBypass(false)
+            }
+            if (settings.restoreOnBoot) {
+                daemonService.setRestoreKillSwitch(false)
+            }
+        }
         return safeDaemonCall {
                 val request = FlagRequest(enabled)
                 client.put(Routes.BACKEND_KILL_SWITCH) { setBody(request) }
@@ -69,7 +84,7 @@ class UdsBackendService(
         }
     }
 
-    private suspend fun enrichWithConfigs(basicStatus: BackendStatus): BackendStatus {
+    private suspend fun enrichWithActiveConfigs(basicStatus: BackendStatus): BackendStatus {
         val updatedTunnels =
             basicStatus.activeTunnels.map { tunnelStatus ->
                 if (tunnelStatus.state != TunnelState.DOWN) {
@@ -129,10 +144,10 @@ class UdsBackendService(
         basicStatusFlow()
             .flatMapLatest { basic ->
                 flow {
-                    emit(enrichWithConfigs(basic))
+                    emit(enrichWithActiveConfigs(basic))
                     while (true) {
-                        delay(3000)
-                        emit(enrichWithConfigs(basic))
+                        delay(ACTIVE_CONFIG_INTERVAL)
+                        emit(enrichWithActiveConfigs(basic))
                     }
                 }
             }

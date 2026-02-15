@@ -23,7 +23,6 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.appear
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.general
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.settings
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
@@ -32,6 +31,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.appearance.LockdownIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
+import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Disabled
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.SettingsViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -86,16 +86,25 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     },
                 )
                 SurfaceRow(
-                    leading = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
+                    leading = {
+                        Icon(
+                            Icons.Default.RestartAlt,
+                            contentDescription = null,
+                            tint =
+                                if (uiState.lockdownEnabled) LocalContentColor.current else Disabled,
+                        )
+                    },
                     title = "Protect on system startup",
                     onClick = {
                         viewModel.onLockdownAction(
                             LockdownIntent.TogglePersist(!uiState.lockdownRestoreOnBootEnabled)
                         )
                     },
+                    enabled = uiState.lockdownEnabled,
                     trailing = {
                         ThemedSwitch(
                             checked = uiState.lockdownRestoreOnBootEnabled,
+                            enabled = uiState.lockdownEnabled,
                             onClick = {
                                 viewModel.onLockdownAction(LockdownIntent.TogglePersist(it))
                             },
@@ -103,8 +112,16 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     },
                 )
                 SurfaceRow(
-                    leading = { Icon(Icons.Default.Lan, contentDescription = null) },
+                    leading = {
+                        Icon(
+                            Icons.Default.Lan,
+                            contentDescription = null,
+                            tint =
+                                if (uiState.lockdownEnabled) LocalContentColor.current else Disabled,
+                        )
+                    },
                     title = "Allow local network access",
+                    enabled = uiState.lockdownEnabled,
                     onClick = {
                         viewModel.onLockdownAction(
                             LockdownIntent.ToggleBypassLan(!uiState.lockdownRestoreOnBootEnabled)
@@ -113,6 +130,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     trailing = {
                         ThemedSwitch(
                             checked = uiState.lockdownBypassEnabled,
+                            enabled = uiState.lockdownEnabled,
                             onClick = {
                                 viewModel.onLockdownAction(LockdownIntent.ToggleBypassLan(it))
                             },
@@ -121,10 +139,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                 )
             }
             Column(modifier = Modifier.padding(bottom = 16.dp)) {
-                GroupLabel(
-                    stringResource(Res.string.tunnel),
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
+                GroupLabel("Tunnel", modifier = Modifier.padding(horizontal = 16.dp))
                 SurfaceRow(
                     leading = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
                     title = "Restore tunnel on system startup",

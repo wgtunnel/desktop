@@ -17,6 +17,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
+import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -133,12 +134,11 @@ fun Route.backendRoutes(backend: Backend) {
                     }
                 }
                 .distinctUntilChanged()
-                .collect { dto ->
-                    Logger.d { "Daemon: Sending status update to WS: $dto" }
-                    sendSerialized(dto)
-                }
+                .collect { dto -> sendSerialized(dto) }
         } catch (e: Exception) {
-            Logger.e(e) { "Error streaming status" }
+            if (e !is CancellationException) {
+                Logger.e(e) { "Error streaming status" }
+            }
         }
     }
 }

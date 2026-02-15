@@ -123,6 +123,13 @@ class TunnelDaemon(
                     .setKillSwitch(true)
                     .onFailure { Logger.e(it) { "Failed to restore kill switch" } }
                     .onSuccess { Logger.i { "Kill switch successfully restored" } }
+                val bypassLan = cacheRepository.getKillSwitchBypassLan()
+                if (bypassLan) {
+                    backend
+                        .setKillSwitch(true)
+                        .onFailure { Logger.e(it) { "Failed to restore kill switch bypass" } }
+                        .onSuccess { Logger.i { "Kill switch bypass successfully restored" } }
+                }
             }
             if (restoreTun) {
                 Logger.i { "Attempting to restore previous tunnel" }
