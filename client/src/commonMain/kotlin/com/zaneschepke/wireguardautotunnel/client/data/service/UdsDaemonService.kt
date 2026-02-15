@@ -1,8 +1,11 @@
 package com.zaneschepke.wireguardautotunnel.client.data.service
 
 import co.touchlab.kermit.Logger
-import com.zaneschepke.wireguardautotunnel.client.service.DaemonHealthService
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.FlagRequest
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
@@ -16,7 +19,11 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 
-class UdsDaemonHealthService(private val client: HttpClient) : DaemonHealthService {
+class UdsDaemonService(
+    private val client: HttpClient,
+    private val lockdownSettingsRepository: LockdownSettingsRepository,
+    private val generalSettingsRepository: GeneralSettingRepository,
+) : DaemonService {
 
     override suspend fun alive(): Boolean {
         return try {
@@ -25,6 +32,26 @@ class UdsDaemonHealthService(private val client: HttpClient) : DaemonHealthServi
             Logger.w(e) { "UDS Daemon service not available" }
             false
         }
+    }
+
+    override suspend fun setRestoreKillSwitch(enabled: Boolean): Result<Unit> {
+        lockdownSettingsRepository.updateRestoreOnBoot(enabled)
+        return safeDaemonCall {
+                val request = FlagRequest(enabled)
+                client.put(Routes.DAEMON_RESTORE_KILL_SWITCH) { setBody(request) }
+                Unit
+            }
+            .onFailure { lockdownSettingsRepository.updateRestoreOnBoot(!enabled) }
+    }
+
+    override suspend fun setRestoreTunnel(enabled: Boolean): Result<Unit> {
+        generalSettingsRepository.updateRestoreTunnelOnBoot(enabled)
+        return safeDaemonCall {
+                val request = FlagRequest(enabled)
+                client.put(Routes.DAEMON_RESTORE_TUNNEL) { setBody(request) }
+                Unit
+            }
+            .onFailure { generalSettingsRepository.updateRestoreTunnelOnBoot(!enabled) }
     }
 
     override val alive: Flow<Boolean> =

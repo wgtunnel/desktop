@@ -3,8 +3,8 @@ package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 import androidx.lifecycle.ViewModel
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
-import com.zaneschepke.wireguardautotunnel.client.service.BackendCommandService
-import com.zaneschepke.wireguardautotunnel.client.service.DaemonHealthService
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
+import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
@@ -13,8 +13,8 @@ import org.orbitmvi.orbit.viewmodel.container
 
 class AppViewModel(
     private val settingsRepository: GeneralSettingRepository,
-    private val daemonHealthService: DaemonHealthService,
-    private val backendCommandService: BackendCommandService,
+    private val daemonService: DaemonService,
+    private val backendService: BackendService,
 ) : ContainerHost<AppUiState, AppSideEffect>, ViewModel() {
 
     override val container =
@@ -37,11 +37,9 @@ class AppViewModel(
                     }
                 }
             }
+            intent { daemonService.alive.collect { reduce { state.copy(daemonConnected = it) } } }
             intent {
-                daemonHealthService.alive.collect { reduce { state.copy(daemonConnected = it) } }
-            }
-            intent {
-                backendCommandService.statusFlow().collect {
+                backendService.statusFlow().collect {
                     reduce { state.copy(lockdownActive = it.killSwitchEnabled) }
                 }
             }

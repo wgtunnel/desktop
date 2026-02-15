@@ -22,9 +22,8 @@ dependencies {
 
     testImplementation(kotlin("test"))
 
-    // secure caching
-    implementation(libs.kstore)
-    implementation(libs.kstore.file)
+    // caching
+    implementation(libs.multiplatform.settings)
 
     implementation(libs.kotlinx.serialization)
 

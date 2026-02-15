@@ -5,7 +5,7 @@ import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.KillSwitchRequest
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.FlagRequest
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toDto
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toInternal
 import com.zaneschepke.wireguardautotunnel.parser.ActiveConfig
@@ -17,19 +17,17 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
-import io.ktor.websocket.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalCoroutinesApi::class)
 fun Route.backendRoutes(backend: Backend) {
 
-    post(Routes.BACKEND_MODE) {
+    put(Routes.BACKEND_MODE) {
         val mode = call.receive<BackendMode>()
 
         Logger.i { "Setting backend mode to $mode" }
@@ -37,16 +35,28 @@ fun Route.backendRoutes(backend: Backend) {
         call.respond(HttpStatusCode.OK, "Backend mode set to $mode")
     }
 
-    post(Routes.BACKEND_KILL_SWITCH) {
-        val request = call.receive<KillSwitchRequest>()
-
-        Logger.i {
-            "Setting kill switch to enabled: ${request.enable} and bypassLan: ${request.bypassLan}"
-        }
+    put(Routes.BACKEND_KILL_SWITCH_BYPASS) {
+        val request = call.receive<FlagRequest>()
+        Logger.i { "Setting backend bypass lan to $request" }
         backend
-            .setKillSwitch(request.enable)
+            .setKillSwitchLanBypass(request.value)
             .onSuccess {
-                call.respond(HttpStatusCode.OK, "Kill switch set to ${request.enable} successfully")
+                call.respond(
+                    HttpStatusCode.OK,
+                    "Bypass LAN for kill switch set to ${request.value} successfully",
+                )
+            }
+            .onFailure { call.respond(HttpStatusCode.BadRequest, it.message ?: "Unknown error") }
+    }
+
+    put(Routes.BACKEND_KILL_SWITCH) {
+        val request = call.receive<FlagRequest>()
+
+        Logger.i { "Setting kill switch to enabled: ${request.value}" }
+        backend
+            .setKillSwitch(request.value)
+            .onSuccess {
+                call.respond(HttpStatusCode.OK, "Kill switch set to ${request.value} successfully")
             }
             .onFailure {
                 if (it is BackendException.StateConflict)

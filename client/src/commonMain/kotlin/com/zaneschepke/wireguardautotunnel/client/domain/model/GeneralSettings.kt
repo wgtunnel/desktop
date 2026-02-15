@@ -9,4 +9,5 @@ data class GeneralSettings(
     val theme: Theme = Theme.DARK,
     val locale: String? = null,
     val alreadyDonated: Boolean = false,
+    val restoreTunnelOnBoot: Boolean = false,
 )

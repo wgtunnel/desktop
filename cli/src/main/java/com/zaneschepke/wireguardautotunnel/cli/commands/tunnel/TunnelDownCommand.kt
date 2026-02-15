@@ -3,7 +3,7 @@ package com.zaneschepke.wireguardautotunnel.cli.commands.tunnel
 import com.zaneschepke.wireguardautotunnel.cli.util.CliUtils
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
-import com.zaneschepke.wireguardautotunnel.client.service.TunnelCommandService
+import com.zaneschepke.wireguardautotunnel.client.service.TunnelService
 import java.util.concurrent.Callable
 import kotlinx.coroutines.runBlocking
 import org.koin.java.KoinJavaComponent.inject
@@ -12,7 +12,7 @@ import picocli.CommandLine.Parameters
 
 @Command(name = "down", description = ["Bring a tunnel down."])
 class TunnelDownCommand : Callable<Int> {
-    private val tunnelService: TunnelCommandService by inject(TunnelCommandService::class.java)
+    private val tunnelService: TunnelService by inject(TunnelService::class.java)
     private val tunnelRepository: TunnelRepository by inject(TunnelRepository::class.java)
 
     @Parameters(

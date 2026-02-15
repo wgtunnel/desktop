@@ -26,6 +26,10 @@ interface AwgTunnel : Library {
 
     fun setKillSwitch(value: Int): Int // 1 for enable, 0 for disable, return 1 or -1 for error
 
+    fun setKillSwitchLanBypass(value: Int): Int
+
+    fun getKillSwitchLanBypassStatus(): Int
+
     fun getKillSwitchStatus(): Int // 1 for enabled, 0 for disabled
 
     companion object {

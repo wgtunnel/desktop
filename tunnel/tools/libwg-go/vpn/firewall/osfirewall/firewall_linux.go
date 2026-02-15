@@ -247,10 +247,7 @@ func (f *LinuxFirewall) AllowLocalNetworks(prefixes []netip.Prefix) error {
 	}
 
 	// remove any old rules
-	for _, rule := range f.localAddrRules {
-		f.conn.DelRule(rule)
-	}
-	f.localAddrRules = nil
+	f.RemoveLocalNetworks()
 
 	// add bypass rules for each prefix
 	for _, table := range f.getTables() {
@@ -258,6 +255,18 @@ func (f *LinuxFirewall) AllowLocalNetworks(prefixes []netip.Prefix) error {
 		if err != nil {
 			return fmt.Errorf("get output chain: %w", err)
 		}
+
+		// temp remove drop rules
+		dropTemplate := createDropRule(table.Filter, outputChain)
+		existingDrop, err := findRule(f.conn, dropTemplate)
+		if err != nil {
+			return fmt.Errorf("find drop rule: %w", err)
+		}
+		if existingDrop != nil {
+			f.conn.DelRule(existingDrop)
+		}
+
+		// add the local bypass rules
 		for _, prefix := range prefixes {
 			if prefix.Addr().Is6() && !f.v6Available {
 				continue
@@ -272,12 +281,31 @@ func (f *LinuxFirewall) AllowLocalNetworks(prefixes []netip.Prefix) error {
 				f.localAddrRules = append(f.localAddrRules, rule)
 			}
 		}
+
+		// add drop rule back
+		dropRule := createDropRule(table.Filter, outputChain)
+		f.conn.AddRule(dropRule)
 	}
+
 	if err := f.conn.Flush(); err != nil {
 		return fmt.Errorf("flush after bypassing local addrs: %w", err)
 	}
+
 	f.logger.Verbosef("Bypassed local addrs: %v", prefixes)
 	return nil
+}
+
+func (f *LinuxFirewall) RemoveLocalNetworks() error {
+	for _, rule := range f.localAddrRules {
+		f.conn.DelRule(rule)
+	}
+	f.localAddrRules = nil
+
+	return nil
+}
+
+func (f *LinuxFirewall) IsAllowLocalNetworksEnabled() bool {
+	return f.localAddrRules != nil
 }
 
 func (f *LinuxFirewall) IsEnabled() bool {

@@ -33,4 +33,8 @@ class RoomSettingsRepository(private val settingsDao: GeneralSettingsDao) :
     override suspend fun updateAlreadyDonated(donated: Boolean) {
         settingsDao.updateAlreadyDonated(donated)
     }
+
+    override suspend fun updateRestoreTunnelOnBoot(enabled: Boolean) {
+        settingsDao.updateRestoreTunnelOnBoot(enabled)
+    }
 }

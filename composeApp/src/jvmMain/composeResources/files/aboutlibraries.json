@@ -892,6 +892,32 @@
             ]
         },
         {
+            "uniqueId": "com.ibm.icu:icu4j",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "Markus Scherer"
+                },
+                {
+                    "name": "Richard Gillam"
+                }
+            ],
+            "artifactVersion": "77.1",
+            "description": "International Components for Unicode for Java (ICU4J) is a mature, widely used Java library\n    providing Unicode and Globalization support",
+            "scm": {
+                "connection": "scm:git:git://github.com/unicode-org/icu.git",
+                "url": "https://github.com/unicode-org/icu",
+                "developerConnection": "scm:git:git@github.com:unicode-org/icu.git"
+            },
+            "name": "ICU4J",
+            "website": "https://icu.unicode.org/",
+            "licenses": [
+                "a953261c1ab0a39c092979a5ef28d565"
+            ]
+        },
+        {
             "uniqueId": "com.materialkolor:material-kolor",
             "funding": [
                 
@@ -1294,6 +1320,29 @@
             "website": "https://github.com/kdroidFilter/",
             "licenses": [
                 "MIT"
+            ]
+        },
+        {
+            "uniqueId": "io.github.skeptick.libres:libres",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "Danil Yudov"
+                }
+            ],
+            "artifactVersion": "1.2.4",
+            "description": "Resources generation in Kotlin Multiplatform.",
+            "scm": {
+                "connection": "scm:git:ssh://git@github.com/skeptick/libres.git",
+                "url": "https://github.com/skeptick/libres",
+                "developerConnection": "scm:git:ssh://git@github.com/skeptick/libres.git"
+            },
+            "name": "Libres Core",
+            "website": "https://github.com/skeptick/libres",
+            "licenses": [
+                "Apache-2.0"
             ]
         },
         {
@@ -1913,6 +1962,27 @@
             "licenses": [
                 "LGPL-2.1-or-later",
                 "Apache-2.0"
+            ]
+        },
+        {
+            "uniqueId": "nl.jacobras:Human-Readable",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "Jacob Ras"
+                }
+            ],
+            "artifactVersion": "1.12.3",
+            "description": "A small set of data formatting utilities for Kotlin Multiplatform (KMP)",
+            "scm": {
+                "url": "https://github.com/jacobras/human-readable"
+            },
+            "name": "Human Readable",
+            "website": "https://github.com/jacobras/human-readable",
+            "licenses": [
+                "MIT"
             ]
         },
         {
@@ -4601,6 +4671,11 @@
             "url": "https://spdx.org/licenses/MIT.html",
             "spdxId": "MIT",
             "name": "MIT License"
+        },
+        "a953261c1ab0a39c092979a5ef28d565": {
+            "hash": "a953261c1ab0a39c092979a5ef28d565",
+            "url": "https://raw.githubusercontent.com/unicode-org/icu/maint/maint-77/LICENSE",
+            "name": "Unicode-3.0"
         },
         "dd74d358d0b6f8b5099019a55929b63f": {
             "hash": "dd74d358d0b6f8b5099019a55929b63f",

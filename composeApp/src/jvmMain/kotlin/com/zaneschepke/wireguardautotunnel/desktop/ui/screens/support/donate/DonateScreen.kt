@@ -40,12 +40,12 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.libera
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.options
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.components.DonationHeroSection
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
-import com.zaneschepke.wireguardautotunnel.ui.common.button.ThemedSwitch
-import com.zaneschepke.wireguardautotunnel.ui.common.label.GroupLabel
-import com.zaneschepke.wireguardautotunnel.ui.common.text.DescriptionText
-import com.zaneschepke.wireguardautotunnel.ui.screens.support.donate.components.DonationHeroSection
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import org.orbitmvi.orbit.compose.collectAsState

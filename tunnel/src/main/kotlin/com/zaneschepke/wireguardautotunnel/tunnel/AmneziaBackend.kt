@@ -11,13 +11,26 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class AmneziaBackend : Backend {
     private val tun = AwgTunnel.INSTANCE
 
+    private val tunnelMutex = Mutex()
+    private val killSwitchMutex = Mutex()
+
     private var currentMode: Backend.Mode = Backend.Mode.Userspace
 
-    private val _status = MutableStateFlow(Backend.Status(false, currentMode, emptyMap()))
+    private val _status =
+        MutableStateFlow(
+            Backend.Status(
+                killSwitchEnabled = false,
+                killSwitchLanBypassEnabled = false,
+                mode = currentMode,
+                activeTunnels = emptyMap(),
+            )
+        )
 
     override val status: Flow<Backend.Status> = _status.asStateFlow()
 
@@ -27,17 +40,27 @@ class AmneziaBackend : Backend {
     private val backendScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
-        initKillSwitchStatus()
+        backendScope.launch { initKillSwitchStatus() }
     }
 
-    private fun initKillSwitchStatus() {
-        val status = tun.getKillSwitchStatus()
-        val enabled = status == 1
-        _status.update { it.copy(killSwitchEnabled = enabled) }
-    }
+    private suspend fun initKillSwitchStatus() =
+        killSwitchMutex.withLock {
+            val killSwitchStatus = tun.getKillSwitchStatus()
+            val killSwitchEnabled = killSwitchStatus == 1
+            val bypassEnabled =
+                if (killSwitchEnabled) {
+                    val bypassStatus = tun.getKillSwitchLanBypassStatus()
+                    bypassStatus == 1
+                } else false
+            _status.update {
+                it.copy(
+                    killSwitchEnabled = killSwitchEnabled,
+                    killSwitchLanBypassEnabled = bypassEnabled,
+                )
+            }
+        }
 
-    @Synchronized
-    override fun start(tunnel: Tunnel, config: String): Result<Unit> = runCatching {
+    override suspend fun start(tunnel: Tunnel, config: String): Result<Unit> = runCatching {
         if (_status.value.activeTunnels.any { it.key.id == tunnel.id }) {
             throw BackendException.StateConflict("Tunnel ${tunnel.id} is already in use")
         }
@@ -58,11 +81,12 @@ class AmneziaBackend : Backend {
                                 trySend(statusCode)
                             }
                         }
-
                     val handle =
-                        when (currentMode) {
-                            Backend.Mode.Proxy -> tun.awgProxyTurnOn(config, statusCallback)
-                            Backend.Mode.Userspace -> tun.awgTurnOn(config, statusCallback)
+                        tunnelMutex.withLock {
+                            when (currentMode) {
+                                Backend.Mode.Proxy -> tun.awgProxyTurnOn(config, statusCallback)
+                                Backend.Mode.Userspace -> tun.awgTurnOn(config, statusCallback)
+                            }
                         }
 
                     if (handle < 0) {
@@ -115,8 +139,7 @@ class AmneziaBackend : Backend {
             }
     }
 
-    @Synchronized
-    override fun stop(id: Long): Result<Unit> = runCatching {
+    override suspend fun stop(id: Long): Result<Unit> = runCatching {
         val tunnel =
             tunnelHandles.keys.find { it.id == id }
                 ?: return Result.failure(
@@ -129,9 +152,11 @@ class AmneziaBackend : Backend {
                     BackendException.StateConflict("Tunnel with $id is not active.")
                 )
 
-        when (currentMode) {
-            Backend.Mode.Proxy -> tun.awgProxyTurnOff(handle)
-            Backend.Mode.Userspace -> tun.awgTurnOff(handle)
+        tunnelMutex.withLock {
+            when (currentMode) {
+                Backend.Mode.Proxy -> tun.awgProxyTurnOff(handle)
+                Backend.Mode.Userspace -> tun.awgTurnOff(handle)
+            }
         }
 
         tunnelJobs.remove(tunnel)?.cancel()
@@ -141,7 +166,7 @@ class AmneziaBackend : Backend {
         _status.update { it.copy(activeTunnels = it.activeTunnels - key) }
     }
 
-    override fun setMode(mode: Backend.Mode) {
+    override suspend fun setMode(mode: Backend.Mode) {
         if (mode == currentMode) return
         shutdown()
         currentMode = mode
@@ -160,7 +185,7 @@ class AmneziaBackend : Backend {
         _status.update { it.copy(activeTunnels = emptyMap()) }
     }
 
-    override fun getActiveConfig(id: Long): Result<String?> {
+    override suspend fun getActiveConfig(id: Long): Result<String?> {
         val handle =
             tunnelHandles.keys.find { it.id == id }?.let { tunnelHandles[it] }
                 ?: return Result.failure(
@@ -179,21 +204,34 @@ class AmneziaBackend : Backend {
         }
     }
 
-    override fun setKillSwitch(enabled: Boolean): Result<Unit> {
+    override suspend fun setKillSwitch(enabled: Boolean): Result<Unit> {
         if (_status.value.killSwitchEnabled == enabled)
             return Result.failure(
                 BackendException.StateConflict("Kill switch enable: $enabled is already set.")
             )
-        val setValue = if (enabled) 1 else 0
-        val status = tun.setKillSwitch(setValue)
-        if (status == -1)
-            return Result.failure(
-                BackendException.InternalError(
-                    "Kill switch failed to start with error code: $status"
-                )
-            )
-        val killSwitchEnabled = status == 1
+        val killSwitchEnabled =
+            killSwitchMutex.withLock {
+                val setValue = if (enabled) 1 else 0
+                val status = tun.setKillSwitch(setValue)
+                if (status == -1)
+                    return Result.failure(
+                        BackendException.InternalError(
+                            "Kill switch failed to start with error code: $status"
+                        )
+                    )
+                status == 1
+            }
         _status.update { it.copy(killSwitchEnabled = killSwitchEnabled) }
+        return Result.success(Unit)
+    }
+
+    override suspend fun setKillSwitchLanBypass(enabled: Boolean): Result<Unit> {
+        if (!_status.value.killSwitchEnabled)
+            return Result.failure(BackendException.StateConflict("Kill switch is not active."))
+        killSwitchMutex.withLock {
+            val setValue = if (enabled) 1 else 0
+            tun.setKillSwitchLanBypass(setValue)
+        }
         return Result.success(Unit)
     }
 
@@ -203,7 +241,7 @@ class AmneziaBackend : Backend {
             1 -> Tunnel.State.Up.HandshakeFailure
             2 -> Tunnel.State.Up.ResolvingDns
             3 -> Tunnel.State.Up.Unknown
-            else -> Tunnel.State.Down // unknown or negative error code consider down
+            else -> Tunnel.State.Down
         }
     }
 }

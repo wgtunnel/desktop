@@ -7,6 +7,7 @@ import com.zaneschepke.wireguardautotunnel.daemon.plugin.hmacShieldPlugin
 import com.zaneschepke.wireguardautotunnel.daemon.routes.backendRoutes
 import com.zaneschepke.wireguardautotunnel.daemon.routes.daemonRoutes
 import com.zaneschepke.wireguardautotunnel.daemon.routes.tunnelRoutes
+import com.zaneschepke.wireguardautotunnel.daemon.tunnel.RunningTunnel
 import com.zaneschepke.wireguardautotunnel.tunnel.Backend
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.*
@@ -94,8 +95,8 @@ class TunnelDaemon(
                     }
                     install(hmacShieldPlugin)
                     routing {
-                        daemonRoutes()
-                        tunnelRoutes(backend)
+                        daemonRoutes(cacheRepository)
+                        tunnelRoutes(backend, cacheRepository)
                         backendRoutes(backend)
                     }
                     monitor.subscribe(ApplicationStarted) {
@@ -114,11 +115,23 @@ class TunnelDaemon(
         }
 
         scope.launch {
-            // TODO handle startup with cached settings
-            val settings = cacheRepository.getKillSwitchSettings()
-            val startConfigs = cacheRepository.getStartConfigs()
-            Logger.d { "Got kill switch settings $settings" }
-            Logger.d { "Got start configs of size ${startConfigs.size}" }
+            val restoreTun = cacheRepository.getRestoreTunnelOnBoot()
+            val restoreKillSwitch = cacheRepository.getKillSwitchRestore()
+            if (restoreKillSwitch) {
+                Logger.i { "Attempting to restore kill switch" }
+                backend
+                    .setKillSwitch(true)
+                    .onFailure { Logger.e(it) { "Failed to restore kill switch" } }
+                    .onSuccess { Logger.i { "Kill switch successfully restored" } }
+            }
+            if (restoreTun) {
+                Logger.i { "Attempting to restore previous tunnel" }
+                val config = cacheRepository.getLastActiveTunnelConfig() ?: return@launch
+                val name = cacheRepository.getLastActiveTunnelName() ?: return@launch
+                val id = cacheRepository.getLastActiveTunnelId() ?: return@launch
+                val tunnel = RunningTunnel(id, name)
+                backend.start(tunnel, config)
+            }
         }
     }
 

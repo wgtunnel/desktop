@@ -2,7 +2,7 @@ package com.zaneschepke.wireguardautotunnel.cli.commands.killswitch
 
 import com.zaneschepke.wireguardautotunnel.cli.util.CliUtils
 import com.zaneschepke.wireguardautotunnel.cli.util.CliUtils.renderAnsi
-import com.zaneschepke.wireguardautotunnel.client.service.BackendCommandService
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import java.util.concurrent.Callable
 import kotlinx.coroutines.runBlocking
 import org.koin.java.KoinJavaComponent.inject
@@ -14,7 +14,7 @@ import picocli.CommandLine.*
     mixinStandardHelpOptions = true,
 )
 class KillSwitchCommand : Callable<Int> {
-    private val backendService: BackendCommandService by inject(BackendCommandService::class.java)
+    private val backendService: BackendService by inject(BackendService::class.java)
 
     @Parameters(index = "0", description = ["The desired state: 'on' or 'off' (or true/false)."])
     lateinit var state: String

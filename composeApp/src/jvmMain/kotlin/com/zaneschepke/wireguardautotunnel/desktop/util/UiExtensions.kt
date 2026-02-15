@@ -18,6 +18,7 @@ fun ClientException?.asUserMessage(): String {
         is ClientException.DaemonCommsException ->
             "Daemon communication error, please check the daemon status."
         is ClientException.InternalServerError -> "An internal error occurred, please try again."
+        is ClientException.UnauthorizedException -> "Unauthorized, please try again."
         is ClientException.UnknownError,
         null -> "An unknown error occurred, please try again."
     }

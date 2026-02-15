@@ -134,12 +134,7 @@ func New(logger *device.Logger) (firewall.Firewall, error) {
 
 func (f *WindowsFirewall) AllowLocalNetworks(addrs []netip.Prefix) error {
 	// cleanup old local addr rules
-	if err := f.removeRules(f.localAddrRules); err != nil {
-		f.logger.Errorf("Failed to remove old local addr rules: %v", err)
-	}
-	f.mu.Lock()
-	f.localAddrRules = nil
-	f.mu.Unlock()
+	f.RemoveLocalNetworks()
 
 	// add new rules
 	addedByPrefix, err := f.addPermissiveRulesForPrefixes(addrs, "bypass for local addr ")
@@ -154,6 +149,21 @@ func (f *WindowsFirewall) AllowLocalNetworks(addrs []netip.Prefix) error {
 	f.mu.Unlock()
 	f.logger.Verbosef("Bypassed local addrs in firewall")
 	return nil
+}
+
+func (f *WindowsFirewall) RemoveLocalNetworks() error {
+	if err := f.removeRules(f.localAddrRules); err != nil {
+		f.logger.Errorf("Failed to remove old local addr rules: %v", err)
+	}
+	f.mu.Lock()
+	f.localAddrRules = nil
+	f.mu.Unlock()
+
+	return nil
+}
+
+func (f *WindowsFirewall) IsAllowLocalNetworksEnabled() bool {
+	return f.localAddrRules != nil
 }
 
 func (f *WindowsFirewall) UpdatePermittedRoutes(newRoutes []netip.Prefix) error {

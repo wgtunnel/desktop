@@ -5,12 +5,17 @@ object Routes {
     const val DAEMON_STATUS = "$DAEMON_BASE/status"
     const val DAEMON_STATUS_WS = "$DAEMON_BASE/status/ws"
 
+    const val DAEMON_RESTORE_TUNNEL = "$DAEMON_BASE/restore/tunnel"
+    const val DAEMON_RESTORE_KILL_SWITCH = "$DAEMON_BASE/restore/kill-switch"
+
     const val BACKEND_BASE = "/backend"
     const val BACKEND_STATUS = "$BACKEND_BASE/status"
 
     const val BACKEND_ACTIVE_CONFIG = "$BACKEND_BASE/config/{id}/active"
     const val BACKEND_STATUS_WS = "$BACKEND_BASE/status/ws"
     const val BACKEND_KILL_SWITCH = "$BACKEND_BASE/kill-switch"
+
+    const val BACKEND_KILL_SWITCH_BYPASS = "$BACKEND_BASE/kill-switch/bypass-lan"
     const val BACKEND_MODE = "$BACKEND_BASE/mode"
 
     object Tunnels {

@@ -2,7 +2,7 @@ package com.zaneschepke.wireguardautotunnel.cli.commands.status
 
 import com.zaneschepke.wireguardautotunnel.cli.util.CliUtils
 import com.zaneschepke.wireguardautotunnel.cli.util.CliUtils.renderAnsi
-import com.zaneschepke.wireguardautotunnel.client.service.BackendCommandService
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
 import java.time.format.DateTimeFormatter
@@ -17,7 +17,7 @@ import picocli.CommandLine.*
     mixinStandardHelpOptions = true,
 )
 class StatusCommand : Callable<Int> {
-    private val backendService: BackendCommandService by inject(BackendCommandService::class.java)
+    private val backendService: BackendService by inject(BackendService::class.java)
 
     override fun call(): Int = runBlocking { fetchSnapshot() }
 

@@ -16,3 +16,14 @@ fun TunnelState.asColor(): Color {
         TunnelState.RESOLVING_DNS -> Straw
     }
 }
+
+fun TunnelState.asTooltipMessage(): String? {
+    return when (this) {
+        TunnelState.DOWN,
+        TunnelState.STARTING,
+        TunnelState.UNKNOWN -> null
+        TunnelState.HEALTHY -> "Healthy"
+        TunnelState.HANDSHAKE_FAILURE -> "Handshake failure"
+        TunnelState.RESOLVING_DNS -> "Resolving DNS"
+    }
+}

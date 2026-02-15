@@ -16,4 +16,6 @@ interface GeneralSettingRepository {
     suspend fun updateLocale(locale: String)
 
     suspend fun updateAlreadyDonated(donated: Boolean)
+
+    suspend fun updateRestoreTunnelOnBoot(enabled: Boolean)
 }

@@ -9,5 +9,7 @@ sealed class ClientException : Exception() {
 
     class UnknownError(override val message: String) : ClientException()
 
+    class UnauthorizedException(override val message: String) : ClientException()
+
     class DaemonCommsException : ClientException()
 }

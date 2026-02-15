@@ -10,7 +10,14 @@ fun Entity.toDomain(): Domain =
         theme = Theme.valueOf(theme.uppercase()),
         locale = locale,
         alreadyDonated = alreadyDonated,
+        restoreTunnelOnBoot = restoreTunnelOnBoot,
     )
 
 fun Domain.toEntity(): Entity =
-    Entity(id = id, theme = theme.name, locale = locale, alreadyDonated = alreadyDonated)
+    Entity(
+        id = id,
+        theme = theme.name,
+        locale = locale,
+        alreadyDonated = alreadyDonated,
+        restoreTunnelOnBoot = restoreTunnelOnBoot,
+    )

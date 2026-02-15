@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.dokar.sonner.Toast
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.appearance
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.general
@@ -24,22 +25,34 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdo
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.settings
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.appearance.LockdownIntent
+import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.SettingsViewModel
-import com.zaneschepke.wireguardautotunnel.ui.common.button.ThemedSwitch
-import com.zaneschepke.wireguardautotunnel.ui.common.label.GroupLabel
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
     val navController = LocalNavController.current
+    val toaster = LocalToaster.current
 
     val uiState by viewModel.collectAsState()
+
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            is AppSideEffect.Toast -> {
+                toaster.show(Toast(sideEffect.message, sideEffect.type))
+            }
+        }
+    }
 
     if (!uiState.isLoaded) return
 
@@ -94,14 +107,14 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     title = "Allow local network access",
                     onClick = {
                         viewModel.onLockdownAction(
-                            LockdownIntent.TogglePersist(!uiState.lockdownRestoreOnBootEnabled)
+                            LockdownIntent.ToggleBypassLan(!uiState.lockdownRestoreOnBootEnabled)
                         )
                     },
                     trailing = {
                         ThemedSwitch(
                             checked = uiState.lockdownBypassEnabled,
                             onClick = {
-                                viewModel.onLockdownAction(LockdownIntent.TogglePersist(it))
+                                viewModel.onLockdownAction(LockdownIntent.ToggleBypassLan(it))
                             },
                         )
                     },
@@ -116,16 +129,12 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     leading = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
                     title = "Restore tunnel on system startup",
                     onClick = {
-                        viewModel.onLockdownAction(
-                            LockdownIntent.TogglePersist(!uiState.lockdownRestoreOnBootEnabled)
-                        )
+                        viewModel.onRestoreTunnelOnBoot(!uiState.tunnelRestoreOnBootEnabled)
                     },
                     trailing = {
                         ThemedSwitch(
-                            checked = uiState.lockdownRestoreOnBootEnabled,
-                            onClick = {
-                                viewModel.onLockdownAction(LockdownIntent.TogglePersist(it))
-                            },
+                            checked = uiState.tunnelRestoreOnBootEnabled,
+                            onClick = { viewModel.onRestoreTunnelOnBoot(it) },
                         )
                     },
                 )

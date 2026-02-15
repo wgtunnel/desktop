@@ -3,6 +3,7 @@ package com.zaneschepke.wireguardautotunnel.daemon.routes
 import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.StartTunnelRequest
+import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
 import com.zaneschepke.wireguardautotunnel.daemon.tunnel.RunningTunnel
 import com.zaneschepke.wireguardautotunnel.tunnel.Backend
 import com.zaneschepke.wireguardautotunnel.tunnel.util.BackendException
@@ -11,7 +12,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.tunnelRoutes(backend: Backend) {
+fun Route.tunnelRoutes(backend: Backend, daemonCacheRepository: DaemonCacheRepository) {
 
     post(Routes.Tunnels.START_TEMPLATE) {
         val id =
@@ -22,6 +23,11 @@ fun Route.tunnelRoutes(backend: Backend) {
         Logger.i { "Starting tunnel (${request.name})" }
 
         val tunnel = RunningTunnel(id, request.name)
+
+        Logger.d { "Updating daemon cache" }
+        daemonCacheRepository.updateLastActiveTunnelConfig(request.quickConfig)
+        daemonCacheRepository.updateLastActiveTunnelId(id)
+        daemonCacheRepository.updateLastActiveTunnelName(request.name)
 
         backend
             .start(tunnel, request.quickConfig)

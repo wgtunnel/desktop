@@ -10,4 +10,6 @@ data class GeneralSettings(
     @ColumnInfo(name = "theme", defaultValue = "DARK") val theme: String = "DARK",
     @ColumnInfo(name = "locale") val locale: String? = null,
     @ColumnInfo(name = "already_donated", defaultValue = "0") val alreadyDonated: Boolean = false,
+    @ColumnInfo(name = "restore_tunnel_on_boot", defaultValue = "0")
+    val restoreTunnelOnBoot: Boolean = false,
 )

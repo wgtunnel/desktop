@@ -14,8 +14,8 @@ val hmacShieldPlugin =
     createApplicationPlugin("HmacShield") {
         onCall { call ->
 
-            // ignore daemon routes
-            if (call.request.path().contains(Routes.DAEMON_BASE)) {
+            // ignore daemon health calls
+            if (call.request.path() == Routes.DAEMON_BASE) {
                 return@onCall
             }
 

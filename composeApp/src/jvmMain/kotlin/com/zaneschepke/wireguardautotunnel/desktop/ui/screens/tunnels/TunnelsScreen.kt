@@ -168,18 +168,19 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                             detectTapGestures(onPress = { viewModel.onClearSelectionMode() })
                         }
                     }
-        )
-        TunnelList(
-            uiState = uiState,
-            startTunnel = viewModel::onStartTunnel,
-            stopTunnel = viewModel::onStopTunnel,
-            viewModel::onItemsReordered,
-            viewModel::onPersistReorder,
-            viewModel::onSelectTunnel,
-            viewModel::onDeselectTunnel,
-            viewModel::onClearSelectionMode,
-            { intent -> pendingDeleteIntent = intent },
-            viewModel::onExportIntent,
-        )
+        ) {
+            TunnelList(
+                uiState = uiState,
+                startTunnel = viewModel::onStartTunnel,
+                stopTunnel = viewModel::onStopTunnel,
+                viewModel::onItemsReordered,
+                viewModel::onPersistReorder,
+                viewModel::onSelectTunnel,
+                viewModel::onDeselectTunnel,
+                viewModel::onClearSelectionMode,
+                { intent -> pendingDeleteIntent = intent },
+                viewModel::onExportIntent,
+            )
+        }
     }
 }

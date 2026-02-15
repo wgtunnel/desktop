@@ -24,4 +24,9 @@ type Firewall interface {
 	// AllowLocalNetworks adds bypass rules for the specified local network prefixes. Requires kill switch enabled and
 	// operates independently of tunnel/router bypasses.
 	AllowLocalNetworks([]netip.Prefix) error
+
+	// RemoveLocalNetworks removes any rules set by AllowLocalNetworks
+	RemoveLocalNetworks() error
+
+	IsAllowLocalNetworksEnabled() bool
 }

@@ -51,7 +51,7 @@ func newConn() (*Conn, error) {
 	}
 	return &Conn{
 		conn: conn,
-		obj:  conn.Object(dbusDest, dbus.ObjectPath(dbusPath)),
+		obj:  conn.Object(dbusDest, dbusPath),
 	}, nil
 }
 

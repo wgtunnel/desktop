@@ -54,7 +54,7 @@ object PermissionsHelper {
                     path,
                     PosixFilePermissions.fromString(OWNER_FULL_CONTROL_SYMBOLIC),
                 )
-                Logger.i { "Successfully set directory permissions to " }
+                Logger.i { "Successfully set daemon data directory permission" }
             } catch (e: Exception) {
                 Logger.e { "POSIX native permissions failed: ${e.message} → falling back to chmod" }
                 try {
@@ -74,6 +74,58 @@ object PermissionsHelper {
             }
         } else {
             Logger.w { "Runtime directory $runtimeDirPath not found" }
+        }
+    }
+
+    fun secureDaemonDataDirectory(path: Path) {
+        val pathString = path.toString()
+        try {
+            if (SystemUtils.IS_OS_WINDOWS) {
+                val process =
+                    ProcessBuilder(
+                            ICACLS,
+                            pathString,
+                            WIN_INHERIT_REPLACE,
+                            WIN_GRANT_REPLACE,
+                            "$SID_SYSTEM$WIN_FULL_CONTROL_INHERIT",
+                            WIN_GRANT_REPLACE,
+                            "$SID_ADMINISTRATORS$WIN_FULL_CONTROL_INHERIT",
+                        )
+                        .start()
+
+                val exitCode = process.waitFor()
+                if (exitCode == 0) {
+                    Logger.i { "Successfully secured Windows directory: $pathString" }
+                    logWindowsACLs(pathString)
+                } else {
+                    val error = process.errorStream.bufferedReader().use { it.readText() }
+                    Logger.e { "Failed to secure Windows directory: $error" }
+                }
+            } else {
+                try {
+                    Files.setPosixFilePermissions(
+                        path,
+                        PosixFilePermissions.fromString(OWNER_ONLY_PRIVATE_DIR),
+                    )
+                    Logger.i { "Successfully set POSIX permissions for directory: $pathString" }
+                } catch (e: Exception) {
+                    Logger.e {
+                        "POSIX native permissions failed: ${e.message} → falling back to chmod"
+                    }
+                    val exitCode = ProcessBuilder("chmod", "700", pathString).start().waitFor()
+                    if (exitCode == 0) {
+                        Logger.i {
+                            "Successfully set directory permissions using chmod: $pathString"
+                        }
+                    } else {
+                        Logger.e { "chmod failed with exit code $exitCode for: $pathString" }
+                    }
+                }
+                val finalPerms = Files.getPosixFilePermissions(path)
+                Logger.i { "Final directory permissions: $finalPerms for $pathString" }
+            }
+        } catch (e: Exception) {
+            Logger.e(e) { "Error securing directory: $pathString" }
         }
     }
 

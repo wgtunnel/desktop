@@ -4,17 +4,19 @@ import com.zaneschepke.wireguardautotunnel.tunnel.model.TunnelKey
 import kotlinx.coroutines.flow.Flow
 
 interface Backend {
-    fun start(tunnel: Tunnel, config: String): Result<Unit>
+    suspend fun start(tunnel: Tunnel, config: String): Result<Unit>
 
-    fun stop(id: Long): Result<Unit>
+    suspend fun stop(id: Long): Result<Unit>
 
-    fun setMode(mode: Mode)
+    suspend fun setMode(mode: Mode)
 
-    fun setKillSwitch(enabled: Boolean): Result<Unit>
+    suspend fun setKillSwitch(enabled: Boolean): Result<Unit>
+
+    suspend fun setKillSwitchLanBypass(enabled: Boolean): Result<Unit>
 
     fun shutdown()
 
-    fun getActiveConfig(id: Long): Result<String?>
+    suspend fun getActiveConfig(id: Long): Result<String?>
 
     val status: Flow<Status>
 
@@ -26,6 +28,7 @@ interface Backend {
 
     data class Status(
         val killSwitchEnabled: Boolean,
+        val killSwitchLanBypassEnabled: Boolean,
         val mode: Mode,
         val activeTunnels: Map<TunnelKey, Tunnel.State>,
     )

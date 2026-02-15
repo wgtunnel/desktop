@@ -3,17 +3,16 @@ package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
-import com.zaneschepke.wireguardautotunnel.client.service.BackendCommandService
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TunnelUiState
 import com.zaneschepke.wireguardautotunnel.parser.Config
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 
 class TunnelViewModel(
-    private val backendCommandService: BackendCommandService,
+    private val backendService: BackendService,
     private val tunnelRepository: TunnelRepository,
     val tunnelId: Long,
 ) : ContainerHost<TunnelUiState, AppSideEffect>, ViewModel() {
@@ -23,44 +22,44 @@ class TunnelViewModel(
             TunnelUiState(),
             buildSettings = { repeatOnSubscribedStopTimeout = 5000L },
         ) {
-            combine(
-                    tunnelRepository.flow.map { it.firstOrNull { tun -> tun.id == tunnelId } },
-                    backendCommandService.statusFlow().map { status ->
-                        status.activeTunnels.firstOrNull { tunnel -> tunnel.id == tunnelId }
-                    },
-                ) { tunnel, activeTunnel ->
-                    tunnel to activeTunnel
-                }
-                .collect { (tunnel, status) ->
-                    reduce {
-                        state.copy(
-                            isLoaded = true,
-                            originalConfig = tunnel ?: state.originalConfig,
-                            editedConfig = tunnel ?: state.editedConfig,
-                            tunnelState = status?.state,
-                            activeConfig = status?.activeConfig ?: state.activeConfig,
-                        )
+            intent {
+                tunnelRepository.flow
+                    .map { it.firstOrNull { tun -> tun.id == tunnelId } }
+                    .collect { tunnel ->
+                        reduce {
+                            state.copy(
+                                isLoaded = true,
+                                originalConfig = tunnel ?: state.originalConfig,
+                                editedConfig = tunnel ?: state.editedConfig,
+                            )
+                        }
                     }
-                }
+            }
+            intent {
+                backendService
+                    .statusFlow()
+                    .map { status ->
+                        status.activeTunnels.firstOrNull { tunnel -> tunnel.id == tunnelId }
+                    }
+                    .collect {
+                        reduce {
+                            state.copy(
+                                tunnelState = it?.state ?: state.tunnelState,
+                                activeConfig = it?.activeConfig ?: state.activeConfig,
+                            )
+                        }
+                    }
+            }
         }
 
     fun onConfigUpdate(newText: String) = intent {
-        reduce {
-            state.copy(
-                editedConfig = state.editedConfig.copy(quickConfig = newText),
-                isDirty = state.originalConfig != state.editedConfig,
-            )
-        }
+        val newEdited = state.editedConfig.copy(quickConfig = newText)
+        reduce { state.copy(editedConfig = newEdited, isDirty = state.originalConfig != newEdited) }
     }
 
     fun onNameUpdated(name: String) = intent {
-        reduce {
-            val updatedConfig = state.editedConfig.copy(name = name)
-            state.copy(
-                editedConfig = updatedConfig,
-                isDirty = state.originalConfig != state.editedConfig,
-            )
-        }
+        val newEdited = state.editedConfig.copy(name = name)
+        reduce { state.copy(editedConfig = newEdited, isDirty = state.originalConfig != newEdited) }
     }
 
     fun saveChanges() = intent {

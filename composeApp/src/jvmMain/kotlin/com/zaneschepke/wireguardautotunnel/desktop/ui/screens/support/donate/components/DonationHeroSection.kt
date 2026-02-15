@@ -1,4 +1,4 @@
-package com.zaneschepke.wireguardautotunnel.ui.screens.support.donate.components
+package com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

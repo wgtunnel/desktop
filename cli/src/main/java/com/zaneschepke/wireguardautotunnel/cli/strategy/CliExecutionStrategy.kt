@@ -1,14 +1,14 @@
 package com.zaneschepke.wireguardautotunnel.cli.strategy
 
 import com.zaneschepke.wireguardautotunnel.cli.util.CliUtils
-import com.zaneschepke.wireguardautotunnel.client.service.DaemonHealthService
+import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import kotlinx.coroutines.runBlocking
 import org.koin.java.KoinJavaComponent.inject
 import picocli.CommandLine.*
 
 class CliExecutionStrategy(private val defaultStrategy: IExecutionStrategy) : IExecutionStrategy {
 
-    private val daemonHealthService: DaemonHealthService by inject(DaemonHealthService::class.java)
+    private val daemonService: DaemonService by inject(DaemonService::class.java)
 
     override fun execute(parseResult: ParseResult): Int = runBlocking {
         // skip help and version
@@ -18,7 +18,7 @@ class CliExecutionStrategy(private val defaultStrategy: IExecutionStrategy) : IE
 
         val isAlive =
             try {
-                daemonHealthService.alive()
+                daemonService.alive()
             } catch (e: Exception) {
                 false
             }

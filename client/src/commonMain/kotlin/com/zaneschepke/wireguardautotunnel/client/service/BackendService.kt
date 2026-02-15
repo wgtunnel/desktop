@@ -4,10 +4,12 @@ import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
 import kotlinx.coroutines.flow.Flow
 
-interface BackendCommandService {
+interface BackendService {
     suspend fun setMode(mode: BackendMode): Result<Unit>
 
     suspend fun setKillSwitch(enabled: Boolean): Result<Unit>
+
+    suspend fun setKillSwitchLanBypass(enabled: Boolean): Result<Unit>
 
     suspend fun getStatus(): Result<BackendStatus>
 

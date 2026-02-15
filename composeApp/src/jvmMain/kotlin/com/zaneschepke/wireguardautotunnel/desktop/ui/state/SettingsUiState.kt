@@ -5,4 +5,5 @@ data class SettingsUiState(
     val lockdownEnabled: Boolean = false,
     val lockdownRestoreOnBootEnabled: Boolean = false,
     val lockdownBypassEnabled: Boolean = false,
+    val tunnelRestoreOnBootEnabled: Boolean = false,
 )

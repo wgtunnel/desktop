@@ -39,7 +39,7 @@ class TunnelDeleteCommand : Callable<Int> {
             return@runBlocking 0
         }
 
-        CliUtils.withSpinner("Deleting '$tunnelName'...") { tunnelRepository.delete(tunnel) }
+        CliUtils.withSpinner("Deleting '$tunnelName'...") { tunnelRepository.delete(tunnel.id) }
 
         CliUtils.printSuccess("Tunnel '$tunnelName' deleted successfully.")
         0

@@ -2,14 +2,14 @@ package com.zaneschepke.wireguardautotunnel.client.di
 
 import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.client.data.service.DefaultTunnelImportService
-import com.zaneschepke.wireguardautotunnel.client.data.service.UdsBackendCommandService
-import com.zaneschepke.wireguardautotunnel.client.data.service.UdsDaemonHealthService
-import com.zaneschepke.wireguardautotunnel.client.data.service.UdsTunnelCommandService
+import com.zaneschepke.wireguardautotunnel.client.data.service.UdsBackendService
+import com.zaneschepke.wireguardautotunnel.client.data.service.UdsDaemonService
+import com.zaneschepke.wireguardautotunnel.client.data.service.UdsTunnelService
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
-import com.zaneschepke.wireguardautotunnel.client.service.BackendCommandService
-import com.zaneschepke.wireguardautotunnel.client.service.DaemonHealthService
-import com.zaneschepke.wireguardautotunnel.client.service.TunnelCommandService
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
+import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelImportService
+import com.zaneschepke.wireguardautotunnel.client.service.TunnelService
 import com.zaneschepke.wireguardautotunnel.core.crypto.HmacProtector
 import com.zaneschepke.wireguardautotunnel.core.ipc.Headers
 import com.zaneschepke.wireguardautotunnel.core.ipc.IPC
@@ -68,6 +68,8 @@ val serviceModule = module {
                         HttpStatusCode.InternalServerError ->
                             ClientException.BadRequestException(bodyText)
                         HttpStatusCode.Conflict -> ClientException.ConflictException(bodyText)
+                        HttpStatusCode.Unauthorized ->
+                            ClientException.UnauthorizedException(bodyText)
                         else -> ClientException.UnknownError(bodyText)
                     }
                 }
@@ -81,7 +83,7 @@ val serviceModule = module {
             install("HmacSigner") {
                 requestPipeline.intercept(HttpRequestPipeline.Render) { payload ->
                     val path = context.url.encodedPath
-                    if (path.startsWith(Routes.DAEMON_BASE)) return@intercept
+                    if (path == Routes.DAEMON_BASE) return@intercept
 
                     val secret = IPC.getIPCSecret()
                     val user = System.getProperty("user.name")
@@ -106,9 +108,9 @@ val serviceModule = module {
             }
         }
     }
-    single<DaemonHealthService> { UdsDaemonHealthService(get()) }
-    single<TunnelCommandService> { UdsTunnelCommandService(get(), tunnelRepository = get()) }
-    single<BackendCommandService> { UdsBackendCommandService(get(), get(), get()) }
+    single<DaemonService> { UdsDaemonService(get(), get(), get()) }
+    single<TunnelService> { UdsTunnelService(get(), tunnelRepository = get()) }
+    single<BackendService> { UdsBackendService(get(), get(), get()) }
 
     single<TunnelImportService> { DefaultTunnelImportService(get()) }
 }

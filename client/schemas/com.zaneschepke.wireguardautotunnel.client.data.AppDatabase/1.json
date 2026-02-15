@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "57c05ed7dd6615f7812c499f8486ae43",
+    "identityHash": "b662918cb8aa7ed02d3d3050c1fba46e",
     "entities": [
       {
         "tableName": "tunnel_config",
@@ -106,7 +106,7 @@
       },
       {
         "tableName": "general_settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `theme` TEXT NOT NULL DEFAULT 'DARK', `locale` TEXT, `already_donated` INTEGER NOT NULL DEFAULT 0)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `theme` TEXT NOT NULL DEFAULT 'DARK', `locale` TEXT, `already_donated` INTEGER NOT NULL DEFAULT 0, `restore_tunnel_on_boot` INTEGER NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
@@ -132,6 +132,13 @@
             "affinity": "INTEGER",
             "notNull": true,
             "defaultValue": "0"
+          },
+          {
+            "fieldPath": "restoreTunnelOnBoot",
+            "columnName": "restore_tunnel_on_boot",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {
@@ -144,7 +151,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '57c05ed7dd6615f7812c499f8486ae43')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b662918cb8aa7ed02d3d3050c1fba46e')"
     ]
   }
 }
