@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
-import com.kdroid.composetray.tray.api.ExperimentalTrayAppApi
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_window_2
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.wgtunnel
@@ -25,9 +24,8 @@ import java.awt.Frame
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.vectorResource
 
-@OptIn(ExperimentalTrayAppApi::class)
 @Composable
-fun WindowScope.TitleBar() {
+fun WindowScope.TitleBar(onClose: () -> Unit) {
     val frame = window as? Frame
     var isMaximized by remember {
         mutableStateOf((frame?.extendedState ?: Frame.NORMAL) == Frame.MAXIMIZED_BOTH)
@@ -90,7 +88,7 @@ fun WindowScope.TitleBar() {
                     )
                 }
                 IconButton(
-                    onClick = { window.dispose() },
+                    onClick = onClose,
                     colors = colors,
                     modifier = Modifier.size(buttonSize),
                 ) {

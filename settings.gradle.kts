@@ -21,4 +21,4 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
-include(":composeApp", ":parser", ":daemon", ":tunnel", ":cli", ":client", ":keyring", ":core")
+include(":composeApp", ":parser", ":daemon", ":tunnel", ":cli", ":client", ":keyring", ":shared")

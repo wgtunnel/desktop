@@ -1,6 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.daemon.di
 
-import com.zaneschepke.wireguardautotunnel.core.ipc.IPC
+import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.daemon.TunnelDaemon
 import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
 import com.zaneschepke.wireguardautotunnel.daemon.data.SettingsDaemonCacheRepository
@@ -18,5 +18,5 @@ val daemonModule = module {
     }
     single<Backend> { AmneziaBackend() }
     single<DaemonCacheRepository> { SettingsDaemonCacheRepository() }
-    single { TunnelDaemon(get(), get(), get(), IPC.getDaemonSocketPath()) }
+    single { TunnelDaemon(get(), get(), get(), FilePathsHelper.getDaemonSocketPath()) }
 }

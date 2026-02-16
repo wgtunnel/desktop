@@ -79,8 +79,12 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
             "Expand rail"
         }
 
-    // TODO fix
-    if (!uiState.isLoaded) return
+    if (!uiState.isLoaded) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
     LocalinaApp {
         CompositionLocalProvider(

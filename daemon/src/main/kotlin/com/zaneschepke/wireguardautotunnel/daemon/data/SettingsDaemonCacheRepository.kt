@@ -4,16 +4,16 @@ import co.touchlab.kermit.Logger
 import com.russhwolf.settings.PropertiesSettings
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.set
+import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.helper.PermissionsHelper
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.Properties
-import org.apache.commons.lang3.SystemUtils
 
-class SettingsDaemonCacheRepository(private val baseCacheDir: Path = getCacheBaseDir()) :
-    DaemonCacheRepository {
+class SettingsDaemonCacheRepository(
+    private val baseCacheDir: Path = FilePathsHelper.getDaemonCacheBaseDir()
+) : DaemonCacheRepository {
 
     private val settings: Settings by lazy {
         val storePathNio = baseCacheDir.resolve(CACHE_FILE_NAME)
@@ -54,14 +54,6 @@ class SettingsDaemonCacheRepository(private val baseCacheDir: Path = getCacheBas
         private const val KEY_LAST_TUNNEL_ID = "last_active_tunnel_id"
         private const val KEY_LAST_TUNNEL_NAME = "last_active_tunnel_name"
         private const val KEY_RESTORE_ON_BOOT = "restore_on_boot"
-
-        private fun getCacheBaseDir(): Path {
-            return when {
-                SystemUtils.IS_OS_MAC_OSX -> Paths.get("/Library/Application Support/wgtunnel")
-                SystemUtils.IS_OS_WINDOWS -> Paths.get(System.getenv("PROGRAMDATA") + "\\wgtunnel")
-                else -> Paths.get("/var/lib/wgtunnel")
-            }
-        }
     }
 
     override suspend fun updateKillSwitchEnabled(enabled: Boolean) =

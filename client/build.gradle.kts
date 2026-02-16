@@ -13,7 +13,7 @@ kotlin {
             dependencies {
                 implementation(project(":parser"))
                 implementation(project(":keyring"))
-                api(project(":core"))
+                api(project(":shared"))
                 implementation(libs.androidx.room.runtime)
                 implementation(libs.androidx.sqlite.bundled)
 

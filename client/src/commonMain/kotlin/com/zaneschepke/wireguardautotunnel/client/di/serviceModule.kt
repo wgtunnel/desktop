@@ -11,6 +11,7 @@ import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelImportService
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelService
 import com.zaneschepke.wireguardautotunnel.core.crypto.HmacProtector
+import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.ipc.Headers
 import com.zaneschepke.wireguardautotunnel.core.ipc.IPC
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
@@ -76,7 +77,7 @@ val serviceModule = module {
             }
             install("UnixSocket") {
                 requestPipeline.intercept(HttpRequestPipeline.Before) {
-                    context.unixSocket(IPC.getDaemonSocketPath())
+                    context.unixSocket(FilePathsHelper.getDaemonSocketPath())
                     proceedWith(subject)
                 }
             }

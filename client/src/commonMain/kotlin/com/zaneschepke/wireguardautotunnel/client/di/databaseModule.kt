@@ -16,6 +16,7 @@ import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSetti
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.core.crypto.Crypto
+import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.keyring.Keyring
 import java.io.File
 import javax.crypto.SecretKey
@@ -38,7 +39,7 @@ val databaseModule = module {
     }
     single<AppDatabase> {
         val dbFileName = AppDatabase.DB_FILE_NAME
-        val dbDir = AppDatabase.getDatabaseDir()
+        val dbDir = FilePathsHelper.getDatabaseDir()
         dbDir.mkdirs()
         val dbFile = File(dbDir, dbFileName)
         Room.databaseBuilder<AppDatabase>(dbFile.absolutePath)

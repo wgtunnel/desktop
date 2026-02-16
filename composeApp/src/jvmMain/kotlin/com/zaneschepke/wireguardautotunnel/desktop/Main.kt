@@ -1,13 +1,11 @@
 package com.zaneschepke.wireguardautotunnel.desktop
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
+import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Error
@@ -16,6 +14,8 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import co.touchlab.kermit.Logger
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
@@ -36,10 +37,14 @@ import com.zaneschepke.wireguardautotunnel.client.di.serviceModule
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.app_name
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.wgtunnel
+import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.desktop.di.viewModelModule
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.bar.TitleBar
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WGTunnelTheme
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
+import java.io.File
+import java.io.RandomAccessFile
+import java.nio.channels.FileLock
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -49,86 +54,139 @@ import org.koin.dsl.koinConfiguration
 import org.orbitmvi.orbit.compose.collectAsState
 
 @OptIn(ExperimentalTrayAppApi::class)
-fun main() = application {
-    val appIcon = painterResource(Res.drawable.wgtunnel)
-    val appName = stringResource(Res.string.app_name)
+fun main() {
 
-    val isMenuBarDark = isMenuBarInDarkMode()
-    val windowState = rememberWindowState(size = DpSize(1200.dp, 800.dp))
-    val toaster = rememberToasterState()
-
-    Tray(
-        iconContent = {
-            Icon(
-                imageVector = vectorResource(Res.drawable.wgtunnel),
-                contentDescription = appName,
-                tint = if (isMenuBarDark) Color.White else Color.Black,
-            )
-        },
-        tooltip = appName,
-        primaryAction = {},
-    ) {
-        Item(label = "Exit") { exitApplication() }
+    val appDir = FilePathsHelper.getDatabaseDir()
+    if (!appDir.exists()) {
+        appDir.mkdirs()
     }
 
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = stringResource(Res.string.app_name),
-        icon = appIcon,
-        state = windowState,
-        undecorated = true,
-        transparent = true,
-    ) {
-        window.minimumSize = java.awt.Dimension(800, 650)
+    val lockFile = File(appDir, "wgtunnel.lock")
 
-        KoinApplication(
-            configuration =
-                koinConfiguration(
-                    declaration = { modules(databaseModule, serviceModule, viewModelModule) }
-                ),
-            content = {
-                val viewModel: AppViewModel = koinViewModel()
-                val uiState by viewModel.collectAsState()
+    // enforce single instance
+    try {
+        val raf = RandomAccessFile(lockFile, "rw")
+        val lock: FileLock? = raf.channel.tryLock()
 
-                WGTunnelTheme(uiState.theme) {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        TitleBar()
-                        App(uiState, viewModel, toaster)
-                        Toaster(
-                            state = toaster,
-                            elevation = 0.dp,
-                            border = { BorderStroke(0.dp, Color.Transparent) },
-                            background = { SolidColor(MaterialTheme.colorScheme.inverseOnSurface) },
-                            iconSlot = {
-                                Icon(
-                                    when (it.type) {
-                                        ToastType.Normal,
-                                        ToastType.Info -> Icons.Default.Info
-                                        ToastType.Success -> Icons.Default.Check
-                                        ToastType.Warning -> Icons.Default.Warning
-                                        ToastType.Error -> Icons.Default.Error
-                                    },
-                                    null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = MaterialTheme.colorScheme.inverseSurface,
-                                )
-                            },
-                            messageSlot = {
-                                val message = it.message as? String ?: return@Toaster
-                                Text(
-                                    message,
-                                    color = MaterialTheme.colorScheme.inverseSurface,
-                                    fontSize = 16.sp,
-                                    modifier = Modifier.padding(start = 12.dp),
-                                )
-                            },
-                            contentColor = { MaterialTheme.colorScheme.inverseSurface },
-                            shape = { RoundedCornerShape(8.dp) },
-                            containerPadding = PaddingValues(48.dp),
+        if (lock == null) {
+            Logger.i { "App is already running." }
+            return
+        }
+
+        Runtime.getRuntime()
+            .addShutdownHook(
+                Thread {
+                    lock.release()
+                    raf.close()
+                }
+            )
+
+        application {
+            KoinApplication(
+                configuration =
+                    koinConfiguration(
+                        declaration = { modules(databaseModule, serviceModule, viewModelModule) }
+                    )
+            ) {
+                val isWindowVisible = remember { mutableStateOf(true) }
+
+                val appIcon = painterResource(Res.drawable.wgtunnel)
+                val appName = stringResource(Res.string.app_name)
+
+                val isMenuBarDark = isMenuBarInDarkMode()
+                val windowState = rememberWindowState(size = DpSize(1200.dp, 800.dp))
+                val toaster = rememberToasterState()
+
+                Tray(
+                    iconContent = {
+                        Icon(
+                            imageVector = vectorResource(Res.drawable.wgtunnel),
+                            contentDescription = appName,
+                            tint = if (isMenuBarDark) Color.White else Color.Black,
                         )
+                    },
+                    primaryAction = {
+                        Logger.i { "Tray primary action triggered" }
+                        isWindowVisible.value = true
+                    },
+                    tooltip = appName,
+                ) {
+                    Item(label = "Open") {
+                        Logger.i { "Open menu item clicked" }
+                        isWindowVisible.value = true
+                    }
+                    Item(label = "Exit") { exitApplication() }
+                }
+
+                Window(
+                    visible = isWindowVisible.value,
+                    onCloseRequest = {
+                        isWindowVisible.value = false
+                        Logger.i { "OS close requested - hiding to tray" }
+                    },
+                    title = stringResource(Res.string.app_name),
+                    icon = appIcon,
+                    state = windowState,
+                    undecorated = true,
+                    transparent = true,
+                ) {
+                    window.minimumSize = java.awt.Dimension(800, 650)
+
+                    val viewModel: AppViewModel = koinViewModel()
+                    val uiState by viewModel.collectAsState()
+
+                    WGTunnelTheme(uiState.theme) {
+                        Surface(
+                            modifier =
+                                Modifier.fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background),
+                            color = MaterialTheme.colorScheme.background,
+                        ) {
+                            Column {
+                                TitleBar(onClose = { isWindowVisible.value = false })
+                                App(uiState, viewModel, toaster)
+                                Toaster(
+                                    state = toaster,
+                                    elevation = 0.dp,
+                                    border = { BorderStroke(0.dp, Color.Transparent) },
+                                    background = {
+                                        SolidColor(MaterialTheme.colorScheme.inverseOnSurface)
+                                    },
+                                    iconSlot = {
+                                        Icon(
+                                            when (it.type) {
+                                                ToastType.Normal,
+                                                ToastType.Info -> Icons.Default.Info
+                                                ToastType.Success -> Icons.Default.Check
+                                                ToastType.Warning -> Icons.Default.Warning
+                                                ToastType.Error -> Icons.Default.Error
+                                            },
+                                            null,
+                                            modifier = Modifier.size(24.dp),
+                                            tint = MaterialTheme.colorScheme.inverseSurface,
+                                        )
+                                    },
+                                    messageSlot = {
+                                        val message = it.message as? String ?: return@Toaster
+                                        Text(
+                                            message,
+                                            color = MaterialTheme.colorScheme.inverseSurface,
+                                            fontSize = 16.sp,
+                                            modifier = Modifier.padding(start = 12.dp),
+                                        )
+                                    },
+                                    contentColor = { MaterialTheme.colorScheme.inverseSurface },
+                                    shape = { RoundedCornerShape(8.dp) },
+                                    containerPadding = PaddingValues(48.dp),
+                                )
+                            }
+                        }
                     }
                 }
-            },
-        )
+            }
+        }
+    } catch (e: Exception) {
+        Logger.e(e) { "Failed to acquire app lock." }
+        return
     }
 }

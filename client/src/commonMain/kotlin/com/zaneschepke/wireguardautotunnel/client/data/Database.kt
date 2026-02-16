@@ -8,8 +8,6 @@ import com.zaneschepke.wireguardautotunnel.client.data.dao.TunnelConfigDao
 import com.zaneschepke.wireguardautotunnel.client.data.entity.GeneralSettings
 import com.zaneschepke.wireguardautotunnel.client.data.entity.LockdownSettings
 import com.zaneschepke.wireguardautotunnel.client.data.entity.TunnelConfig
-import java.io.File
-import org.apache.commons.lang3.SystemUtils
 
 @Database(
     entities = [TunnelConfig::class, LockdownSettings::class, GeneralSettings::class],
@@ -29,26 +27,6 @@ abstract class AppDatabase : RoomDatabase() {
         const val DB_SECRET_KEY = "db_secret"
         const val DB_KEYRING = "wg_tunnel"
         const val DB_FILE_NAME = "wg_tunnel.db"
-        const val APP_NAME = "WGTunnel" // macos convention
-
-        fun getDatabaseDir(): File {
-            val home = System.getProperty("user.home")
-            return when {
-                SystemUtils.IS_OS_WINDOWS -> {
-                    val appData =
-                        System.getenv("APPDATA")
-                            ?: "${System.getProperty("user.home")}\\AppData\\Roaming"
-                    File("$appData\\$APP_NAME")
-                }
-                SystemUtils.IS_OS_MAC -> {
-                    File("$home/Library/Application Support/$APP_NAME")
-                }
-                else -> {
-                    val xdgDataHome = System.getenv("XDG_DATA_HOME") ?: "$home/.local/share"
-                    File("$xdgDataHome/${APP_NAME.lowercase()}") // linux lowercase convention
-                }
-            }
-        }
     }
 }
 

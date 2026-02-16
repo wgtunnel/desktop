@@ -59,19 +59,4 @@ object IPC {
             else -> "/home/$user"
         }
     }
-
-    fun getDaemonSocketPath(): String {
-        return when {
-            SystemUtils.IS_OS_WINDOWS -> {
-                val baseDir = System.getenv("PROGRAMDATA") + "\\wgtunnel"
-                "$baseDir\\$SOCKET_FILE_NAME"
-            }
-            SystemUtils.IS_OS_MAC_OSX -> {
-                "/tmp/wgtunnel/$SOCKET_FILE_NAME"
-            }
-            else -> {
-                "/run/wgtunnel/$SOCKET_FILE_NAME"
-            }
-        }
-    }
 }

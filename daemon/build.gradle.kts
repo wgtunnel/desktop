@@ -7,7 +7,7 @@ plugins {
 dependencies {
     implementation(project(":tunnel"))
     implementation(project(":parser"))
-    implementation(project(":core"))
+    implementation(project(":shared"))
 
     // DI
     implementation(libs.koin.core)
