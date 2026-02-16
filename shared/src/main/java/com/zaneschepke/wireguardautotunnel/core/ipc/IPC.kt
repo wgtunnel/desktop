@@ -31,7 +31,7 @@ object IPC {
                 null
             }
         } catch (e: Exception) {
-            Logger.Companion.e(e) { "Failed to resolve IPC key for user: $user" }
+            Logger.e(e) { "Failed to resolve IPC key for user: $user" }
             null
         }
     }

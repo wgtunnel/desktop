@@ -82,7 +82,6 @@ fun Route.backendRoutes(backend: Backend) {
                 }
             }
             .onFailure { e ->
-                Logger.e(e) { "Failed to get active config for tunnel $id" }
                 if (e is BackendException.StateConflict) {
                     call.respond(HttpStatusCode.Conflict, e.message)
                 } else {

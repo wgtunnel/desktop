@@ -61,82 +61,83 @@ class AmneziaBackend : Backend {
         }
 
     override suspend fun start(tunnel: Tunnel, config: String): Result<Unit> = runCatching {
-        if (_status.value.activeTunnels.any { it.key.id == tunnel.id }) {
-            throw BackendException.StateConflict("Tunnel ${tunnel.id} is already in use")
-        }
+        tunnelMutex.withLock {
+            if (_status.value.activeTunnels.any { it.key.id == tunnel.id }) {
+                throw BackendException.StateConflict("Tunnel ${tunnel.id} is already in use")
+            }
 
-        tunnel.updateState(Tunnel.State.Starting)
-        _status.update {
-            it.copy(
-                activeTunnels =
-                    it.activeTunnels + (TunnelKey(tunnel.id, tunnel.name) to Tunnel.State.Starting)
-            )
-        }
+            tunnel.updateState(Tunnel.State.Starting)
+            _status.update {
+                it.copy(
+                    activeTunnels =
+                        it.activeTunnels +
+                            (TunnelKey(tunnel.id, tunnel.name) to Tunnel.State.Starting)
+                )
+            }
 
-        val statusFlow =
-            callbackFlow {
-                    val statusCallback =
-                        object : StatusCodeCallback {
-                            override fun onTunnelStatusCode(handle: Int, statusCode: Int) {
-                                trySend(statusCode)
+            val statusFlow =
+                callbackFlow {
+                        val statusCallback =
+                            object : StatusCodeCallback {
+                                override fun onTunnelStatusCode(handle: Int, statusCode: Int) {
+                                    trySend(statusCode)
+                                }
                             }
-                        }
-                    val handle =
-                        tunnelMutex.withLock {
+                        val handle =
                             when (currentMode) {
                                 Backend.Mode.Proxy -> tun.awgProxyTurnOn(config, statusCallback)
                                 Backend.Mode.Userspace -> tun.awgTurnOn(config, statusCallback)
                             }
-                        }
 
-                    if (handle < 0) {
-                        close(
-                            BackendException.InternalError(
-                                "Tunnel failed with internal error code $handle"
+                        if (handle < 0) {
+                            close(
+                                BackendException.InternalError(
+                                    "Tunnel failed with internal error code $handle"
+                                )
                             )
-                        )
-                    } else {
-                        tunnelHandles[tunnel] = handle
-                        _status.update {
-                            it.copy(
-                                activeTunnels =
-                                    it.activeTunnels +
-                                        (TunnelKey(tunnel.id, tunnel.name) to
-                                            Tunnel.State.Up.Unknown)
-                            )
+                        } else {
+                            tunnelHandles[tunnel] = handle
+                            _status.update {
+                                it.copy(
+                                    activeTunnels =
+                                        it.activeTunnels +
+                                            (TunnelKey(tunnel.id, tunnel.name) to
+                                                Tunnel.State.Up.Unknown)
+                                )
+                            }
+                            awaitCancellation()
                         }
-                        awaitCancellation()
+                    }
+                    .buffer(Channel.BUFFERED)
+
+            tunnelJobs[tunnel] =
+                backendScope.launch {
+                    try {
+                        statusFlow.collect { statusCode ->
+                            val tunnelState = mapStatusCodeToState(statusCode)
+                            _status.update {
+                                it.copy(
+                                    activeTunnels =
+                                        it.activeTunnels +
+                                            (TunnelKey(tunnel.id, tunnel.name) to tunnelState)
+                                )
+                            }
+                            tunnel.updateState(tunnelState)
+                        }
+                    } catch (_: Exception) {
+                        tunnel.updateState(Tunnel.State.Down)
+                    } finally {
+                        // cleanup
+                        tunnelJobs.remove(tunnel)
+                        tunnelHandles.remove(tunnel)
+                        _status.value.activeTunnels.keys
+                            .firstOrNull { it.id == tunnel.id }
+                            ?.let { key ->
+                                _status.update { it.copy(activeTunnels = it.activeTunnels - key) }
+                            }
                     }
                 }
-                .buffer(Channel.BUFFERED)
-
-        tunnelJobs[tunnel] =
-            backendScope.launch {
-                try {
-                    statusFlow.collect { statusCode ->
-                        val tunnelState = mapStatusCodeToState(statusCode)
-                        _status.update {
-                            it.copy(
-                                activeTunnels =
-                                    it.activeTunnels +
-                                        (TunnelKey(tunnel.id, tunnel.name) to tunnelState)
-                            )
-                        }
-                        tunnel.updateState(tunnelState)
-                    }
-                } catch (_: Exception) {
-                    tunnel.updateState(Tunnel.State.Down)
-                } finally {
-                    // cleanup
-                    tunnelJobs.remove(tunnel)
-                    tunnelHandles.remove(tunnel)
-                    _status.value.activeTunnels.keys
-                        .firstOrNull { it.id == tunnel.id }
-                        ?.let { key ->
-                            _status.update { it.copy(activeTunnels = it.activeTunnels - key) }
-                        }
-                }
-            }
+        }
     }
 
     override suspend fun stop(id: Long): Result<Unit> = runCatching {
@@ -147,23 +148,38 @@ class AmneziaBackend : Backend {
                 )
 
         val handle =
-            tunnelHandles.remove(tunnel)
+            tunnelHandles[tunnel]
                 ?: return Result.failure(
                     BackendException.StateConflict("Tunnel with $id is not active.")
                 )
 
-        tunnelMutex.withLock {
-            when (currentMode) {
-                Backend.Mode.Proxy -> tun.awgProxyTurnOff(handle)
-                Backend.Mode.Userspace -> tun.awgTurnOff(handle)
+        try {
+            tunnelMutex.withLock {
+                when (currentMode) {
+                    Backend.Mode.Proxy -> tun.awgProxyTurnOff(handle)
+                    Backend.Mode.Userspace -> tun.awgTurnOff(handle)
+                }
+            }
+
+            tunnelJobs[tunnel]?.cancel()
+            tunnelJobs.remove(tunnel)
+            tunnelHandles.remove(tunnel)
+
+            tunnel.updateState(Tunnel.State.Down)
+            val key = _status.value.activeTunnels.keys.firstOrNull { it.id == tunnel.id }
+            if (key != null) {
+                _status.update { it.copy(activeTunnels = it.activeTunnels - key) }
+            }
+        } finally {
+            // Ensure cleanup on exception
+            tunnelJobs[tunnel]?.cancel()
+            tunnelJobs.remove(tunnel)
+            tunnelHandles.remove(tunnel)
+            val key = _status.value.activeTunnels.keys.firstOrNull { it.id == tunnel.id }
+            if (key != null) {
+                _status.update { it.copy(activeTunnels = it.activeTunnels - key) }
             }
         }
-
-        tunnelJobs.remove(tunnel)?.cancel()
-
-        tunnel.updateState(Tunnel.State.Down)
-        val key = _status.value.activeTunnels.keys.first { it.id == tunnel.id }
-        _status.update { it.copy(activeTunnels = it.activeTunnels - key) }
     }
 
     override suspend fun setMode(mode: Backend.Mode) {

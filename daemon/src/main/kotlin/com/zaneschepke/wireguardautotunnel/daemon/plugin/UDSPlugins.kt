@@ -50,7 +50,5 @@ val hmacShieldPlugin =
                 Logger.e { "Daemon: HMAC Mismatch! Path: ${call.request.path()} Body: '$bodyText'" }
                 return@onCall call.respond(HttpStatusCode.Unauthorized, "Invalid HMAC")
             }
-
-            Logger.d { "Daemon: HMAC Verified for ${call.request.path()}" }
         }
     }
