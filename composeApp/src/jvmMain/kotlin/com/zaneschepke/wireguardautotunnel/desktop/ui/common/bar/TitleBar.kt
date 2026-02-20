@@ -8,95 +8,69 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CropSquare
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_window_2
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.wgtunnel
-import java.awt.Frame
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.vectorResource
+import java.awt.Frame
+import java.awt.event.WindowStateListener
 
 @Composable
 fun WindowScope.TitleBar(onClose: () -> Unit) {
     val frame = window as? Frame
-    var isMaximized by remember {
-        mutableStateOf((frame?.extendedState ?: Frame.NORMAL) == Frame.MAXIMIZED_BOTH)
+
+    // sync state with frame
+    var isMaximized by remember { mutableStateOf(frame?.extendedState == Frame.MAXIMIZED_BOTH) }
+
+    DisposableEffect(frame) {
+        val listener = WindowStateListener { e -> isMaximized = (e.newState and Frame.MAXIMIZED_BOTH) != 0 }
+        frame?.addWindowStateListener(listener)
+        onDispose { frame?.removeWindowStateListener(listener) }
     }
-
-    val buttonSize = 18.dp
-
-    val colors =
-        IconButtonDefaults.iconButtonColors()
-            .copy(
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.onBackground,
-            )
 
     WindowDraggableArea {
         Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(36.dp)
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+
             Icon(
                 painter = painterResource(Res.drawable.wgtunnel),
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.onBackground,
             )
 
             Spacer(Modifier.weight(1f))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconButton(
-                    onClick = { frame?.state = Frame.ICONIFIED },
-                    colors = colors,
-                    modifier = Modifier.size(buttonSize),
-                ) {
-                    Icon(
-                        Icons.Default.Remove,
-                        contentDescription = "Minimize",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                WindowControlButton(Icons.Default.Remove, "Minimize") {
+                    frame?.state = Frame.ICONIFIED
                 }
-                IconButton(
-                    onClick = {
-                        val f = frame ?: return@IconButton
-                        f.extendedState = if (isMaximized) Frame.NORMAL else Frame.MAXIMIZED_BOTH
-                        isMaximized = !isMaximized
-                    },
-                    colors = colors,
-                    modifier = Modifier.size(buttonSize),
+
+                WindowControlButton(
+                    if (isMaximized) vectorResource(Res.drawable.select_window_2) else Icons.Default.CropSquare,
+                    if (isMaximized) "Restore" else "Maximize"
                 ) {
-                    Icon(
-                        imageVector =
-                            if (isMaximized) vectorResource(Res.drawable.select_window_2)
-                            else Icons.Default.CropSquare,
-                        contentDescription = if (isMaximized) "Restore" else "Maximize",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
+                    frame?.extendedState = if (isMaximized) Frame.NORMAL else Frame.MAXIMIZED_BOTH
                 }
-                IconButton(
-                    onClick = onClose,
-                    colors = colors,
-                    modifier = Modifier.size(buttonSize),
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Close",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
+
+                WindowControlButton(Icons.Default.Close, "Close") {
+                    onClose()
                 }
             }
         }

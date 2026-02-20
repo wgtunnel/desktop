@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"sync"
 
 	"github.com/amnezia-vpn/amneziawg-go/device"
 )
@@ -55,12 +56,21 @@ func NewLogger(prefix string) *device.Logger {
 
 type StatusCodeCallback C.StatusCodeCallback
 
-var tunnelCallbacks = make(map[int32]StatusCodeCallback)
+var (
+	tunnelCallbacks = make(map[int32]StatusCodeCallback)
+	callbackMutex   sync.RWMutex
+)
 
 func StoreTunnelCallback(handle int32, cb StatusCodeCallback) {
 	if cb != nil {
 		tunnelCallbacks[handle] = cb
 	}
+}
+
+func RemoveTunnelCallback(handle int32) {
+	callbackMutex.Lock()
+	delete(tunnelCallbacks, handle)
+	callbackMutex.Unlock()
 }
 
 func NotifyStatusCode(handle int32, status int32) {

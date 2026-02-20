@@ -44,6 +44,11 @@ type linuxRouter struct {
 	policyRules map[int][]*netlink.Rule
 }
 
+// GetPhysicalInterfaceIndex stub
+func (r *linuxRouter) GetPhysicalInterfaceIndex() uint32 {
+	return 0
+}
+
 func New(iface string, fw firewall.Firewall, _ tun.Device, logger *device.Logger) (router.Router, error) {
 	return &linuxRouter{
 		iface:       iface,

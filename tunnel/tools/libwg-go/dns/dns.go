@@ -93,8 +93,8 @@ func resolveInner(host string, ipType uint16, u upstream.Upstream, dialer *net.D
 	return addr, nil
 }
 
-func Resolve(host string, opts ResolverOptions, preferIpv6 bool) ([]netip.Addr, []netip.Addr, error) {
-	dialer, err := GetBypassDialer(preferIpv6)
+func Resolve(host string, opts ResolverOptions, preferIpv6 bool, physicalIfIndex uint32) ([]netip.Addr, []netip.Addr, error) {
+	dialer, err := GetBypassDialer(preferIpv6, physicalIfIndex)
 	if err != nil {
 		return nil, nil, fmt.Errorf("bypass dialer failed: %w", err)
 	}
@@ -102,7 +102,7 @@ func Resolve(host string, opts ResolverOptions, preferIpv6 bool) ([]netip.Addr, 
 	// 2. Setup the library just to handle URL parsing and certificates
 	// We pass the CustomResolver (which uses our bypass dialer) for bootstrapping
 	u, err := upstream.AddressToUpstream(opts.UpstreamURL, &upstream.Options{
-		Bootstrap:  CustomResolver(preferIpv6),
+		Bootstrap:  CustomResolver(preferIpv6, physicalIfIndex),
 		Timeout:    opts.Timeout,
 		PreferIPv6: preferIpv6,
 	})
@@ -139,13 +139,13 @@ func Resolve(host string, opts ResolverOptions, preferIpv6 bool) ([]netip.Addr, 
 }
 
 // ResolveWithBackoff retries resolution with exponential backoff until success
-func ResolveWithBackoff(ctx context.Context, host string, opts ResolverOptions, preferIpv6 bool, logger *device.Logger) (Resolved, error) {
+func ResolveWithBackoff(ctx context.Context, host string, opts ResolverOptions, preferIpv6 bool, logger *device.Logger, physicalIfIndex uint32) (Resolved, error) {
 	logger.Verbosef("Starting DNS resolution...")
 	operation := func() (Resolved, error) {
 		if err := ctx.Err(); err != nil {
 			return Resolved{}, backoff.Permanent(err)
 		}
-		v4, v6, err := Resolve(host, opts, preferIpv6)
+		v4, v6, err := Resolve(host, opts, preferIpv6, physicalIfIndex)
 		if err != nil {
 			logger.Errorf("Error resolving host %s: %v, retrying...", host, err)
 			return Resolved{}, err

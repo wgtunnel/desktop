@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"sync"
 	"sync/atomic"
 
 	"github.com/amnezia-vpn/amneziawg-go/device"
@@ -22,8 +21,6 @@ import (
 )
 
 type WindowsFirewall struct {
-	mu sync.Mutex // protect shared state
-
 	logger *device.Logger
 
 	session *wf.Session
@@ -84,51 +81,16 @@ var (
 )
 
 func New(logger *device.Logger) (firewall.Firewall, error) {
-	session, err := wf.New(&wf.Options{
-		Name:        "WG Tunnel firewall",
-		Description: "Manages WG Tunnel firewall rules",
-		Dynamic:     true, // Removes rules on close
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("create WFP session: %w", err)
-	}
-
-	guid, err := windows.GenerateGUID()
-	if err != nil {
-		return nil, err
-	}
-
-	providerID := wf.ProviderID(guid)
-	if err := session.AddProvider(&wf.Provider{
-		ID:   providerID,
-		Name: "WG Tunnel provider",
-	}); err != nil {
-		return nil, err
-	}
-
-	guid, err = windows.GenerateGUID()
-	if err != nil {
-		return nil, err
-	}
-
-	sublayerID := wf.SublayerID(guid)
-	if err := session.AddSublayer(&wf.Sublayer{
-		ID:     sublayerID,
-		Name:   "WG Tunnel permissive and blocking filters",
-		Weight: uint16(weightCatchAll),
-	}); err != nil {
-		return nil, err
-	}
-
 	f := &WindowsFirewall{
 		logger:          logger,
-		session:         session,
-		providerID:      providerID,
-		sublayerID:      sublayerID,
 		permittedRoutes: make(map[netip.Prefix][]*wf.Rule),
 		tunRules:        make([]*wf.Rule, 0),
 	}
+
+	if err := f.createSession(); err != nil {
+		return nil, err
+	}
+
 	return f, nil
 }
 
@@ -141,12 +103,10 @@ func (f *WindowsFirewall) AllowLocalNetworks(addrs []netip.Prefix) error {
 	if err != nil {
 		return err
 	}
-	f.mu.Lock()
 	f.localAddrRules = nil
 	for _, rules := range addedByPrefix {
 		f.localAddrRules = append(f.localAddrRules, rules...)
 	}
-	f.mu.Unlock()
 	f.logger.Verbosef("Bypassed local addrs in firewall")
 	return nil
 }
@@ -155,9 +115,7 @@ func (f *WindowsFirewall) RemoveLocalNetworks() error {
 	if err := f.removeRules(f.localAddrRules); err != nil {
 		f.logger.Errorf("Failed to remove old local addr rules: %v", err)
 	}
-	f.mu.Lock()
 	f.localAddrRules = nil
-	f.mu.Unlock()
 
 	return nil
 }
@@ -167,7 +125,6 @@ func (f *WindowsFirewall) IsAllowLocalNetworksEnabled() bool {
 }
 
 func (f *WindowsFirewall) UpdatePermittedRoutes(newRoutes []netip.Prefix) error {
-	f.mu.Lock()
 	// routes to remove
 	var routesToRemove []netip.Prefix
 	for existing := range f.permittedRoutes {
@@ -182,67 +139,60 @@ func (f *WindowsFirewall) UpdatePermittedRoutes(newRoutes []netip.Prefix) error 
 			routesToRemove = append(routesToRemove, existing)
 		}
 	}
-	f.mu.Unlock()
 	for _, r := range routesToRemove {
-		f.mu.Lock()
 		rules := f.permittedRoutes[r]
-		f.mu.Unlock()
 		if err := f.removeRules(rules); err != nil {
 			f.logger.Errorf("Failed to remove permitted route %v: %v", r, err)
 		}
-		f.mu.Lock()
 		delete(f.permittedRoutes, r)
-		f.mu.Unlock()
 	}
 
 	// routes to add
 	var routesToAdd []netip.Prefix
-	f.mu.Lock()
 	for _, newRoute := range newRoutes {
 		if _, exists := f.permittedRoutes[newRoute]; !exists {
 			routesToAdd = append(routesToAdd, newRoute)
 		}
 	}
-	f.mu.Unlock()
 
 	// add new rules
 	addedByPrefix, err := f.addPermissiveRulesForPrefixes(routesToAdd, "permitted route - ")
 	if err != nil {
 		return err
 	}
-	f.mu.Lock()
 	for prefix, rules := range addedByPrefix {
 		f.permittedRoutes[prefix] = rules
 	}
-	f.mu.Unlock()
 
 	f.logger.Verbosef("Updated permitted routes: %v", newRoutes)
 	return nil
 }
 
 func (f *WindowsFirewall) BypassTunnel(luid uint64, listenPort uint16) error {
-	f.mu.Lock()
 	f.luid = luid
-	f.mu.Unlock()
 	if err := f.permitTunInterface(weightDaemonTraffic); err != nil {
 		return fmt.Errorf("permitTunInterface failed: %w", err)
 	}
+	f.logger.Verbosef("Bypassing listen port %d", listenPort)
 	if err := f.permitListenPort(weightDaemonTraffic, listenPort); err != nil {
 		return fmt.Errorf("permitListenPort failed: %w", err)
 	}
+	f.logger.Verbosef("Tunnel successfully bypassed")
 	return nil
 }
 
 func (f *WindowsFirewall) Enable() error {
-	f.mu.Lock()
 	if f.killSwitchEnabled.Load() {
-		f.mu.Unlock()
 		f.logger.Verbosef("Kill switch already active, skipping activation")
 		return nil
 	}
-	f.mu.Unlock()
+
+	if err := f.ensureSession(); err != nil {
+		return fmt.Errorf("ensure WFP session: %w", err)
+	}
+
 	if err := f.permitDaemon(weightDaemonTraffic); err != nil {
-		return fmt.Errorf("permitTailscaleService failed: %w", err)
+		return fmt.Errorf("permitDaemon failed: %w", err)
 	}
 	if err := f.permitLoopback(weightDaemonTraffic); err != nil {
 		return fmt.Errorf("permitLoopback failed: %w", err)
@@ -274,22 +224,19 @@ func (f *WindowsFirewall) IsEnabled() bool {
 }
 
 func (f *WindowsFirewall) RemoveTunnelRules() error {
-	f.mu.Lock()
 	tunRulesCopy := make([]*wf.Rule, len(f.tunRules))
 	copy(tunRulesCopy, f.tunRules)
 	f.tunRules = nil
-	f.mu.Unlock()
 	if err := f.removeRules(tunRulesCopy); err != nil {
 		f.logger.Errorf("Failed to remove tun rules: %v", err)
 	}
 
-	f.mu.Lock()
 	permittedCopy := make(map[netip.Prefix][]*wf.Rule, len(f.permittedRoutes))
 	for k, v := range f.permittedRoutes {
 		permittedCopy[k] = v
 	}
 	f.permittedRoutes = make(map[netip.Prefix][]*wf.Rule)
-	f.mu.Unlock()
+
 	for prefix, rules := range permittedCopy {
 		if err := f.removeRules(rules); err != nil {
 			f.logger.Errorf("Failed to remove permitted route %s: %v", prefix, err)
@@ -302,8 +249,6 @@ func (f *WindowsFirewall) RemoveTunnelRules() error {
 
 // addPermissiveRulesForPrefixes is a helper to add permissive rules for a list of prefixes
 func (f *WindowsFirewall) addPermissiveRulesForPrefixes(prefixes []netip.Prefix, namePrefix string) (map[netip.Prefix][]*wf.Rule, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
 
 	addedByPrefix := make(map[netip.Prefix][]*wf.Rule)
 	var partialAdds []netip.Prefix // rollback tracking
@@ -341,8 +286,6 @@ func (f *WindowsFirewall) addPermissiveRulesForPrefixes(prefixes []netip.Prefix,
 
 // removeRules is a helper to remove a list of rules
 func (f *WindowsFirewall) removeRules(rules []*wf.Rule) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
 
 	for _, rule := range rules {
 		if err := f.session.DeleteRule(rule.ID); err != nil {
@@ -354,26 +297,34 @@ func (f *WindowsFirewall) removeRules(rules []*wf.Rule) error {
 }
 
 func (f *WindowsFirewall) Disable() error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	if err := f.session.Close(); err != nil {
-		f.logger.Errorf("Failed to close WFP session: %v", err)
+	// Clean up tunnel-specific rules
+	if err := f.RemoveTunnelRules(); err != nil {
+		f.logger.Errorf("Failed to remove tunnel rules on disable: %v", err)
 	}
+
+	// Close the session and reset pointer, next createSession will overwrite provider and sublayer with fresh GUIDs
+	if f.session != nil {
+		if err := f.session.Close(); err != nil {
+			f.logger.Errorf("Failed to close WFP session: %v", err)
+		}
+		f.session = nil
+	}
+
 	f.killSwitchEnabled.Store(false)
-	f.logger.Verbosef("Firewall rules and kill switch cleaned up")
+	f.logger.Verbosef("Firewall fully disabled and session closed")
 	return nil
 }
 
 // permitDaemon allows the daemon process through firewall
 func (f *WindowsFirewall) permitDaemon(w weight) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+
 	currentFile, err := os.Executable()
 	if err != nil {
 		return err
 	}
 
 	appID, err := wf.AppID(currentFile)
+	f.logger.Verbosef("Adding bypass rule for %s", appID)
 	if err != nil {
 		return fmt.Errorf("could not get app id for %q: %w", currentFile, err)
 	}
@@ -388,9 +339,59 @@ func (f *WindowsFirewall) permitDaemon(w weight) error {
 	return err
 }
 
+// createSession is the single place where we create a fresh session + provider + sublayer.
+func (f *WindowsFirewall) createSession() error {
+	session, err := wf.New(&wf.Options{
+		Name:        "WG Tunnel firewall",
+		Description: "Manages WG Tunnel firewall rules",
+		Dynamic:     true,
+	})
+	if err != nil {
+		return fmt.Errorf("create WFP session: %w", err)
+	}
+	f.session = session
+
+	// fresh provider
+	guid, err := windows.GenerateGUID()
+	if err != nil {
+		return err
+	}
+	f.providerID = wf.ProviderID(guid)
+	if err := f.session.AddProvider(&wf.Provider{
+		ID:   f.providerID,
+		Name: "WG Tunnel provider",
+	}); err != nil {
+		return err
+	}
+
+	// fresh sublayer
+	guid, err = windows.GenerateGUID()
+	if err != nil {
+		return err
+	}
+	f.sublayerID = wf.SublayerID(guid)
+	if err := f.session.AddSublayer(&wf.Sublayer{
+		ID:     f.sublayerID,
+		Name:   "WG Tunnel permissive and blocking filters",
+		Weight: uint16(weightCatchAll),
+	}); err != nil {
+		return err
+	}
+
+	f.logger.Verbosef("Created fresh WFP session")
+	return nil
+}
+
+// ensureSession reuses the existing session if it's still alive, otherwise creates a new one.
+func (f *WindowsFirewall) ensureSession() error {
+	if f.session != nil {
+		return nil
+	}
+	return f.createSession()
+}
+
 func (f *WindowsFirewall) permitLoopback(w weight) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+
 	condition := []*wf.Match{
 		{
 			Field: wf.FieldFlags,
@@ -403,8 +404,7 @@ func (f *WindowsFirewall) permitLoopback(w weight) error {
 }
 
 func (f *WindowsFirewall) permitListenPort(w weight, listenPort uint16) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+
 	conditions := []*wf.Match{
 		{Field: wf.FieldIPLocalInterface, Op: wf.MatchTypeEqual, Value: f.luid},
 		{Field: wf.FieldIPProtocol, Op: wf.MatchTypeEqual, Value: wf.IPProtoUDP},
@@ -419,8 +419,7 @@ func (f *WindowsFirewall) permitListenPort(w weight, listenPort uint16) error {
 }
 
 func (f *WindowsFirewall) permitDHCPv6(w weight) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+
 	var dhcpConditions = func(remoteAddrs ...any) []*wf.Match {
 		conditions := []*wf.Match{
 			{
@@ -465,8 +464,7 @@ func (f *WindowsFirewall) permitDHCPv6(w weight) error {
 }
 
 func (f *WindowsFirewall) permitDHCPv4(w weight) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+
 	var dhcpConditions = func(remoteAddrs ...any) []*wf.Match {
 		conditions := []*wf.Match{
 			{
@@ -507,8 +505,7 @@ func (f *WindowsFirewall) permitDHCPv4(w weight) error {
 }
 
 func (f *WindowsFirewall) permitNDP(w weight) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+
 	// These are aliased according to:
 	// https://social.msdn.microsoft.com/Forums/azure/en-US/eb2aa3cd-5f1c-4461-af86-61e7d43ccc23/filtering-icmp-by-type-code?forum=wfp
 	fieldICMPType := wf.FieldIPLocalPort
@@ -597,16 +594,12 @@ func (f *WindowsFirewall) permitNDP(w weight) error {
 }
 
 func (f *WindowsFirewall) blockAll(w weight) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
 	_, err := f.addRules("all", w, nil, wf.ActionBlock, protocolAll, directionBoth)
 	return err
 }
 
 // addRules adds WFP rules with the given parameters
 func (f *WindowsFirewall) addRules(name string, w weight, conditions []*wf.Match, action wf.Action, p protocol, d direction) ([]*wf.Rule, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
 	var rules []*wf.Rule
 	for _, layer := range p.getLayers(d) {
 		r, err := f.newRule(name, w, layer, conditions, action)
@@ -644,8 +637,6 @@ func (p protocol) getLayers(d direction) []wf.LayerID {
 }
 
 func (f *WindowsFirewall) newRule(name string, w weight, layer wf.LayerID, conditions []*wf.Match, action wf.Action) (*wf.Rule, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
 	id, err := windows.GenerateGUID()
 	if err != nil {
 		return nil, err
@@ -678,8 +669,6 @@ func ruleName(action wf.Action, layerID wf.LayerID, name string) string {
 
 // permitTunInterface allows tun interface through firewall, requires luid to be set
 func (f *WindowsFirewall) permitTunInterface(w weight) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
 	condition := []*wf.Match{
 		{
 			Field: wf.FieldIPLocalInterface,

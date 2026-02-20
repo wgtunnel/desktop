@@ -38,13 +38,19 @@ type windowsRouter struct {
 	luid                  winipcfg.LUID
 	rawLuid               uint64
 	originalSearchDomains []string
+
+	originalGateway netip.Addr
+	physicalLUID    winipcfg.LUID
+
+	physicalIfIndex uint32
+	notifyHandle    *winipcfg.InterfaceChangeCallback
 }
 
 func New(iface string, fw firewall.Firewall, tunnel tun.Device, logger *device.Logger) (router.Router, error) {
 	nativeTun := tunnel.(*tun.NativeTun)
 	// get windows interface id
 	rawLuid := nativeTun.LUID()
-	return &windowsRouter{
+	r := &windowsRouter{
 		iface:       iface,
 		fw:          fw.(*osfirewall.WindowsFirewall),
 		logger:      logger,
@@ -52,7 +58,9 @@ func New(iface string, fw firewall.Firewall, tunnel tun.Device, logger *device.L
 		nativeTun:   nativeTun,
 		rawLuid:     rawLuid,
 		luid:        winipcfg.LUID(rawLuid),
-	}, nil
+	}
+	r.notifyHandle, _ = winipcfg.RegisterInterfaceChangeCallback(r.onNetworkChange)
+	return r, nil
 }
 
 func (r *windowsRouter) Set(c *router.Config) error {
@@ -134,6 +142,7 @@ func (r *windowsRouter) syncFirewallState(newC *router.Config, requiresKS bool) 
 
 	// If kill switch is active (independent or just enabled), always add tunnel bypasses
 	if r.fw.IsEnabled() {
+		r.logger.Verbosef("FW enabled, adding tunnel bypass..")
 		if err := r.fw.BypassTunnel(r.rawLuid, newC.ListenPort); err != nil {
 			return fmt.Errorf("add firewall bypasses: %w", err)
 		}
@@ -157,6 +166,18 @@ func getBit(addr netip.Addr, i int) bool {
 	byteIdx := i / 8
 	bitIdx := 7 - (i % 8)
 	return (b[byteIdx] & (1 << bitIdx)) != 0
+}
+
+func (r *windowsRouter) onNetworkChange(notificationType winipcfg.MibNotificationType, _ *winipcfg.MibIPInterfaceRow) {
+	if notificationType != winipcfg.MibParameterNotification {
+		return // we only care about gateway and routing changes
+	}
+
+	r.logger.Verbosef("Network change detected — re-applying router config")
+	if r.prevConfig != nil {
+		// Set will recheck the physical gateway and add the protected peer endpoint routes
+		_ = r.Set(r.prevConfig.Clone())
+	}
 }
 
 // setBit returns a new Addr with the i-th bit set to value
@@ -183,12 +204,13 @@ func setBit(addr netip.Addr, i int, value bool) netip.Addr {
 	return netip.AddrFrom16(b)
 }
 
-// flipBit returns a new Addr with the i-th bit flipped
-func flipBit(addr netip.Addr, i int) netip.Addr {
-	return setBit(addr, i, !getBit(addr, i))
-}
-
 func (r *windowsRouter) Close() error {
+	// Unregister network change callback
+	if r.notifyHandle != nil {
+		r.notifyHandle.Unregister()
+		r.notifyHandle = nil
+	}
+
 	if r.prevConfig != nil {
 		dns.RevertDNS(r.luid, r.prevConfig.HasAnyDefaultRoute(), r.originalSearchDomains, r.logger)
 	}
@@ -209,6 +231,39 @@ func (r *windowsRouter) configureInterface(cfg *router.Config) error {
 	_, err = r.setPrivateNetwork()
 	if err != nil {
 		r.logger.Verbosef("**WARNING** failed to set private network: %v", err)
+	}
+
+	// redirect the physical interface on each call to Set
+	r.originalGateway = netip.Addr{}
+	r.physicalLUID = 0
+	r.physicalIfIndex = 0
+	physicalRoutes, _ := winipcfg.GetIPForwardTable2(windows.AF_INET)
+	for _, row := range physicalRoutes {
+		if row.DestinationPrefix.Prefix().Bits() == 0 && row.NextHop.Addr().IsValid() {
+			r.originalGateway = row.NextHop.Addr()
+			r.physicalLUID = row.InterfaceLUID
+			r.physicalIfIndex = row.InterfaceIndex
+			r.logger.Verbosef("Detected physical gateway %v (LUID %d, Index %d) for peer endpoint protection", r.originalGateway, r.physicalLUID, r.physicalIfIndex)
+			break
+		}
+	}
+
+	// protect peer public endpoints from routing loop by adding route to physical interface with metric 1 to take priority over the tunnel split-tunnel routes
+	for _, prefix := range cfg.PeerEndpoints {
+		if !prefix.IsValid() || prefix.Addr().IsPrivate() || prefix.Addr().IsLinkLocalUnicast() {
+			continue
+		}
+
+		if r.originalGateway.IsValid() && r.physicalLUID != 0 {
+			if err := r.physicalLUID.AddRoute(prefix, r.originalGateway, 1); err == nil {
+				r.logger.Verbosef("Added protecting route for peer endpoint %v", prefix.Addr())
+				continue
+			}
+		}
+		// fallback
+		if err := iface.LUID.AddRoute(prefix, netip.Addr{}, 1); err != nil {
+			r.logger.Errorf("Failed to add peer endpoint route %v: %v", prefix.Addr(), err)
+		}
 	}
 
 	ipif4, err := r.luid.IPInterface(windows.AF_INET)
@@ -370,6 +425,10 @@ func (r *windowsRouter) configureInterface(cfg *router.Config) error {
 	}
 
 	return errAcc
+}
+
+func (r *windowsRouter) GetPhysicalInterfaceIndex() uint32 {
+	return r.physicalIfIndex
 }
 
 func isIPv6LinkLocal(a netip.Prefix) bool {
@@ -673,6 +732,7 @@ func (r *windowsRouter) getGlobalSearchDomains() ([]string, error) {
 	return domains, nil
 }
 
+// important for LAN access and service discovery
 func (r *windowsRouter) setPrivateNetwork() (bool, error) {
 	alias := r.iface
 

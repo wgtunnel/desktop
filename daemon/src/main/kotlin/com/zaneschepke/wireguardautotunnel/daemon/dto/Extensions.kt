@@ -15,6 +15,7 @@ fun Tunnel.State.toDto(): TunnelState =
         is Tunnel.State.Up.HandshakeFailure -> TunnelState.HANDSHAKE_FAILURE
         is Tunnel.State.Up.ResolvingDns -> TunnelState.RESOLVING_DNS
         is Tunnel.State.Up.Unknown -> TunnelState.UNKNOWN
+        is Tunnel.State.Stopping -> TunnelState.STOPPING
     }
 
 fun Backend.Mode.toDto(): BackendMode =

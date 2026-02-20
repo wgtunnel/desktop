@@ -13,29 +13,31 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.collections.firstOrNull
 
 class AmneziaBackend : Backend {
     private val tun = AwgTunnel.INSTANCE
+    private val log = Logger.withTag("AmneziaBackend")
 
     private val tunnelMutex = Mutex()
     private val killSwitchMutex = Mutex()
 
     private var currentMode: Backend.Mode = Backend.Mode.Userspace
 
-    private val _status =
-        MutableStateFlow(
-            Backend.Status(
-                killSwitchEnabled = false,
-                killSwitchLanBypassEnabled = false,
-                mode = currentMode,
-                activeTunnels = emptyMap(),
-            )
+    private val _status = MutableStateFlow(
+        Backend.Status(
+            killSwitchEnabled = false,
+            killSwitchLanBypassEnabled = false,
+            mode = currentMode,
+            activeTunnels = emptyMap(),
         )
+    )
 
     override val status: Flow<Backend.Status> = _status.asStateFlow()
 
-    private val tunnelHandles = ConcurrentHashMap<Tunnel, Int>()
-    private val tunnelJobs = ConcurrentHashMap<Tunnel, Job>()
+    private val tunnelHandles = ConcurrentHashMap<Long, Int>()
+    private val tunnelJobs = ConcurrentHashMap<Long, Job>()
+    private val statusCallbacks = ConcurrentHashMap<Long, StatusCodeCallback>()
 
     private val backendScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -43,167 +45,144 @@ class AmneziaBackend : Backend {
         backendScope.launch { initKillSwitchStatus() }
     }
 
-    private suspend fun initKillSwitchStatus() =
-        killSwitchMutex.withLock {
-            val killSwitchStatus = tun.getKillSwitchStatus()
-            val killSwitchEnabled = killSwitchStatus == 1
-            val bypassEnabled =
-                if (killSwitchEnabled) {
-                    val bypassStatus = tun.getKillSwitchLanBypassStatus()
-                    bypassStatus == 1
-                } else false
-            _status.update {
-                it.copy(
-                    killSwitchEnabled = killSwitchEnabled,
-                    killSwitchLanBypassEnabled = bypassEnabled,
-                )
+    private suspend fun initKillSwitchStatus() = killSwitchMutex.withLock {
+        log.d { "Initializing kill switch status..." }
+        val killSwitchStatus = tun.getKillSwitchStatus()
+        val killSwitchEnabled = killSwitchStatus == 1
+        val bypassEnabled = if (killSwitchEnabled) {
+            tun.getKillSwitchLanBypassStatus() == 1
+        } else false
+
+        _status.update {
+            it.copy(killSwitchEnabled = killSwitchEnabled, killSwitchLanBypassEnabled = bypassEnabled)
+        }
+        log.d { "Kill switch initialized: enabled=$killSwitchEnabled, bypass=$bypassEnabled" }
+    }
+
+    override suspend fun start(tunnel: Tunnel, config: String): Result<Unit> = runCatching {
+        log.i { "Start request for tunnel: ${tunnel.id}" }
+
+
+        val statusChannel = Channel<Int>(Channel.BUFFERED)
+        val statusCallback = object : StatusCodeCallback {
+            override fun onTunnelStatusCode(handle: Int, statusCode: Int) {
+                log.v { "Native Callback - Handle: $handle, Code: $statusCode" }
+                statusChannel.trySend(statusCode)
             }
         }
 
-    override suspend fun start(tunnel: Tunnel, config: String): Result<Unit> = runCatching {
-        tunnelMutex.withLock {
-            if (_status.value.activeTunnels.any { it.key.id == tunnel.id }) {
+        statusCallbacks[tunnel.id] = statusCallback
+
+        val handle = tunnelMutex.withLock {
+            if (tunnelHandles.containsKey(tunnel.id)) {
+                log.w { "Tunnel ${tunnel.id} already exists in handles map." }
                 throw BackendException.StateConflict("Tunnel ${tunnel.id} is already in use")
             }
 
-            tunnel.updateState(Tunnel.State.Starting)
-            _status.update {
-                it.copy(
-                    activeTunnels =
-                        it.activeTunnels +
-                            (TunnelKey(tunnel.id, tunnel.name) to Tunnel.State.Starting)
-                )
+            log.d { "Lock acquired. Invoking native turnOn..." }
+            val nativeHandle = when (currentMode) {
+                Backend.Mode.Proxy -> tun.awgProxyTurnOn(config, statusCallback)
+                Backend.Mode.Userspace -> tun.awgTurnOn(config, statusCallback)
             }
 
-            val statusFlow =
-                callbackFlow {
-                        val statusCallback =
-                            object : StatusCodeCallback {
-                                override fun onTunnelStatusCode(handle: Int, statusCode: Int) {
-                                    trySend(statusCode)
-                                }
-                            }
-                        val handle =
-                            when (currentMode) {
-                                Backend.Mode.Proxy -> tun.awgProxyTurnOn(config, statusCallback)
-                                Backend.Mode.Userspace -> tun.awgTurnOn(config, statusCallback)
-                            }
+            if (nativeHandle < 0) {
+                log.e { "Native turnOn failed: $nativeHandle" }
+                throw BackendException.InternalError("Tunnel failed with internal error code $nativeHandle")
+            }
 
-                        if (handle < 0) {
-                            close(
-                                BackendException.InternalError(
-                                    "Tunnel failed with internal error code $handle"
-                                )
-                            )
-                        } else {
-                            tunnelHandles[tunnel] = handle
-                            _status.update {
-                                it.copy(
-                                    activeTunnels =
-                                        it.activeTunnels +
-                                            (TunnelKey(tunnel.id, tunnel.name) to
-                                                Tunnel.State.Up.Unknown)
-                                )
-                            }
-                            awaitCancellation()
-                        }
-                    }
-                    .buffer(Channel.BUFFERED)
+            tunnelHandles[tunnel.id] = nativeHandle
+            nativeHandle
+        }
 
-            tunnelJobs[tunnel] =
-                backendScope.launch {
-                    try {
-                        statusFlow.collect { statusCode ->
-                            val tunnelState = mapStatusCodeToState(statusCode)
-                            _status.update {
-                                it.copy(
-                                    activeTunnels =
-                                        it.activeTunnels +
-                                            (TunnelKey(tunnel.id, tunnel.name) to tunnelState)
-                                )
-                            }
-                            tunnel.updateState(tunnelState)
-                        }
-                    } catch (_: Exception) {
-                        tunnel.updateState(Tunnel.State.Down)
-                    } finally {
-                        // cleanup
-                        tunnelJobs.remove(tunnel)
-                        tunnelHandles.remove(tunnel)
-                        _status.value.activeTunnels.keys
-                            .firstOrNull { it.id == tunnel.id }
-                            ?.let { key ->
-                                _status.update { it.copy(activeTunnels = it.activeTunnels - key) }
-                            }
+        log.i { "Tunnel ${tunnel.id} native initialization successful. Handle: $handle" }
+
+        tunnel.updateState(Tunnel.State.Starting)
+        _status.update {
+            it.copy(
+                activeTunnels = it.activeTunnels +
+                        (TunnelKey(tunnel.id, tunnel.name) to Tunnel.State.Starting)
+            )
+        }
+
+        tunnelJobs[tunnel.id] = backendScope.launch {
+            try {
+                statusChannel.consumeAsFlow().collect { statusCode ->
+                    val tunnelState = mapStatusCodeToState(statusCode)
+                    log.d { "Tunnel ${tunnel.id} status update: $statusCode -> $tunnelState" }
+
+                    _status.update {
+                        it.copy(activeTunnels = it.activeTunnels +
+                                (TunnelKey(tunnel.id, tunnel.name) to tunnelState))
                     }
+                    tunnel.updateState(tunnelState)
                 }
+            } catch (e: Exception) {
+                log.e(e) { "Error in status flow for tunnel ${tunnel.id}" }
+            } finally {
+                log.i { "Status collector for tunnel ${tunnel.id} terminating." }
+                statusChannel.close()
+                cleanupTunnelState(tunnel.id)
+                tunnel.updateState(Tunnel.State.Down)
+            }
         }
     }
 
     override suspend fun stop(id: Long): Result<Unit> = runCatching {
-        val tunnel =
-            tunnelHandles.keys.find { it.id == id }
-                ?: return Result.failure(
-                    BackendException.StateConflict("Tunnel with $id is not active.")
-                )
+        log.i { "Stop request for tunnel ID: $id" }
 
-        val handle =
-            tunnelHandles[tunnel]
-                ?: return Result.failure(
-                    BackendException.StateConflict("Tunnel with $id is not active.")
-                )
+        val handle = tunnelHandles[id] ?: run {
+            log.w { "Stop requested for $id but no handle found." }
+            return Result.failure(BackendException.StateConflict("Tunnel $id is not active."))
+        }
+        _status.update { current ->
+            val key = current.activeTunnels.keys.firstOrNull { it.id == id }
+            if (key != null) current.copy(
+                activeTunnels = current.activeTunnels + (key to Tunnel.State.Stopping)
+            )
+            else current
+        }
 
-        try {
-            tunnelMutex.withLock {
-                when (currentMode) {
-                    Backend.Mode.Proxy -> tun.awgProxyTurnOff(handle)
-                    Backend.Mode.Userspace -> tun.awgTurnOff(handle)
-                }
+
+        tunnelMutex.withLock {
+            log.d { "Lock acquired for Stop. Calling native turnOff for handle: $handle" }
+            when (currentMode) {
+                Backend.Mode.Proxy -> tun.awgProxyTurnOff(handle)
+                Backend.Mode.Userspace -> tun.awgTurnOff(handle)
             }
+        }
 
-            tunnelJobs[tunnel]?.cancel()
-            tunnelJobs.remove(tunnel)
-            tunnelHandles.remove(tunnel)
+        tunnelJobs[id]?.cancel()
 
-            tunnel.updateState(Tunnel.State.Down)
-            val key = _status.value.activeTunnels.keys.firstOrNull { it.id == tunnel.id }
-            if (key != null) {
-                _status.update { it.copy(activeTunnels = it.activeTunnels - key) }
-            }
-        } finally {
-            // Ensure cleanup on exception
-            tunnelJobs[tunnel]?.cancel()
-            tunnelJobs.remove(tunnel)
-            tunnelHandles.remove(tunnel)
-            val key = _status.value.activeTunnels.keys.firstOrNull { it.id == tunnel.id }
-            if (key != null) {
-                _status.update { it.copy(activeTunnels = it.activeTunnels - key) }
-            }
+        log.i { "Stop command sent and job cancelled for tunnel $id" }
+    }
+
+    private fun cleanupTunnelState(id: Long) {
+        statusCallbacks.remove(id)
+        tunnelJobs.remove(id)
+        tunnelHandles.remove(id)
+        _status.update { current ->
+            val key = current.activeTunnels.keys.firstOrNull { it.id == id }
+            if (key != null) current.copy(activeTunnels = current.activeTunnels - key)
+            else current
         }
     }
 
-    override suspend fun setMode(mode: Backend.Mode) {
-        if (mode == currentMode) return
-        shutdown()
-        currentMode = mode
-    }
-
     override fun shutdown() {
-
+        log.i { "Backend shutdown initiated" }
         when (currentMode) {
             Backend.Mode.Proxy -> tun.awgProxyTurnOffAll()
             Backend.Mode.Userspace -> tun.awgTurnOffAll()
         }
-
         tunnelJobs.values.forEach { it.cancel() }
         tunnelJobs.clear()
         tunnelHandles.clear()
+        statusCallbacks.clear()
         _status.update { it.copy(activeTunnels = emptyMap()) }
     }
 
     override suspend fun getActiveConfig(id: Long): Result<String?> {
         val handle =
-            tunnelHandles.keys.find { it.id == id }?.let { tunnelHandles[it] }
+            tunnelHandles.keys.find { it == id }?.let { tunnelHandles[it] }
                 ?: return Result.failure(
                     BackendException.StateConflict("Tunnel with $id is not active.")
                 )
@@ -219,6 +198,13 @@ class AmneziaBackend : Backend {
             Native.free(Pointer.nativeValue(pointer))
         }
     }
+
+    override suspend fun setMode(mode: Backend.Mode) {
+        if (mode == currentMode) return
+        shutdown()
+        currentMode = mode
+    }
+
 
     override suspend fun setKillSwitch(enabled: Boolean): Result<Unit> {
         if (_status.value.killSwitchEnabled == enabled)

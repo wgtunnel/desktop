@@ -11,7 +11,7 @@ import (
 )
 
 // GetBypassDialer returns a dialer that bypasses the VPN via SO_MARK
-func GetBypassDialer(preferIpv6 bool) (*net.Dialer, error) {
+func GetBypassDialer(preferIpv6 bool, physicalIfIndex uint32) (*net.Dialer, error) {
 	return &net.Dialer{
 		Control: func(network, address string, c syscall.RawConn) error {
 			var opErr error
@@ -27,11 +27,11 @@ func GetBypassDialer(preferIpv6 bool) (*net.Dialer, error) {
 }
 
 // CustomResolver is still needed for the dnsproxy Bootstrap field
-func CustomResolver(preferIpv6 bool) *net.Resolver {
+func CustomResolver(preferIpv6 bool, physicalIfIndex uint32) *net.Resolver {
 	return &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			d, err := GetBypassDialer(preferIpv6)
+			d, err := GetBypassDialer(preferIpv6, physicalIfIndex)
 			if err != nil {
 				return nil, err
 			}

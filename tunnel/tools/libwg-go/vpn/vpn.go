@@ -10,10 +10,12 @@ import "C"
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/netip"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -90,11 +92,9 @@ func awgTurnOn(settings *C.char, callback C.StatusCodeCallback) C.int {
 		return C.int(-1)
 	}
 
-	// Create a context to manage resolution goroutines
 	tunnelCtx, tunnelCancel := context.WithCancel(context.Background())
 	h.cancel = tunnelCancel
 
-	// Check for peers needing resolution, but we wait to start resolution until the firewall bypasses are set
 	type peerToResolve struct {
 		index int
 		host  string
@@ -117,7 +117,8 @@ func awgTurnOn(settings *C.char, callback C.StatusCodeCallback) C.int {
 		}
 	}
 
-	tunnel, err := tun.CreateTUN(constants.IfaceName, conf.Device.MTU)
+	ifName := fmt.Sprintf("wgtun%d", handleID)
+	tunnel, err := tun.CreateTUN(ifName, conf.Device.MTU)
 	if err != nil {
 		shared.LogError(tag, "Create TUN failed", err)
 		return C.int(-1)
@@ -198,7 +199,7 @@ func awgTurnOn(settings *C.char, callback C.StatusCodeCallback) C.int {
 
 	// try to resolve DNS to replace our dummy endpoints
 	for _, p := range resolutionQueue {
-		go resolveAndUpdatePeer(tunnelCtx, handleID, conf, p.index, p.host)
+		go resolveAndUpdatePeer(tunnelCtx, handleID, conf, p.index, p.host, r, listenPort)
 	}
 
 	success = true
@@ -209,7 +210,7 @@ func awgTurnOn(settings *C.char, callback C.StatusCodeCallback) C.int {
 }
 
 // resolveAndUpdatePeer resolves the host and updates the peer's endpoint if successful.
-func resolveAndUpdatePeer(ctx context.Context, tunnelHandle int32, conf *wireproxyawg.Configuration, peerIndex int, host string) {
+func resolveAndUpdatePeer(ctx context.Context, tunnelHandle int32, conf *wireproxyawg.Configuration, peerIndex int, host string, router router.Router, listenPort uint16) {
 
 	resolvingHandles.Store(tunnelHandle, true)
 	shared.NotifyStatusCode(tunnelHandle, shared.StatusResolvingDNS)
@@ -226,7 +227,14 @@ func resolveAndUpdatePeer(ctx context.Context, tunnelHandle int32, conf *wirepro
 	// TODO make configurable by user
 	preferIPv6 := false
 
-	resolved, err := dns.ResolveWithBackoff(ctx, host, opts, preferIPv6, logger)
+	// windows only to bind bootstrap DNS queries directly to the physical interface
+	var physicalIfIndex uint32
+	if runtime.GOOS == "windows" {
+		if pr, ok := router.(interface{ GetPhysicalInterfaceIndex() uint32 }); ok {
+			physicalIfIndex = pr.GetPhysicalInterfaceIndex()
+		}
+	}
+	resolved, err := dns.ResolveWithBackoff(ctx, host, opts, preferIPv6, logger, physicalIfIndex)
 	if err != nil {
 		shared.LogError(tag, "Permanent failure resolving %s: %v", host, err)
 		return
@@ -270,6 +278,20 @@ func resolveAndUpdatePeer(ctx context.Context, tunnelHandle int32, conf *wirepro
 		return
 	}
 
+	// for windows, we need to update the router with the new peer endpoint for routing
+	if runtime.GOOS == "windows" {
+		rConfig, err := parseToRouterConfig(conf, listenPort)
+		if err != nil {
+			logger.Errorf("Failed to parse new router config after DNS resolution: %v", err)
+			return
+		}
+		err = router.Set(rConfig)
+		if err != nil {
+			logger.Errorf("Failed to set new router config after DNS resolution: %v", err)
+			return
+		}
+	}
+
 	shared.LogDebug(tag, "Successfully updated peer with resolved endpoint for %s", host)
 	resolvingHandles.Delete(tunnelHandle)
 }
@@ -308,6 +330,9 @@ func awgTurnOff(tunnelHandle C.int) {
 		shared.LogError(tag, "Tunnel is not up")
 		return
 	}
+
+	// clear the callback
+	shared.RemoveTunnelCallback(id)
 
 	delete(tunnelHandles, id)
 	handle.close()
@@ -369,9 +394,28 @@ func parseToRouterConfig(conf *wireproxyawg.Configuration, listenPort uint16) (*
 	cfg.SearchDomains = device.SearchDomains
 	cfg.ListenPort = listenPort
 
-	// Add peer routes (AllowedIPs) to router routes
 	for _, peer := range device.Peers {
 		cfg.Routes = append(cfg.Routes, peer.AllowedIPs...)
+
+		// skip peers with missing/empty endpoints
+		if peer.Endpoint == nil || *peer.Endpoint == "" {
+			continue
+		}
+
+		epPrefix, _, err := wireproxyawg.ParsePeerEndpoint(*peer.Endpoint)
+		if err != nil {
+			logger.Verbosef("Skipping peer with unparseable endpoint %q: %v", *peer.Endpoint, err)
+			continue
+		}
+
+		// skip dummy
+		if epPrefix.Addr().String() == constants.DummyAddress {
+			continue
+		}
+
+		if epPrefix.IsValid() && epPrefix.Addr().IsGlobalUnicast() && !epPrefix.Addr().IsPrivate() {
+			cfg.PeerEndpoints = append(cfg.PeerEndpoints, epPrefix)
+		}
 	}
 
 	return cfg, nil
