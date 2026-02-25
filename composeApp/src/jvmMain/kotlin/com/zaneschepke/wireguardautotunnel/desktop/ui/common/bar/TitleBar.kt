@@ -17,10 +17,10 @@ import androidx.compose.ui.window.WindowScope
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_window_2
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.wgtunnel
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.vectorResource
 import java.awt.Frame
 import java.awt.event.WindowStateListener
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.vectorResource
 
 @Composable
 fun WindowScope.TitleBar(onClose: () -> Unit) {
@@ -30,21 +30,22 @@ fun WindowScope.TitleBar(onClose: () -> Unit) {
     var isMaximized by remember { mutableStateOf(frame?.extendedState == Frame.MAXIMIZED_BOTH) }
 
     DisposableEffect(frame) {
-        val listener = WindowStateListener { e -> isMaximized = (e.newState and Frame.MAXIMIZED_BOTH) != 0 }
+        val listener = WindowStateListener { e ->
+            isMaximized = (e.newState and Frame.MAXIMIZED_BOTH) != 0
+        }
         frame?.addWindowStateListener(listener)
         onDispose { frame?.removeWindowStateListener(listener) }
     }
 
     WindowDraggableArea {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp)
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 12.dp),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(40.dp)
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-
             Icon(
                 painter = painterResource(Res.drawable.wgtunnel),
                 contentDescription = null,
@@ -56,22 +57,21 @@ fun WindowScope.TitleBar(onClose: () -> Unit) {
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 WindowControlButton(Icons.Default.Remove, "Minimize") {
                     frame?.state = Frame.ICONIFIED
                 }
 
                 WindowControlButton(
-                    if (isMaximized) vectorResource(Res.drawable.select_window_2) else Icons.Default.CropSquare,
-                    if (isMaximized) "Restore" else "Maximize"
+                    if (isMaximized) vectorResource(Res.drawable.select_window_2)
+                    else Icons.Default.CropSquare,
+                    if (isMaximized) "Restore" else "Maximize",
                 ) {
                     frame?.extendedState = if (isMaximized) Frame.NORMAL else Frame.MAXIMIZED_BOTH
                 }
 
-                WindowControlButton(Icons.Default.Close, "Close") {
-                    onClose()
-                }
+                WindowControlButton(Icons.Default.Close, "Close") { onClose() }
             }
         }
     }

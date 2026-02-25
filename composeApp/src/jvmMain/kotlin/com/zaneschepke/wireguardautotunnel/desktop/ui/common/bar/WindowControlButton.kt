@@ -13,18 +13,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun WindowControlButton(
-    icon: Any,
-    contentDescription: String,
-    onClick: () -> Unit
-) {
+fun WindowControlButton(icon: Any, contentDescription: String, onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
         modifier = Modifier.size(32.dp),
-        colors = IconButtonDefaults.iconButtonColors(
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onBackground
-        )
+        colors =
+            IconButtonDefaults.iconButtonColors(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onBackground,
+            ),
     ) {
         when (icon) {
             is ImageVector -> Icon(icon, contentDescription, Modifier.size(16.dp))

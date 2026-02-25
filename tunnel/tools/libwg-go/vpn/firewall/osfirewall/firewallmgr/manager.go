@@ -17,9 +17,24 @@ var (
 
 func Get() (firewall.Firewall, error) {
 	once.Do(func() {
-		instance, initErr = osfirewall.New(
-			shared.NewLogger("Firewall"),
+		var fw firewall.Firewall
+		logger := shared.NewLogger("Firewall")
+		fw, initErr = osfirewall.New(
+			logger,
 		)
+		if initErr != nil {
+			return
+		}
+
+		// defensive cleanup
+		if fw.IsEnabled() {
+			logger.Verbosef("Kill switch was left enabled from previous run, disabling...")
+			if err := fw.Disable(); err != nil {
+				logger.Errorf("Failed to disable stale kill switch: %v", err)
+			}
+		}
+
+		instance = fw
 	})
 
 	return instance, initErr

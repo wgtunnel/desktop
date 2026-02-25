@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.client.data.service
 
+import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelService
@@ -16,23 +17,36 @@ class UdsTunnelService(
     private val tunnelRepository: TunnelRepository,
 ) : TunnelService {
 
-    val mutex = Mutex()
+    private val tunnelCommandMutex = Mutex()
 
     override suspend fun startTunnel(id: Long): Result<Unit> =
-        mutex.withLock {
-            val tunnelConfig =
+        tunnelCommandMutex.withLock {
+            val newTunnel =
                 tunnelRepository.getById(id)
-                    ?: throw ClientException.BadRequestException(
-                        "Could not find tunnel with id=$id"
+                    ?: return@withLock Result.failure(
+                        ClientException.BadRequestException("Could not find tunnel with id=$id")
                     )
 
-            tunnelRepository.save(tunnelConfig.copy(active = true))
+            // stop active tunnels to enforce single active
+            val previouslyActive = tunnelRepository.getActive().filter { it.id != id }
+            previouslyActive.forEach { oldTunnel ->
+                tunnelRepository.save(oldTunnel.copy(active = false))
 
-            return safeDaemonCall {
+                safeDaemonCall { client.post(Routes.Tunnels.stop(oldTunnel.id)) }
+                    .onFailure {
+                        Logger.w(it) {
+                            "Failed to stop previous tunnel ${oldTunnel.name} (continuing anyway)"
+                        }
+                    }
+            }
+
+            tunnelRepository.save(newTunnel.copy(active = true))
+
+            return@withLock safeDaemonCall {
                     val request =
                         StartTunnelRequest(
-                            name = tunnelConfig.name,
-                            quickConfig = tunnelConfig.quickConfig,
+                            name = newTunnel.name,
+                            quickConfig = newTunnel.quickConfig,
                         )
 
                     client.post(Routes.Tunnels.start(id)) {
@@ -41,23 +55,25 @@ class UdsTunnelService(
                     }
                     Unit
                 }
-                .onFailure { _ ->
-                    // reset db on failure
-                    tunnelRepository.save(tunnelConfig.copy(active = false))
+                .onFailure { error ->
+                    tunnelRepository.save(newTunnel.copy(active = false))
+                    Logger.e(error) { "Failed to start tunnel $id — rolled back DB state" }
                 }
         }
 
     override suspend fun stopTunnel(id: Long): Result<Unit> =
-        mutex.withLock {
-            return safeDaemonCall {
-                val tunnelConfig =
-                    tunnelRepository.getById(id)
-                        ?: throw ClientException.BadRequestException(
-                            "Could not find tunnel with id=$id"
-                        )
+        tunnelCommandMutex.withLock {
+            val tunnelConfig =
+                tunnelRepository.getById(id)
+                    ?: return@withLock Result.failure(
+                        ClientException.BadRequestException("Could not find tunnel with id=$id")
+                    )
 
-                tunnelRepository.save(tunnelConfig.copy(active = false))
+            tunnelRepository.save(tunnelConfig.copy(active = false))
+
+            return@withLock safeDaemonCall {
                 client.post(Routes.Tunnels.stop(id))
+                Unit
             }
         }
 }

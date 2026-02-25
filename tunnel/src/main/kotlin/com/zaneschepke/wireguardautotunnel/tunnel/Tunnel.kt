@@ -21,6 +21,7 @@ interface Tunnel {
         data object Down : State
 
         data object Starting : State
+
         data object Stopping : State
     }
 

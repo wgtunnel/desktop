@@ -5,9 +5,7 @@ import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -167,34 +165,12 @@ fun TunnelList(
                                     if (!uiState.isSelectionMode) Modifier.draggableHandle()
                                     else Modifier
                                 )
-                                .pointerInput(tunnel.id, uiState.isSelectionMode, isSelected) {
-                                    awaitEachGesture {
-                                        val down = awaitFirstDown()
-                                        down.consume()
-
-                                        val up = waitForUpOrCancellation()
-                                        if (up != null) {
-                                            up.consume()
-                                            if ((up.position - down.position).getDistance() < 5f) {
-                                                val modifiers = currentEvent.keyboardModifiers
-                                                val isMultiSelectModifier =
-                                                    modifiers.isCtrlPressed ||
-                                                        modifiers.isMetaPressed
-
-                                                if (
-                                                    isMultiSelectModifier || uiState.isSelectionMode
-                                                ) {
-                                                    if (isSelected) onDeselected(tunnel)
-                                                    else onSelected(tunnel)
-                                                } else {
-                                                    navController.push(Route.Tunnel(tunnel.id))
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
                                 .pointerHoverIcon(PointerIcon.Hand)
-                                .then(if (isDragging) Modifier.zIndex(1f) else Modifier),
+                                .then(if (isDragging) Modifier.zIndex(1f) else Modifier)
+                                .clickable(
+                                    enabled = !uiState.isSelectionMode,
+                                    onClick = { navController.push(Route.Tunnel(tunnel.id)) },
+                                ),
                         leading = {
                             val tooltip = tunnelIndicators[tunnel.id]?.second
                             val indicatorColor = tunnelIndicators[tunnel.id]?.first

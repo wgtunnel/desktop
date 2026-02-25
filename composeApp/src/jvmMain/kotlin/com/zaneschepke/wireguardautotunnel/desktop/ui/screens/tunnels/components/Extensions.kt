@@ -12,7 +12,9 @@ fun TunnelState.asColor(): Color {
         TunnelState.UNKNOWN -> Color.Gray
         TunnelState.HEALTHY -> SilverTree
         TunnelState.HANDSHAKE_FAILURE -> AlertRed
-        TunnelState.RESOLVING_DNS, TunnelState.STARTING, TunnelState.STOPPING -> Straw
+        TunnelState.RESOLVING_DNS,
+        TunnelState.STARTING,
+        TunnelState.STOPPING -> Straw
     }
 }
 

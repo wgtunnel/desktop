@@ -41,6 +41,16 @@ fun TunnelScreen(viewModel: TunnelViewModel) {
 
     if (!uiState.isLoaded) return
 
+    val isLiveTabAvailable = uiState.activeConfig != null
+
+    var selectedTabIndex by remember { mutableIntStateOf(if (isLiveTabAvailable) 1 else 0) }
+
+    LaunchedEffect(isLiveTabAvailable) {
+        if (isLiveTabAvailable && selectedTabIndex == 0) {
+            selectedTabIndex = 1
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -88,12 +98,6 @@ fun TunnelScreen(viewModel: TunnelViewModel) {
             VerticalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
 
             Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                var selectedTabIndex by remember {
-                    val tab = if (uiState.activeConfig != null) 1 else 0
-                    mutableIntStateOf(tab)
-                }
-                val isTunnelActive = uiState.tunnelState != null
-
                 SecondaryTabRow(selectedTabIndex = selectedTabIndex) {
                     Tab(
                         selected = selectedTabIndex == 0,
@@ -102,14 +106,13 @@ fun TunnelScreen(viewModel: TunnelViewModel) {
                     )
                     Tab(
                         selected = selectedTabIndex == 1,
-                        enabled = isTunnelActive,
+                        enabled = isLiveTabAvailable,
                         onClick = { selectedTabIndex = 1 },
                         text = {
                             Text(
                                 "Live tunnel",
                                 color =
-                                    if (uiState.activeConfig != null)
-                                        MaterialTheme.colorScheme.onSurface
+                                    if (isLiveTabAvailable) MaterialTheme.colorScheme.onSurface
                                     else Color.Gray,
                             )
                         },
@@ -126,7 +129,9 @@ fun TunnelScreen(viewModel: TunnelViewModel) {
                     1 -> {
                         key(uiState.activeConfig) {
                             ConfigEditor(
-                                rawConfig = uiState.activeConfig?.asQuickString() ?: "No data",
+                                rawConfig =
+                                    uiState.activeConfig?.asQuickString()
+                                        ?: "No active tunnel data",
                                 isEditable = false,
                                 onConfigChange = {},
                             )

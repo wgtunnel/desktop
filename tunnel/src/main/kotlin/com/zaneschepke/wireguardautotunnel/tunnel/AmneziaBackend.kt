@@ -8,12 +8,12 @@ import com.zaneschepke.wireguardautotunnel.tunnel.native.AwgTunnel
 import com.zaneschepke.wireguardautotunnel.tunnel.native.StatusCodeCallback
 import com.zaneschepke.wireguardautotunnel.tunnel.util.BackendException
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.firstOrNull
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.collections.firstOrNull
 
 class AmneziaBackend : Backend {
     private val tun = AwgTunnel.INSTANCE
@@ -24,14 +24,15 @@ class AmneziaBackend : Backend {
 
     private var currentMode: Backend.Mode = Backend.Mode.Userspace
 
-    private val _status = MutableStateFlow(
-        Backend.Status(
-            killSwitchEnabled = false,
-            killSwitchLanBypassEnabled = false,
-            mode = currentMode,
-            activeTunnels = emptyMap(),
+    private val _status =
+        MutableStateFlow(
+            Backend.Status(
+                killSwitchEnabled = false,
+                killSwitchLanBypassEnabled = false,
+                mode = currentMode,
+                activeTunnels = emptyMap(),
+            )
         )
-    )
 
     override val status: Flow<Backend.Status> = _status.asStateFlow()
 
@@ -45,103 +46,118 @@ class AmneziaBackend : Backend {
         backendScope.launch { initKillSwitchStatus() }
     }
 
-    private suspend fun initKillSwitchStatus() = killSwitchMutex.withLock {
-        log.d { "Initializing kill switch status..." }
-        val killSwitchStatus = tun.getKillSwitchStatus()
-        val killSwitchEnabled = killSwitchStatus == 1
-        val bypassEnabled = if (killSwitchEnabled) {
-            tun.getKillSwitchLanBypassStatus() == 1
-        } else false
+    private suspend fun initKillSwitchStatus() =
+        killSwitchMutex.withLock {
+            log.d { "Initializing kill switch status..." }
+            val killSwitchStatus = tun.getKillSwitchStatus()
+            val killSwitchEnabled = killSwitchStatus == 1
+            val bypassEnabled =
+                if (killSwitchEnabled) {
+                    tun.getKillSwitchLanBypassStatus() == 1
+                } else false
 
-        _status.update {
-            it.copy(killSwitchEnabled = killSwitchEnabled, killSwitchLanBypassEnabled = bypassEnabled)
+            _status.update {
+                it.copy(
+                    killSwitchEnabled = killSwitchEnabled,
+                    killSwitchLanBypassEnabled = bypassEnabled,
+                )
+            }
+            log.d { "Kill switch initialized: enabled=$killSwitchEnabled, bypass=$bypassEnabled" }
         }
-        log.d { "Kill switch initialized: enabled=$killSwitchEnabled, bypass=$bypassEnabled" }
-    }
 
     override suspend fun start(tunnel: Tunnel, config: String): Result<Unit> = runCatching {
         log.i { "Start request for tunnel: ${tunnel.id}" }
 
-
         val statusChannel = Channel<Int>(Channel.BUFFERED)
-        val statusCallback = object : StatusCodeCallback {
-            override fun onTunnelStatusCode(handle: Int, statusCode: Int) {
-                log.v { "Native Callback - Handle: $handle, Code: $statusCode" }
-                statusChannel.trySend(statusCode)
+        val statusCallback =
+            object : StatusCodeCallback {
+                override fun onTunnelStatusCode(handle: Int, statusCode: Int) {
+                    log.v { "Native Callback - Handle: $handle, Code: $statusCode" }
+                    statusChannel.trySend(statusCode)
+                }
             }
-        }
 
         statusCallbacks[tunnel.id] = statusCallback
 
-        val handle = tunnelMutex.withLock {
-            if (tunnelHandles.containsKey(tunnel.id)) {
-                log.w { "Tunnel ${tunnel.id} already exists in handles map." }
-                throw BackendException.StateConflict("Tunnel ${tunnel.id} is already in use")
-            }
+        val handle =
+            tunnelMutex.withLock {
+                if (tunnelHandles.containsKey(tunnel.id)) {
+                    log.w { "Tunnel ${tunnel.id} already exists in handles map." }
+                    throw BackendException.StateConflict("Tunnel ${tunnel.id} is already in use")
+                }
 
-            log.d { "Lock acquired. Invoking native turnOn..." }
-            val nativeHandle = when (currentMode) {
-                Backend.Mode.Proxy -> tun.awgProxyTurnOn(config, statusCallback)
-                Backend.Mode.Userspace -> tun.awgTurnOn(config, statusCallback)
-            }
+                log.d { "Lock acquired. Invoking native turnOn..." }
+                val nativeHandle =
+                    when (currentMode) {
+                        Backend.Mode.Proxy -> tun.awgProxyTurnOn(config, statusCallback)
+                        Backend.Mode.Userspace -> tun.awgTurnOn(config, statusCallback)
+                    }
 
-            if (nativeHandle < 0) {
-                log.e { "Native turnOn failed: $nativeHandle" }
-                throw BackendException.InternalError("Tunnel failed with internal error code $nativeHandle")
-            }
+                if (nativeHandle < 0) {
+                    log.e { "Native turnOn failed: $nativeHandle" }
+                    throw BackendException.InternalError(
+                        "Tunnel failed with internal error code $nativeHandle"
+                    )
+                }
 
-            tunnelHandles[tunnel.id] = nativeHandle
-            nativeHandle
-        }
+                tunnelHandles[tunnel.id] = nativeHandle
+                nativeHandle
+            }
 
         log.i { "Tunnel ${tunnel.id} native initialization successful. Handle: $handle" }
 
         tunnel.updateState(Tunnel.State.Starting)
         _status.update {
             it.copy(
-                activeTunnels = it.activeTunnels +
-                        (TunnelKey(tunnel.id, tunnel.name) to Tunnel.State.Starting)
+                activeTunnels =
+                    it.activeTunnels + (TunnelKey(tunnel.id, tunnel.name) to Tunnel.State.Starting)
             )
         }
 
-        tunnelJobs[tunnel.id] = backendScope.launch {
-            try {
-                statusChannel.consumeAsFlow().collect { statusCode ->
-                    val tunnelState = mapStatusCodeToState(statusCode)
-                    log.d { "Tunnel ${tunnel.id} status update: $statusCode -> $tunnelState" }
+        tunnelJobs[tunnel.id] =
+            backendScope.launch {
+                try {
+                    statusChannel.consumeAsFlow().collect { statusCode ->
+                        val tunnelState = mapStatusCodeToState(statusCode)
+                        log.d { "Tunnel ${tunnel.id} status update: $statusCode -> $tunnelState" }
 
-                    _status.update {
-                        it.copy(activeTunnels = it.activeTunnels +
-                                (TunnelKey(tunnel.id, tunnel.name) to tunnelState))
+                        _status.update {
+                            it.copy(
+                                activeTunnels =
+                                    it.activeTunnels +
+                                        (TunnelKey(tunnel.id, tunnel.name) to tunnelState)
+                            )
+                        }
+                        tunnel.updateState(tunnelState)
                     }
-                    tunnel.updateState(tunnelState)
+                } catch (e: Exception) {
+                    log.e(e) { "Error in status flow for tunnel ${tunnel.id}" }
+                } finally {
+                    log.i { "Status collector for tunnel ${tunnel.id} terminating." }
+                    statusChannel.close()
+                    cleanupTunnelState(tunnel.id)
+                    tunnel.updateState(Tunnel.State.Down)
                 }
-            } catch (e: Exception) {
-                log.e(e) { "Error in status flow for tunnel ${tunnel.id}" }
-            } finally {
-                log.i { "Status collector for tunnel ${tunnel.id} terminating." }
-                statusChannel.close()
-                cleanupTunnelState(tunnel.id)
-                tunnel.updateState(Tunnel.State.Down)
             }
-        }
     }
 
     override suspend fun stop(id: Long): Result<Unit> = runCatching {
         log.i { "Stop request for tunnel ID: $id" }
 
-        val handle = tunnelHandles[id] ?: run {
-            log.w { "Stop requested for $id but no handle found." }
-            return Result.failure(BackendException.StateConflict("Tunnel $id is not active."))
-        }
+        val handle =
+            tunnelHandles[id]
+                ?: run {
+                    log.w { "Stop requested for $id but no handle found." }
+                    return Result.failure(
+                        BackendException.StateConflict("Tunnel $id is not active.")
+                    )
+                }
         _status.update { current ->
             val key = current.activeTunnels.keys.firstOrNull { it.id == id }
-            if (key != null) current.copy(
-                activeTunnels = current.activeTunnels + (key to Tunnel.State.Stopping)
-            )
+            if (key != null)
+                current.copy(activeTunnels = current.activeTunnels + (key to Tunnel.State.Stopping))
             else current
         }
-
 
         tunnelMutex.withLock {
             log.d { "Lock acquired for Stop. Calling native turnOff for handle: $handle" }
@@ -162,8 +178,7 @@ class AmneziaBackend : Backend {
         tunnelHandles.remove(id)
         _status.update { current ->
             val key = current.activeTunnels.keys.firstOrNull { it.id == id }
-            if (key != null) current.copy(activeTunnels = current.activeTunnels - key)
-            else current
+            if (key != null) current.copy(activeTunnels = current.activeTunnels - key) else current
         }
     }
 
@@ -204,7 +219,6 @@ class AmneziaBackend : Backend {
         shutdown()
         currentMode = mode
     }
-
 
     override suspend fun setKillSwitch(enabled: Boolean): Result<Unit> {
         if (_status.value.killSwitchEnabled == enabled)

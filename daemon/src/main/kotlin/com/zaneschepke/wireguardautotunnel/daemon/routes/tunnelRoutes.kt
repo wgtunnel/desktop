@@ -11,57 +11,64 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 fun Route.tunnelRoutes(backend: Backend, daemonCacheRepository: DaemonCacheRepository) {
+    val tunnelOperationMutex = Mutex()
 
     post(Routes.Tunnels.START_TEMPLATE) {
-        val id =
-            call.parameters["id"]?.toLongOrNull()
-                ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
-        val request = call.receive<StartTunnelRequest>()
+        tunnelOperationMutex.withLock {
+            val id =
+                call.parameters["id"]?.toLongOrNull()
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
+            val request = call.receive<StartTunnelRequest>()
 
-        Logger.i { "Starting tunnel (${request.name})" }
+            Logger.i { "Starting tunnel (${request.name})" }
 
-        val tunnel = RunningTunnel(id, request.name)
+            val tunnel = RunningTunnel(id, request.name)
 
-        Logger.d { "Updating daemon cache" }
-        daemonCacheRepository.updateLastActiveTunnelConfig(request.quickConfig)
-        daemonCacheRepository.updateLastActiveTunnelId(id)
-        daemonCacheRepository.updateLastActiveTunnelName(request.name)
+            Logger.d { "Updating daemon cache" }
+            daemonCacheRepository.updateLastActiveTunnelConfig(request.quickConfig)
+            daemonCacheRepository.updateLastActiveTunnelId(id)
+            daemonCacheRepository.updateLastActiveTunnelName(request.name)
 
-        backend
-            .start(tunnel, request.quickConfig)
-            .onSuccess { call.respond(HttpStatusCode.OK, "Tunnel ${request.name} started") }
-            .onFailure {
-                if (it is BackendException.StateConflict)
-                    call.respond(HttpStatusCode.Conflict, it.message)
-                else
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        it.message
-                            ?: "Failed to start tunnel ${request.name} due to internal error.",
-                    )
-            }
+            backend
+                .start(tunnel, request.quickConfig)
+                .onSuccess { call.respond(HttpStatusCode.OK, "Tunnel ${request.name} started") }
+                .onFailure {
+                    if (it is BackendException.StateConflict)
+                        call.respond(HttpStatusCode.Conflict, it.message)
+                    else
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            it.message
+                                ?: "Failed to start tunnel ${request.name} due to internal error.",
+                        )
+                }
+        }
     }
 
     post(Routes.Tunnels.STOP_TEMPLATE) {
-        val id =
-            call.parameters["id"]?.toIntOrNull()
-                ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
+        tunnelOperationMutex.withLock {
+            val id =
+                call.parameters["id"]?.toIntOrNull()
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
 
-        backend
-            .stop(id.toLong())
-            .onSuccess { call.respond(HttpStatusCode.OK, "Tunnel $id stopped") }
-            .onFailure {
-                when (it) {
-                    is BackendException.StateConflict ->
-                        call.respond(HttpStatusCode.Conflict, it.message)
-                    else ->
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            "Failed to stop tunnel $id due to internal error.",
-                        )
+            backend
+                .stop(id.toLong())
+                .onSuccess { call.respond(HttpStatusCode.OK, "Tunnel $id stopped") }
+                .onFailure {
+                    when (it) {
+                        is BackendException.StateConflict ->
+                            call.respond(HttpStatusCode.Conflict, it.message)
+                        else ->
+                            call.respond(
+                                HttpStatusCode.InternalServerError,
+                                "Failed to stop tunnel $id due to internal error.",
+                            )
+                    }
                 }
-            }
+        }
     }
 }

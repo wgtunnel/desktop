@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"sync"
 	"sync/atomic"
 
 	"github.com/amnezia-vpn/amneziawg-go/device"
@@ -21,6 +22,7 @@ import (
 )
 
 type WindowsFirewall struct {
+	mu     sync.Mutex
 	logger *device.Logger
 
 	session *wf.Session
@@ -30,7 +32,8 @@ type WindowsFirewall struct {
 
 	iface string
 
-	luid uint64
+	luid  uint64
+	appID string
 
 	killSwitchEnabled atomic.Bool
 	persistKillSwitch atomic.Bool
@@ -95,6 +98,8 @@ func New(logger *device.Logger) (firewall.Firewall, error) {
 }
 
 func (f *WindowsFirewall) AllowLocalNetworks(addrs []netip.Prefix) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	// cleanup old local addr rules
 	f.RemoveLocalNetworks()
 
@@ -125,6 +130,8 @@ func (f *WindowsFirewall) IsAllowLocalNetworksEnabled() bool {
 }
 
 func (f *WindowsFirewall) UpdatePermittedRoutes(newRoutes []netip.Prefix) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	// routes to remove
 	var routesToRemove []netip.Prefix
 	for existing := range f.permittedRoutes {
@@ -169,6 +176,8 @@ func (f *WindowsFirewall) UpdatePermittedRoutes(newRoutes []netip.Prefix) error 
 }
 
 func (f *WindowsFirewall) BypassTunnel(luid uint64, listenPort uint16) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.luid = luid
 	if err := f.permitTunInterface(weightDaemonTraffic); err != nil {
 		return fmt.Errorf("permitTunInterface failed: %w", err)
@@ -182,6 +191,8 @@ func (f *WindowsFirewall) BypassTunnel(luid uint64, listenPort uint16) error {
 }
 
 func (f *WindowsFirewall) Enable() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.killSwitchEnabled.Load() {
 		f.logger.Verbosef("Kill switch already active, skipping activation")
 		return nil
@@ -247,6 +258,47 @@ func (f *WindowsFirewall) RemoveTunnelRules() error {
 	return nil
 }
 
+// permitDNS allows outbound DNS queries on UDP/TCP port 53 for bootstrapping tunnels.
+func (f *WindowsFirewall) permitDNS(w weight) error {
+	conditions := []*wf.Match{
+		{
+			Field: wf.FieldALEAppID,
+			Op:    wf.MatchTypeEqual,
+			Value: f.appID,
+		},
+	}
+
+	// UDP DNS
+	udpConditions := append([]*wf.Match{}, conditions...)
+	udpConditions = append(udpConditions, &wf.Match{
+		Field: wf.FieldIPProtocol,
+		Op:    wf.MatchTypeEqual,
+		Value: wf.IPProtoUDP,
+	}, &wf.Match{
+		Field: wf.FieldIPRemotePort,
+		Op:    wf.MatchTypeEqual,
+		Value: uint16(53),
+	})
+	_, err := f.addRules("DNS UDP", w, udpConditions, wf.ActionPermit, protocolAll, directionOutbound)
+	if err != nil {
+		return err
+	}
+
+	// TCP DNS
+	tcpConditions := append([]*wf.Match{}, conditions...)
+	tcpConditions = append(tcpConditions, &wf.Match{
+		Field: wf.FieldIPProtocol,
+		Op:    wf.MatchTypeEqual,
+		Value: wf.IPProtoTCP,
+	}, &wf.Match{
+		Field: wf.FieldIPRemotePort,
+		Op:    wf.MatchTypeEqual,
+		Value: uint16(53),
+	})
+	_, err = f.addRules("DNS TCP", w, tcpConditions, wf.ActionPermit, protocolAll, directionOutbound)
+	return err
+}
+
 // addPermissiveRulesForPrefixes is a helper to add permissive rules for a list of prefixes
 func (f *WindowsFirewall) addPermissiveRulesForPrefixes(prefixes []netip.Prefix, namePrefix string) (map[netip.Prefix][]*wf.Rule, error) {
 
@@ -297,6 +349,8 @@ func (f *WindowsFirewall) removeRules(rules []*wf.Rule) error {
 }
 
 func (f *WindowsFirewall) Disable() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	// Clean up tunnel-specific rules
 	if err := f.RemoveTunnelRules(); err != nil {
 		f.logger.Errorf("Failed to remove tunnel rules on disable: %v", err)

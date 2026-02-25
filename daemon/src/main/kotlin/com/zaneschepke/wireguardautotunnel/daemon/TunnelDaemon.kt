@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.apache.commons.lang3.SystemUtils
 
@@ -44,6 +45,31 @@ class TunnelDaemon(
 
     // run the daemon
     internal fun run() {
+        Logger.i {
+            "Daemon starting on ${SystemUtils.OS_NAME} — enabling kill-switch first for leak protection"
+        }
+
+        // try to start the kill switch as early as possible to prevent leaks, blocking
+        runBlocking {
+            val restoreKillSwitch = cacheRepository.getKillSwitchRestore()
+            if (restoreKillSwitch) {
+                Logger.i { "Restoring kill switch from previous state" }
+                backend
+                    .setKillSwitch(true)
+                    .onFailure { Logger.e(it) { "Failed to restore kill switch" } }
+                    .onSuccess { Logger.i { "Kill switch restored successfully" } }
+
+                val bypassLan = cacheRepository.getKillSwitchBypassLan()
+                if (bypassLan) {
+                    backend
+                        .setKillSwitchLanBypass(true)
+                        .onFailure { Logger.e(it) { "Failed to restore LAN bypass" } }
+                        .onSuccess { Logger.i { "Kill switch LAN bypass restored" } }
+                }
+            } else {
+                Logger.i { "Kill switch restore disabled in settings — skipping" }
+            }
+        }
         startUdsServer()
         shutdownLatch.await() // block main thread until stop()
     }
@@ -116,21 +142,6 @@ class TunnelDaemon(
 
         scope.launch {
             val restoreTun = cacheRepository.getRestoreTunnelOnBoot()
-            val restoreKillSwitch = cacheRepository.getKillSwitchRestore()
-            if (restoreKillSwitch) {
-                Logger.i { "Attempting to restore kill switch" }
-                backend
-                    .setKillSwitch(true)
-                    .onFailure { Logger.e(it) { "Failed to restore kill switch" } }
-                    .onSuccess { Logger.i { "Kill switch successfully restored" } }
-                val bypassLan = cacheRepository.getKillSwitchBypassLan()
-                if (bypassLan) {
-                    backend
-                        .setKillSwitch(true)
-                        .onFailure { Logger.e(it) { "Failed to restore kill switch bypass" } }
-                        .onSuccess { Logger.i { "Kill switch bypass successfully restored" } }
-                }
-            }
             if (restoreTun) {
                 Logger.i { "Attempting to restore previous tunnel" }
                 val config = cacheRepository.getLastActiveTunnelConfig() ?: return@launch
