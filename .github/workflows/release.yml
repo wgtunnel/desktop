@@ -68,7 +68,10 @@ jobs:
         run: ./gradlew clean
 
       - name: Clean Conveyor cache
-        run: rm -rf ~/.config/hydraulic/conveyor
+        run: |
+          rm -rf ~/.config/hydraulic
+          rm -rf ~/.conveyor
+          rm -rf ~/.cache/conveyor
 
       - name: Build & Publish Release
         run: ./gradlew buildConveyorSiteRelease
