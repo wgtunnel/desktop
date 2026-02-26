@@ -60,23 +60,14 @@ subprojects {
 }
 
 
-registerConveyorTask(
-    taskName = "buildLinuxDeb",
-    packageType = "debian-package",
-    subDir = "deb",
-)
+registerConveyorTask("buildLinuxDeb",      "debian-package", "deb")
+registerConveyorTask("buildWindowsMsix",   "windows-msix",   "windows")
+registerConveyorTask("buildConveyorSite",  "site",           "site")
 
-registerConveyorTask(
-    taskName = "buildWindowsMsix",
-    packageType = "windows-msix",
-    subDir = "windows",
-)
 
-registerConveyorTask(
-    taskName = "buildConveyorSite",
-    packageType = "site",
-    subDir = "site"
-)
+registerConveyorTask("buildLinuxDebRelease",      "debian-package", "deb",      "conveyor-release.conf")
+registerConveyorTask("buildWindowsMsixRelease",   "windows-msix",   "windows",  "conveyor-release.conf")
+registerConveyorTask("buildConveyorSiteRelease",  "site",           "site",     "conveyor-release.conf")
 
 
 tasks.register<Delete>("clean") {

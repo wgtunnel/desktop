@@ -79,7 +79,7 @@ fun main() = application {
         val appName = stringResource(Res.string.app_name)
 
         val isMenuBarDark = isMenuBarInDarkMode()
-        val windowState = rememberWindowState(size = DpSize(1200.dp, 800.dp))
+        val windowState = rememberWindowState(size = DpSize(800.dp, 650.dp))
         val toaster = rememberToasterState()
 
         Tray(
