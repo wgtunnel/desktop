@@ -40,6 +40,16 @@ jobs:
         with:
           go-version: '^1.25.5'
 
+      - name: Install MinGW-w64 cross-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-mingw-w64-x86-64 \
+            g++-mingw-w64-x86-64 \
+            binutils-mingw-w64-x86-64
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix || true
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix || true
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -57,8 +67,12 @@ jobs:
       - name: Gradle clean
         run: ./gradlew clean
 
+      - name: Clean Conveyor cache
+        run: rm -rf ~/.config/hydraulic/conveyor
+
       - name: Build & Publish Release
         run: ./gradlew buildConveyorSiteRelease
         env:
           CONVEYOR_SIGNING_KEY: ${{ secrets.CONVEYOR_SIGNING_KEY }}
           CONVEYOR_PAT: ${{ secrets.CONVEYOR_PAT }}
+          CONVEYOR_AGREE_TO_LICENSE: "1"

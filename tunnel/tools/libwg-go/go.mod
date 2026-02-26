@@ -50,12 +50,12 @@ require (
 	gvisor.dev/gvisor v0.0.0-20250205023644-9414b50a5633 // indirect; ind
 )
 
-//replace github.com/amnezia-vpn/amneziawg-go => github.com/wgtunnel/amneziawg-go v0.0.0-20251225080458-6a08ea62878d
+replace github.com/amnezia-vpn/amneziawg-go => github.com/wgtunnel/amneziawg-go v0.0.0-20260131215402-c95dc674538f
 
-//replace github.com/artem-russkikh/wireproxy-awg => github.com/wgtunnel/wireproxy-awg v0.0.0-20251215030122-ffaf05dda47f
+replace github.com/artem-russkikh/wireproxy-awg => github.com/wgtunnel/wireproxy-awg v0.0.0-20260202091409-bf26e89261db
 
 // local dev
-replace github.com/amnezia-vpn/amneziawg-go => ../../../../amneziawg-go
+//replace github.com/amnezia-vpn/amneziawg-go => ../../../../amneziawg-go
 
 //
-replace github.com/artem-russkikh/wireproxy-awg => ../../../../wireproxy-awg
+//replace github.com/artem-russkikh/wireproxy-awg => ../../../../wireproxy-awg

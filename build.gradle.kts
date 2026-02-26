@@ -67,7 +67,7 @@ registerConveyorTask("buildConveyorSite",  "site",           "site")
 
 registerConveyorTask("buildLinuxDebRelease",      "debian-package", "deb",      "conveyor-release.conf")
 registerConveyorTask("buildWindowsMsixRelease",   "windows-msix",   "windows",  "conveyor-release.conf")
-registerConveyorTask("buildConveyorSiteRelease",  "site",           "site",     "conveyor-release.conf")
+registerConveyorTask("buildConveyorSiteRelease",  "copied-site",           "site",     "conveyor-release.conf")
 
 
 tasks.register<Delete>("clean") {

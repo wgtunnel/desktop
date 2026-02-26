@@ -25,11 +25,6 @@ fun Project.registerConveyorTask(
                 packageType,
             )
 
-        // to prevent resources issues on runners
-        if (configFile.contains("release")) {
-            args.add("--parallelism=3")
-        }
-
         if (signingKeyEnv == null) {
             // dev builds use passphrase
             environment(
