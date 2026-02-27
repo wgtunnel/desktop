@@ -1,6 +1,0 @@
-[submodule "daemon/winsw"]
-	path = daemon/winsw
-	url = https://github.com/wgtunnel/winsw
-[submodule "tunnel/tools/amneziawg-tools"]
-	path = tunnel/tools/amneziawg-tools
-	url = https://github.com/amnezia-vpn/amneziawg-tools
