@@ -2,23 +2,33 @@ name: release-apps
 
 permissions:
   contents: write
-  id-token: write        # for Azure OIDC
+  id-token: write
   pages: write
   packages: write
 
 on:
   push:
     tags:
-      - 'v[0-9]*.[0-9]*.[0-9]*'
+      - '[0-9]*.[0-9]*.[0-9]*'
   workflow_dispatch:
 
 jobs:
   publish:
     name: release-apps
     runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
     environment: production
 
     steps:
+      - name: Bootstrap Arch Linux
+        run: |
+          # Only install what's necessary for the runner and the C++ toolchain
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm git nodejs base-devel \
+            mingw-w64-gcc mingw-w64-crt mingw-w64-binutils mingw-w64-winpthreads \
+            zip unzip tar
+
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -30,38 +40,34 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Setup .NET SDK (for WinSW)
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.103'
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '^1.25.5'
-
-      - name: Install MinGW-w64 cross-compiler
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            gcc-mingw-w64-x86-64 \
-            g++-mingw-w64-x86-64 \
-            binutils-mingw-w64-x86-64
-          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix || true
-          sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix || true
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+          go-version: '1.25.5'
 
       - name: Azure Login (Client Secret)
         uses: azure/login@v2
         with:
           creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
-      - name: Build inputs
-        run: ./gradlew :composeApp:createDistributable :cli:installDist :daemon:installDist :composeApp:writeConveyorConfig
+      - name: Build All Inputs
+        run: |
+          # Use Arch's modern GCC specs with your required static flags
+          export LDFLAGS="-static -static-libgcc -static-libstdc++"
+          chmod +x gradlew
+          
+          # Build everything together to ensure the flags are respected across modules
+          ./gradlew :daemon:installDist \
+                    :composeApp:createDistributable \
+                    :cli:installDist \
+                    :composeApp:writeConveyorConfig
 
-      - name: Run Conveyor (copied-site + GitHub Pages + Releases)
+      - name: Run Conveyor
         uses: hydraulic-software/conveyor/actions/build@v21.0
         with:
           command: make copied-site
