@@ -23,6 +23,7 @@ fun Project.registerConveyorTask(
                 "--output-dir",
                 outputDir.get().asFile.absolutePath,
                 packageType,
+                "--rerun=all"
             )
 
         if (signingKeyEnv == null) {

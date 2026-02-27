@@ -81,6 +81,6 @@ jobs:
       - name: Build & Publish Release
         run: ./gradlew buildConveyorSiteRelease
         env:
-          CONVEYOR_SIGNING_KEY: ${{ secrets.CONVEYOR_SIGNING_KEY }}
+          CONVEYOR_SIGNING_KEY: "${{ secrets.CONVEYOR_SIGNING_KEY }}"
           CONVEYOR_PAT: ${{ secrets.CONVEYOR_PAT }}
           CONVEYOR_AGREE_TO_LICENSE: "1"
