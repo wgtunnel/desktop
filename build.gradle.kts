@@ -62,7 +62,7 @@ subprojects {
 
 registerConveyorTask("buildLinuxDeb",      "debian-package", "deb")
 registerConveyorTask("buildWindowsMsix",   "windows-msix",   "windows")
-registerConveyorTask("buildConveyorSite",  "site",           "site")
+registerConveyorTask("buildConveyorSite",  "copied-site",           "site")
 
 
 registerConveyorTask("buildLinuxDebRelease",      "debian-package", "deb",      "conveyor-release.conf")
