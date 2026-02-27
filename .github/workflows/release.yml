@@ -73,6 +73,11 @@ jobs:
           rm -rf ~/.conveyor
           rm -rf ~/.cache/conveyor
 
+      - name: Create cert files
+        run: |
+          echo "${{ secrets.CONVEYOR_APPLE_CERT }}" > apple.cer
+          echo "${{ secrets.CONVEYOR_WINDOWS_CERT }}" > windows.cer
+
       - name: Build & Publish Release
         run: ./gradlew buildConveyorSiteRelease
         env:
