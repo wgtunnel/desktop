@@ -23,15 +23,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Nuke all Conveyor caches
-        run: |
-          rm -rf ~/.config/hydraulic
-          rm -rf ~/.conveyor
-          rm -rf ~/.cache/conveyor
-          rm -rf ~/.cache/hydraulic
-          rm -rf /tmp/conveyor*
-          rm -rf $GITHUB_WORKSPACE/.conveyor
-
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -74,10 +65,11 @@ jobs:
         uses: hydraulic-software/conveyor/actions/build@v21.0
         with:
           command: make copied-site
-          extra_flags: -f conveyor-release.conf
+          extra_flags: -f conveyor-release.conf --passphrase=env:PASSPHRASE
           signing_key: ${{ secrets.CONVEYOR_SIGNING_KEY }}
           agree_to_license: 1
         env:
           CONVEYOR_SIGNING_KEY: ${{ secrets.CONVEYOR_SIGNING_KEY }}
           CONVEYOR_PAT: ${{ secrets.CONVEYOR_PAT }}
+          PASSPHRASE: ${{ secrets.CONVEYOR_PASSPHRASE }}
           CONVEYOR_AGREE_TO_LICENSE: "1"
