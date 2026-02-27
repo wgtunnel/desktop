@@ -23,6 +23,15 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Nuke all Conveyor caches
+        run: |
+          rm -rf ~/.config/hydraulic
+          rm -rf ~/.conveyor
+          rm -rf ~/.cache/conveyor
+          rm -rf ~/.cache/hydraulic
+          rm -rf /tmp/conveyor*
+          rm -rf $GITHUB_WORKSPACE/.conveyor
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
