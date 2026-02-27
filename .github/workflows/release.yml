@@ -23,11 +23,13 @@ jobs:
     steps:
       - name: Bootstrap Arch Linux
         run: |
-          # Only install what's necessary for the runner and the C++ toolchain
           pacman -Syu --noconfirm
+          
           pacman -S --noconfirm git nodejs base-devel \
             mingw-w64-gcc mingw-w64-crt mingw-w64-binutils mingw-w64-winpthreads \
-            zip unzip tar
+            zip unzip tar \
+            azure-cli python \
+            wget ca-certificates
 
       - uses: actions/checkout@v4
         with:
@@ -57,11 +59,11 @@ jobs:
 
       - name: Build All Inputs
         run: |
-          # Use Arch's modern GCC specs with your required static flags
+          git config --global --add safe.directory /__w/desktop/desktop
+          
           export LDFLAGS="-static -static-libgcc -static-libstdc++"
           chmod +x gradlew
           
-          # Build everything together to ensure the flags are respected across modules
           ./gradlew :daemon:installDist \
                     :composeApp:createDistributable \
                     :cli:installDist \
