@@ -29,7 +29,7 @@ chmod +x "$INSTALL_DIR/bin/"*
 # Setup CLI symlinks
 mkdir -p "$HOME/.local/bin"
 ln -sf "$INSTALL_DIR/bin/wgtunnel" "$HOME/.local/bin/wgtunnel"
-ln -sf "$INSTALL_DIR/bin/wgtctl"    "$HOME/.local/bin/wgtctl"
+ln -sf "$INSTALL_DIR/bin/wgtctl" "$HOME/.local/bin/wgtctl"
 echo -e "${GREEN}✓ CLI (wgtctl) and app (wgtunnel) added to PATH${NC}"
 
 # Add GUI desktop entry
@@ -53,17 +53,22 @@ cp -f "$INSTALL_DIR/share/metainfo/com.zaneschepke.wireguardautotunnel.wgtunnel.
 read -p "Install system-wide wgtunnel daemon (requires sudo)? [Y/n] " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
+    echo "Preparing for daemon install..."
+    # Remove old, if it exists
+    if systemctl is-active --quiet wgtunnel-daemon.service 2>/dev/null; then
+        sudo systemctl stop wgtunnel-daemon.service
+    fi
+    sudo systemctl disable wgtunnel-daemon.service 2>/dev/null || true
+    sudo rm -f /etc/systemd/system/wgtunnel-daemon.service
     SERVICE_SRC="$INSTALL_DIR/lib/systemd/system/wgtunnel-daemon.service"
     SERVICE_DEST="/etc/systemd/system/wgtunnel-daemon.service"
-
     sudo cp "$SERVICE_SRC" "$SERVICE_DEST"
-
-    # Fix ExecStart of the tarball
+    # Fix ExecStart and WorkingDirectory of the tarball
     sudo sed -i "s|^ExecStart=.*|ExecStart=$INSTALL_DIR/bin/daemon|" "$SERVICE_DEST"
+    sudo sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|" "$SERVICE_DEST"
 
     sudo systemctl daemon-reload
     sudo systemctl enable --now wgtunnel-daemon.service
-
     echo -e "${GREEN}✓ Daemon successfully installed and started${NC}"
     sudo systemctl status wgtunnel-daemon.service --no-pager -l
 else
@@ -71,6 +76,6 @@ else
 fi
 
 echo -e "\n${GREEN}=== Installation complete! ===${NC}"
-echo -e "GUI:   ${BLUE}wgtunnel${NC}"
-echo -e "CLI:   ${BLUE}wgtctl${NC}"
+echo -e "GUI: ${BLUE}wgtunnel${NC}"
+echo -e "CLI: ${BLUE}wgtctl${NC}"
 echo -e "Update: extract new tarball → run ./install.sh again"
