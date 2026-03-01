@@ -67,6 +67,11 @@ if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
     sudo sed -i "s|^ExecStart=.*|ExecStart=$INSTALL_DIR/bin/daemon|" "$SERVICE_DEST"
     sudo sed -i "s|WorkingDirectory=.*|WorkingDirectory=$INSTALL_DIR|" "$SERVICE_DEST"
 
+    # For SELinux systems
+    if command -v chcon >/dev/null 2>&1; then
+        sudo chcon -t bin_t "$INSTALL_DIR/bin/daemon" 2>/dev/null || true
+    fi
+
     sudo systemctl daemon-reload
     sudo systemctl enable --now wgtunnel-daemon.service
     echo -e "${GREEN}✓ Daemon successfully installed and started${NC}"
