@@ -2,11 +2,18 @@
 
 A WireGuard and AmneziaWG client for desktop.
 
-## Supported Platforms
-- macOS (Future)
+# Supported Platforms
+- macOS (Planned)
 - Windows
 - Linux
 
+# Features
+- Support for WireGuard and AmneziaWG tunnel configurations
+- Independent lockdown mode (kill switch)
+- Lockdown and previous tunnel restoration on boot
+- Tunnel runs as a system service (daemon) independent of the application GUI
+- Encrypted storage of tunnel configs with system keychain integration
+- Tunnel import, export, editing, live statistics, and sorting
 
 # Installation
 
@@ -42,6 +49,12 @@ curl -LO https://raw.githubusercontent.com/wgtunnel/desktop/master/scripts/linux
 chmod +x uninstall.sh && \
 ./uninstall.sh
 ```
+
+## Known issues
+
+On Windows, switching the active network interface (like switching Ethernet → Wi-Fi or Wi-Fi → Ethernet) while a tunnel is active may cause the connection to drop.
+
+**Workaround:** Restart the tunnel after changing network interfaces.
 
 
 
