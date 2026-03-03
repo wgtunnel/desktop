@@ -20,3 +20,7 @@ captures
 node_modules/
 composeApp/generated.conveyor.conf
 local-site
+
+# Arch packaging
+.SRCINFO
+pkg/
