@@ -306,40 +306,51 @@ object PermissionsHelper {
         }
     }
 
+    private fun getUsernameFromIpcKeyPath(keyFile: File): String? {
+        return try {
+            val wgtunnelFolder = keyFile.parentFile
+            val homeFolder = wgtunnelFolder?.parentFile
+            homeFolder?.name?.takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
+            Logger.w { "Failed to extract username from IPC key path: ${keyFile.absolutePath}" }
+            null
+        }
+    }
+
     private fun isOwnerOnlyWindows(path: Path): Boolean {
+        val keyFile = path.toFile()
+        val username =
+            getUsernameFromIpcKeyPath(keyFile)
+                ?: return false // structure already validated earlier
+
         return try {
             val process = ProcessBuilder(ICACLS, path.toString()).start()
             val output = process.inputStream.bufferedReader().readText().trim()
             val exitCode = process.waitFor()
 
             if (exitCode != 0) {
-                Logger.w { "icacls failed (exit $exitCode) while checking $path" }
+                Logger.w { "icacls failed (exit $exitCode) checking $path" }
                 return false
             }
 
-            val currentUser = System.getProperty("user.name").lowercase()
-
-            // Owner must have full control
             val ownerHasFullControl =
-                output.contains("$currentUser:(F)", ignoreCase = true) ||
-                    output.contains("$currentUser:(M)", ignoreCase = true)
+                output.contains("$username:(F)", ignoreCase = true) ||
+                    output.contains("\\$username:(F)", ignoreCase = true)
 
-            // Block dangerous groups
+            // No dangerous groups with write access
             val dangerousGroups = listOf("everyone", "users", "authenticated users", "s-1-5-32-545")
+            val lowerOutput = output.lowercase()
             val hasDangerousWrite =
                 dangerousGroups.any { group ->
-                    output.contains(group, ignoreCase = true) &&
-                        (output.contains("$group:(F)", ignoreCase = true) ||
-                            output.contains("$group:(M)", ignoreCase = true) ||
-                            output.contains("$group:(W)", ignoreCase = true))
+                    lowerOutput.contains(group) &&
+                        (lowerOutput.contains("$group:(f)") ||
+                            lowerOutput.contains("$group:(m)") ||
+                            lowerOutput.contains("$group:(w)"))
                 }
 
-            if (!ownerHasFullControl) {
-                Logger.w { "IPC key owner does not have full control: $path" }
-            }
-            if (hasDangerousWrite) {
-                Logger.w { "Dangerous group write access found on IPC key: $path" }
-            }
+            if (!ownerHasFullControl)
+                Logger.w { "IPC key owner mismatch or no Full Control for user '$username': $path" }
+            if (hasDangerousWrite) Logger.w { "Dangerous group has write access on IPC key: $path" }
 
             ownerHasFullControl && !hasDangerousWrite
         } catch (e: Exception) {
