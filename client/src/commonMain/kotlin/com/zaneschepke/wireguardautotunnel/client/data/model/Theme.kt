@@ -4,4 +4,5 @@ enum class Theme {
     LIGHT,
     DARK,
     AMOLED,
+    SYSTEM,
 }

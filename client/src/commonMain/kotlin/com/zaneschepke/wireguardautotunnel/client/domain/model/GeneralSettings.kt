@@ -10,4 +10,5 @@ data class GeneralSettings(
     val locale: String? = null,
     val alreadyDonated: Boolean = false,
     val restoreTunnelOnBoot: Boolean = false,
+    val useSystemColors: Boolean = false,
 )

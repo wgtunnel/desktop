@@ -6,6 +6,7 @@ import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 data class AppUiState(
     val isLoaded: Boolean = false,
     val theme: Theme = Theme.DARK,
+    val useSystemColors: Boolean = false,
     val daemonConnected: Boolean = false,
     val locale: String = DEFAULT_LOCALE,
     val alreadyDonated: Boolean = false,

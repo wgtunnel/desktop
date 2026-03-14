@@ -35,6 +35,7 @@ class AppViewModel(
                             theme = settings.theme,
                             locale = settings.locale ?: state.locale,
                             alreadyDonated = settings.alreadyDonated,
+                            useSystemColors = settings.useSystemColors,
                         )
                     }
                 }
@@ -55,6 +56,10 @@ class AppViewModel(
 
     fun setAlreadyDonated(donated: Boolean) = intent {
         settingsRepository.updateAlreadyDonated(donated)
+    }
+
+    fun setUseSystemColors(enabled: Boolean) = intent {
+        settingsRepository.updateSystemColors(enabled)
     }
 
     fun setTheme(theme: Theme) = intent { settingsRepository.updateTheme(theme) }

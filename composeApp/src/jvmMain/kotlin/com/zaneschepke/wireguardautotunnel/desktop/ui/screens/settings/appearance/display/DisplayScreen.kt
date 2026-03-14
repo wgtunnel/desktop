@@ -14,14 +14,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.*
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.orbitmvi.orbit.compose.collectAsState
@@ -37,6 +42,8 @@ fun DisplayScreen(appViewModel: AppViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
+                colors =
+                    TopAppBarDefaults.topAppBarColors().copy(containerColor = Color.Transparent),
                 title = { Text(stringResource(Res.string.display_theme)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.pop() }) {
@@ -54,27 +61,44 @@ fun DisplayScreen(appViewModel: AppViewModel) {
             verticalArrangement = Arrangement.Top,
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-            enumValues<Theme>().forEach {
-                val title =
-                    when (it) {
-                        Theme.DARK -> stringResource(Res.string.dark)
-                        Theme.LIGHT -> stringResource(Res.string.light)
-                        Theme.AMOLED -> stringResource(Res.string.amoled)
-                    }
+            Column {
+                GroupLabel("Colors", modifier = Modifier.padding(horizontal = 16.dp))
                 SurfaceRow(
-                    title = title,
-                    trailing =
-                        if (uiState.theme == it) {
-                            {
-                                Icon(
-                                    Icons.Outlined.Check,
-                                    stringResource(Res.string.selected),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        } else null,
-                    onClick = { appViewModel.setTheme(it) },
+                    "Use system colors",
+                    onClick = { appViewModel.setUseSystemColors(!uiState.useSystemColors) },
+                    trailing = {
+                        ThemedSwitch(
+                            checked = uiState.useSystemColors,
+                            onClick = { appViewModel.setUseSystemColors(it) },
+                        )
+                    },
                 )
+            }
+            Column {
+                GroupLabel("Themes", modifier = Modifier.padding(horizontal = 16.dp))
+                enumValues<Theme>().forEach {
+                    val title =
+                        when (it) {
+                            Theme.DARK -> stringResource(Res.string.dark)
+                            Theme.LIGHT -> stringResource(Res.string.light)
+                            Theme.AMOLED -> stringResource(Res.string.amoled)
+                            Theme.SYSTEM -> stringResource(Res.string.system)
+                        }
+                    SurfaceRow(
+                        title = title,
+                        trailing =
+                            if (uiState.theme == it) {
+                                {
+                                    Icon(
+                                        Icons.Outlined.Check,
+                                        stringResource(Res.string.selected),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            } else null,
+                        onClick = { appViewModel.setTheme(it) },
+                    )
+                }
             }
         }
     }

@@ -18,4 +18,6 @@ interface GeneralSettingRepository {
     suspend fun updateAlreadyDonated(donated: Boolean)
 
     suspend fun updateRestoreTunnelOnBoot(enabled: Boolean)
+
+    suspend fun updateSystemColors(enabled: Boolean)
 }

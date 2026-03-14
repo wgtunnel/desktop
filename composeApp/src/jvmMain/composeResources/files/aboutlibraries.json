@@ -1277,6 +1277,167 @@
             ]
         },
         {
+            "uniqueId": "io.github.kdroidfilter:nucleus.core-runtime",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "kdroidFilter"
+                }
+            ],
+            "artifactVersion": "1.4.7",
+            "description": "Core runtime library for the Nucleus Gradle plugin",
+            "scm": {
+                "connection": "scm:git:git://github.com/kdroidFilter/Nucleus.git",
+                "url": "https://github.com/kdroidFilter/Nucleus",
+                "developerConnection": "scm:git:ssh://git@github.com/kdroidFilter/Nucleus.git"
+            },
+            "name": "Nucleus Core Runtime",
+            "website": "https://github.com/kdroidFilter/Nucleus",
+            "licenses": [
+                "MIT"
+            ]
+        },
+        {
+            "uniqueId": "io.github.kdroidfilter:nucleus.darkmode-detector",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "kdroidFilter"
+                }
+            ],
+            "artifactVersion": "1.4.7",
+            "description": "Reactive dark mode detection for Compose Desktop across Windows, macOS and Linux",
+            "scm": {
+                "connection": "scm:git:git://github.com/kdroidFilter/Nucleus.git",
+                "url": "https://github.com/kdroidFilter/Nucleus",
+                "developerConnection": "scm:git:ssh://git@github.com/kdroidFilter/Nucleus.git"
+            },
+            "name": "Nucleus Dark Mode Detector",
+            "website": "https://github.com/kdroidFilter/Nucleus",
+            "licenses": [
+                "MIT"
+            ]
+        },
+        {
+            "uniqueId": "io.github.kdroidfilter:nucleus.decorated-window-core",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "kdroidFilter"
+                }
+            ],
+            "artifactVersion": "1.4.7",
+            "description": "Shared types, layout, styling, and resources for Nucleus Decorated Window",
+            "scm": {
+                "connection": "scm:git:git://github.com/kdroidFilter/Nucleus.git",
+                "url": "https://github.com/kdroidFilter/Nucleus",
+                "developerConnection": "scm:git:ssh://git@github.com/kdroidFilter/Nucleus.git"
+            },
+            "name": "Nucleus Decorated Window Core",
+            "website": "https://github.com/kdroidFilter/Nucleus",
+            "licenses": [
+                "MIT"
+            ]
+        },
+        {
+            "uniqueId": "io.github.kdroidfilter:nucleus.decorated-window-jni",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "kdroidFilter"
+                }
+            ],
+            "artifactVersion": "1.4.7",
+            "description": "JBR-free custom decorated window with native title bar for Compose Desktop (via JNI)",
+            "scm": {
+                "connection": "scm:git:git://github.com/kdroidFilter/Nucleus.git",
+                "url": "https://github.com/kdroidFilter/Nucleus",
+                "developerConnection": "scm:git:ssh://git@github.com/kdroidFilter/Nucleus.git"
+            },
+            "name": "Nucleus Decorated Window JNI",
+            "website": "https://github.com/kdroidFilter/Nucleus",
+            "licenses": [
+                "MIT"
+            ]
+        },
+        {
+            "uniqueId": "io.github.kdroidfilter:nucleus.decorated-window-material",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "kdroidFilter"
+                }
+            ],
+            "artifactVersion": "1.4.7",
+            "description": "Material 3 integration for Nucleus Decorated Window",
+            "scm": {
+                "connection": "scm:git:git://github.com/kdroidFilter/Nucleus.git",
+                "url": "https://github.com/kdroidFilter/Nucleus",
+                "developerConnection": "scm:git:ssh://git@github.com/kdroidFilter/Nucleus.git"
+            },
+            "name": "Nucleus Material Decorated Window",
+            "website": "https://github.com/kdroidFilter/Nucleus",
+            "licenses": [
+                "MIT"
+            ]
+        },
+        {
+            "uniqueId": "io.github.kdroidfilter:nucleus.linux-hidpi",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "kdroidFilter"
+                }
+            ],
+            "artifactVersion": "1.4.7",
+            "description": "Native HiDPI scale factor detection for Compose Desktop on Linux (GSettings, GDK_SCALE, Xft.dpi)",
+            "scm": {
+                "connection": "scm:git:git://github.com/kdroidFilter/Nucleus.git",
+                "url": "https://github.com/kdroidFilter/Nucleus",
+                "developerConnection": "scm:git:ssh://git@github.com/kdroidFilter/Nucleus.git"
+            },
+            "name": "Nucleus Linux HiDPI",
+            "website": "https://github.com/kdroidFilter/Nucleus",
+            "licenses": [
+                "MIT"
+            ]
+        },
+        {
+            "uniqueId": "io.github.kdroidfilter:nucleus.system-color",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "kdroidFilter"
+                }
+            ],
+            "artifactVersion": "1.4.7",
+            "description": "Reactive system accent color and contrast mode detection for Compose Desktop",
+            "scm": {
+                "connection": "scm:git:git://github.com/kdroidFilter/Nucleus.git",
+                "url": "https://github.com/kdroidFilter/Nucleus",
+                "developerConnection": "scm:git:ssh://git@github.com/kdroidFilter/Nucleus.git"
+            },
+            "name": "Nucleus System Color",
+            "website": "https://github.com/kdroidFilter/Nucleus",
+            "licenses": [
+                "MIT"
+            ]
+        },
+        {
             "uniqueId": "io.github.kdroidfilter:platformtools.core",
             "funding": [
                 

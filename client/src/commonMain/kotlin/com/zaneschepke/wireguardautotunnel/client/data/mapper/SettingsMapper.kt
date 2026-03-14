@@ -11,6 +11,7 @@ fun Entity.toDomain(): Domain =
         locale = locale,
         alreadyDonated = alreadyDonated,
         restoreTunnelOnBoot = restoreTunnelOnBoot,
+        useSystemColors = useSystemColors,
     )
 
 fun Domain.toEntity(): Entity =
@@ -20,4 +21,5 @@ fun Domain.toEntity(): Entity =
         locale = locale,
         alreadyDonated = alreadyDonated,
         restoreTunnelOnBoot = restoreTunnelOnBoot,
+        useSystemColors = useSystemColors,
     )

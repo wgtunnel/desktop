@@ -11,8 +11,9 @@ import com.zaneschepke.wireguardautotunnel.client.data.entity.TunnelConfig
 
 @Database(
     entities = [TunnelConfig::class, LockdownSettings::class, GeneralSettings::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 @TypeConverters(AppKeyringConverter::class)
 @ConstructedBy(AppDatabaseConstructor::class)

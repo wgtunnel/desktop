@@ -25,4 +25,7 @@ interface GeneralSettingsDao {
 
     @Query("UPDATE general_settings SET already_donated = :donated WHERE id = 1")
     suspend fun updateAlreadyDonated(donated: Boolean)
+
+    @Query("UPDATE general_settings SET use_system_colors = :enabled WHERE id = 1")
+    suspend fun updateSystemColors(enabled: Boolean)
 }

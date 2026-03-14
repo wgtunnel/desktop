@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.desktop
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
@@ -91,74 +93,105 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
             LocalNavController provides navController,
             LocalToaster provides toaster,
         ) {
-            Row(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
-            ) {
-                WideNavigationRail(
-                    state = railState,
-                    arrangement = Arrangement.SpaceBetween,
-                    header = {
-                        Column(
-                            horizontalAlignment = Alignment.Start,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.padding(bottom = 16.dp),
-                        ) {
-                            CustomTooltip(text = headerDescription) {
-                                IconButton(
-                                    onClick = {
-                                        scope.launch {
-                                            if (
-                                                railState.targetValue ==
-                                                    WideNavigationRailValue.Expanded
-                                            )
-                                                railState.collapse()
-                                            else railState.expand()
-                                        }
-                                    },
-                                    modifier =
-                                        Modifier.padding(start = 24.dp).semantics {
-                                            stateDescription =
+            Crossfade(
+                targetState = uiState.theme to uiState.useSystemColors,
+                animationSpec = tween(250),
+                label = "ThemeChange",
+            ) { (theme, useSystemColors) ->
+                Row(
+                    modifier =
+                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                ) {
+                    WideNavigationRail(
+                        state = railState,
+                        arrangement = Arrangement.SpaceBetween,
+                        header = {
+                            Column(
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.padding(bottom = 16.dp),
+                            ) {
+                                CustomTooltip(text = headerDescription) {
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch {
                                                 if (
-                                                    railState.currentValue ==
+                                                    railState.targetValue ==
                                                         WideNavigationRailValue.Expanded
                                                 )
-                                                    "Expanded"
-                                                else "Collapsed"
+                                                    railState.collapse()
+                                                else railState.expand()
+                                            }
                                         },
-                                ) {
-                                    if (railState.targetValue == WideNavigationRailValue.Expanded) {
-                                        Icon(Icons.AutoMirrored.Filled.MenuOpen, headerDescription)
-                                    } else {
-                                        Icon(Icons.Filled.Menu, headerDescription)
+                                        modifier =
+                                            Modifier.padding(start = 24.dp).semantics {
+                                                stateDescription =
+                                                    if (
+                                                        railState.currentValue ==
+                                                            WideNavigationRailValue.Expanded
+                                                    )
+                                                        "Expanded"
+                                                    else "Collapsed"
+                                            },
+                                    ) {
+                                        if (
+                                            railState.targetValue ==
+                                                WideNavigationRailValue.Expanded
+                                        ) {
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.MenuOpen,
+                                                headerDescription,
+                                            )
+                                        } else {
+                                            Icon(Icons.Filled.Menu, headerDescription)
+                                        }
                                     }
                                 }
                             }
+                        },
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Tab.entries.forEach { tab ->
+                                WideNavigationRailItem(
+                                    railExpanded =
+                                        railState.targetValue == WideNavigationRailValue.Expanded,
+                                    selected = currentTab == tab,
+                                    onClick = { navController.popUpTo(tab.startRoute) },
+                                    icon = { Icon(tab.activeIcon, null) },
+                                    label = { Text(stringResource(tab.titleRes)) },
+                                )
+                            }
                         }
-                    },
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Tab.entries.forEach { tab ->
-                            WideNavigationRailItem(
-                                railExpanded =
-                                    railState.targetValue == WideNavigationRailValue.Expanded,
-                                selected = currentTab == tab,
-                                onClick = { navController.popUpTo(tab.startRoute) },
-                                icon = { Icon(tab.activeIcon, null) },
-                                label = { Text(stringResource(tab.titleRes)) },
-                            )
-                        }
-                    }
 
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        if (uiState.lockdownActive) {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            if (uiState.lockdownActive) {
+                                WideNavigationRailItem(
+                                    interactionSource = remember { NoRippleInteractionSource() },
+                                    selected = false,
+                                    railExpanded =
+                                        railState.targetValue == WideNavigationRailValue.Expanded,
+                                    icon = {
+                                        CustomTooltip(text = "Lockdown active") {
+                                            Icon(
+                                                Icons.Filled.Lock,
+                                                "Lockdown active",
+                                                tint = ErrorRed,
+                                            )
+                                        }
+                                    },
+                                    enabled = false,
+                                    label = {},
+                                    onClick = {},
+                                )
+                            }
                             WideNavigationRailItem(
                                 interactionSource = remember { NoRippleInteractionSource() },
                                 selected = false,
                                 railExpanded =
                                     railState.targetValue == WideNavigationRailValue.Expanded,
                                 icon = {
-                                    CustomTooltip(text = "Lockdown active") {
-                                        Icon(Icons.Filled.Lock, "Lockdown active", tint = ErrorRed)
+                                    CustomTooltip(text = "Daemon health") {
+                                        PulsingStatusLed(isHealthy = uiState.daemonConnected)
                                     }
                                 },
                                 enabled = false,
@@ -166,86 +199,72 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                                 onClick = {},
                             )
                         }
-                        WideNavigationRailItem(
-                            interactionSource = remember { NoRippleInteractionSource() },
-                            selected = false,
-                            railExpanded =
-                                railState.targetValue == WideNavigationRailValue.Expanded,
-                            icon = {
-                                CustomTooltip(text = "Daemon health") {
-                                    PulsingStatusLed(isHealthy = uiState.daemonConnected)
+                    }
+                    Scaffold(containerColor = Color.Transparent) {
+                        NavDisplay(
+                            backStack = backStack,
+                            onBack = { navController.pop() },
+                            transitionSpec = {
+                                val initialIndex = previousRoute?.let(Tab::fromRoute)?.index ?: 0
+                                val targetIndex = currentRoute?.let(Tab::fromRoute)?.index ?: 0
+
+                                if (initialIndex != targetIndex) {
+                                    val isMovingDown = targetIndex > initialIndex
+                                    (fadeIn(tween(200)) +
+                                        slideInVertically(tween(200)) {
+                                            if (isMovingDown) 30 else -30
+                                        }) togetherWith (fadeOut(tween(150)))
+                                } else {
+                                    (fadeIn(tween(200)) +
+                                        scaleIn(
+                                            initialScale = 0.95f,
+                                            animationSpec = tween(200),
+                                        )) togetherWith fadeOut(tween(150))
                                 }
                             },
-                            enabled = false,
-                            label = {},
-                            onClick = {},
-                        )
-                    }
-                }
-                Scaffold {
-                    NavDisplay(
-                        backStack = backStack,
-                        onBack = { navController.pop() },
-                        transitionSpec = {
-                            val initialIndex = previousRoute?.let(Tab::fromRoute)?.index ?: 0
-                            val targetIndex = currentRoute?.let(Tab::fromRoute)?.index ?: 0
-
-                            if (initialIndex != targetIndex) {
-                                val isMovingDown = targetIndex > initialIndex
-                                (fadeIn(tween(200)) +
-                                    slideInVertically(tween(200)) {
-                                        if (isMovingDown) 30 else -30
-                                    }) togetherWith (fadeOut(tween(150)))
-                            } else {
+                            popTransitionSpec = {
                                 (fadeIn(tween(200)) +
                                     scaleIn(
-                                        initialScale = 0.95f,
+                                        initialScale = 1.05f,
                                         animationSpec = tween(200),
-                                    )) togetherWith fadeOut(tween(150))
-                            }
-                        },
-                        popTransitionSpec = {
-                            (fadeIn(tween(200)) +
-                                scaleIn(
-                                    initialScale = 1.05f,
-                                    animationSpec = tween(200),
-                                )) togetherWith
-                                (fadeOut(tween(150)) +
-                                    scaleOut(targetScale = 0.95f, animationSpec = tween(150)))
-                        },
-                        predictivePopTransitionSpec = {
-                            (fadeIn(tween(200)) +
-                                scaleIn(
-                                    initialScale = 1.05f,
-                                    animationSpec = tween(200),
-                                )) togetherWith
-                                (fadeOut(tween(150)) +
-                                    scaleOut(targetScale = 0.95f, animationSpec = tween(150)))
-                        },
-                        entryDecorators =
-                            listOf(
-                                rememberSaveableStateHolderNavEntryDecorator(),
-                                rememberViewModelStoreNavEntryDecorator(),
-                            ),
-                        entryProvider =
-                            entryProvider {
-                                currentTab.startRoute
-                                entry<Route.Tunnels> { TunnelsScreen(viewModel) }
-                                entry<Route.Tunnel> {
-                                    val viewModel: TunnelViewModel =
-                                        koinViewModel(parameters = { parametersOf(it.id) })
-                                    TunnelScreen(viewModel)
-                                }
-                                entry<Route.Settings> { SettingsScreen() }
-                                entry<Route.AutoTunnel> { AutoTunnelScreen() }
-                                entry<Route.Support> { SupportScreen() }
-                                entry<Route.License> { LicenseScreen() }
-                                entry<Route.Donate> { DonateScreen(viewModel) }
-                                entry<Route.Addresses> { AddressesScreen() }
-                                entry<Route.Appearance> { AppearanceScreen() }
-                                entry<Route.Display> { DisplayScreen(viewModel) }
+                                    )) togetherWith
+                                    (fadeOut(tween(150)) +
+                                        scaleOut(targetScale = 0.95f, animationSpec = tween(150)))
                             },
-                    )
+                            predictivePopTransitionSpec = {
+                                (fadeIn(tween(200)) +
+                                    scaleIn(
+                                        initialScale = 1.05f,
+                                        animationSpec = tween(200),
+                                    )) togetherWith
+                                    (fadeOut(tween(150)) +
+                                        scaleOut(targetScale = 0.95f, animationSpec = tween(150)))
+                            },
+                            entryDecorators =
+                                listOf(
+                                    rememberSaveableStateHolderNavEntryDecorator(),
+                                    rememberViewModelStoreNavEntryDecorator(),
+                                ),
+                            entryProvider =
+                                entryProvider {
+                                    currentTab.startRoute
+                                    entry<Route.Tunnels> { TunnelsScreen(viewModel) }
+                                    entry<Route.Tunnel> {
+                                        val viewModel: TunnelViewModel =
+                                            koinViewModel(parameters = { parametersOf(it.id) })
+                                        TunnelScreen(viewModel)
+                                    }
+                                    entry<Route.Settings> { SettingsScreen() }
+                                    entry<Route.AutoTunnel> { AutoTunnelScreen() }
+                                    entry<Route.Support> { SupportScreen() }
+                                    entry<Route.License> { LicenseScreen() }
+                                    entry<Route.Donate> { DonateScreen(viewModel) }
+                                    entry<Route.Addresses> { AddressesScreen() }
+                                    entry<Route.Appearance> { AppearanceScreen() }
+                                    entry<Route.Display> { DisplayScreen(viewModel) }
+                                },
+                        )
+                    }
                 }
             }
         }

@@ -38,6 +38,7 @@ localina = "1.0.0-alpha3"
 materialIcons = "1.7.3"
 navigation3 = "1.1.0-alpha01"
 reorderable = "3.0.0"
+nucleus = "1.4.7"
 
 # Logging
 logbackClassic = "1.5.24"
@@ -60,6 +61,8 @@ jetbrains-lifecycle = ["jetbrains-lifecycle-viewmodel-navigation3", "jetbrains-l
 compose-icons = ["compose-material-icons-core", "compose-material-icons-extended"]
 filekit = [ "filekit-core", "filekit-dialogs", "filekit-dialogs-compose" ]
 orbit-mvi = ["orbit-compose", "orbit-viewmodel", "orbit-core"]
+
+nucleus = [ "nucleus-darkmode-detector", "nucleus-decorated-window-jni", "nucleus-decorated-window-matrial", "nucleus-linux-hidpi", "nucleus-system-color" ]
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -151,6 +154,13 @@ sonner = { module = "io.github.dokar3:sonner", version.ref = "sonner" }
 material-kolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 compose-native-tray = { module = "io.github.kdroidfilter:composenativetray", version.ref = "nativeTray" }
+
+# Nucleus
+nucleus-decorated-window-jni = { module = "io.github.kdroidfilter:nucleus.decorated-window-jni", version.ref = "nucleus" }
+nucleus-decorated-window-matrial = { module = "io.github.kdroidfilter:nucleus.decorated-window-material", version.ref = "nucleus" }
+nucleus-linux-hidpi = { module = "io.github.kdroidfilter:nucleus.linux-hidpi", version.ref = "nucleus" }
+nucleus-system-color = { module = "io.github.kdroidfilter:nucleus.system-color", version.ref = "nucleus" }
+nucleus-darkmode-detector = { module = "io.github.kdroidfilter:nucleus.darkmode-detector", version.ref = "nucleus" }
 
 # Icons
 compose-material-icons-core = { group = "org.jetbrains.compose.material", name = "material-icons-core", version.ref = "materialIcons" }

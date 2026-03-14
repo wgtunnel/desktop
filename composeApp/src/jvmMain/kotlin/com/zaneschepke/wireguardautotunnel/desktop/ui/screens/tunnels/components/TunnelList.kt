@@ -164,11 +164,12 @@ fun TunnelList(
                                     else Modifier
                                 )
                                 .pointerHoverIcon(PointerIcon.Hand)
-                                .then(if (isDragging) Modifier.zIndex(1f) else Modifier)
-                                .clickable(
-                                    enabled = !uiState.isSelectionMode,
-                                    onClick = { navController.push(Route.Tunnel(tunnel.id)) },
-                                ),
+                                .then(if (isDragging) Modifier.zIndex(1f) else Modifier),
+                        onClick = {
+                            if (!uiState.isSelectionMode) {
+                                navController.push(Route.Tunnel(tunnel.id))
+                            }
+                        },
                         leading = {
                             val tooltip = tunnelIndicators[tunnel.id]?.second
                             val indicatorColor = tunnelIndicators[tunnel.id]?.first
