@@ -22,7 +22,7 @@ makepkg --printsrcinfo > .SRCINFO
 **Push to AUR**
 ```bash
 git add PKGBUILD wgtunnel-bin.install .SRCINFO
-git commit -m <message>
+git commit -m "upgpkg: wgtunnel-bin <pkgver>-<pkgrel>"
 git push origin master
 ```
 
