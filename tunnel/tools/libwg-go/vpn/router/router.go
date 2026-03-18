@@ -1,3 +1,7 @@
+// Portions of this file are derived from Tailscale
+// Copyright (c) Tailscale Inc & contributors
+// Licensed under the BSD 3-Clause License
+
 package router
 
 import (

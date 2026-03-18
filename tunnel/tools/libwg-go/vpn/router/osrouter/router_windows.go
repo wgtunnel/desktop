@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright © 2026 WG Tunnel.
-// Adapted from Tailscale
+// Portions of this file are derived from Tailscale
+// Copyright (c) Tailscale Inc & contributors
+// Licensed under the BSD 3-Clause License
 
 //go:build windows
 
