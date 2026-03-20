@@ -20,6 +20,7 @@ optdepends=(
   'libnotify: desktop notifications'
   'gnome-keyring: GNOME keyring backend'
   'kwallet: KDE keyring backend'
+  'libayatana-appindicator: improved system tray support'
 )
 
 provides=("wgtunnel=${pkgver}")

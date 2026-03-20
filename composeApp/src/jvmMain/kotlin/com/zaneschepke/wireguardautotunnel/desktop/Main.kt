@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import co.touchlab.kermit.Logger
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
@@ -39,6 +38,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.titlei
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
 import com.zaneschepke.wireguardautotunnel.desktop.di.viewModelModule
+import com.zaneschepke.wireguardautotunnel.desktop.ui.WindowIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asColor
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asTooltipMessage
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TrayBadgeState
@@ -50,6 +50,8 @@ import io.github.kdroidfilter.nucleus.hidpi.getLinuxNativeScaleFactor
 import io.github.kdroidfilter.nucleus.window.material.MaterialDecoratedWindow
 import io.github.kdroidfilter.nucleus.window.material.MaterialTitleBar
 import io.github.kdroidfilter.nucleus.window.newFullscreenControls
+import java.awt.event.WindowEvent
+import java.awt.event.WindowFocusListener
 import java.nio.file.Paths
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -57,8 +59,6 @@ import org.koin.compose.KoinApplication
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
 import org.orbitmvi.orbit.compose.collectAsState
-import java.awt.event.WindowEvent
-import java.awt.event.WindowFocusListener
 
 @OptIn(ExperimentalTrayAppApi::class)
 fun main() {
@@ -73,17 +73,57 @@ fun main() {
     }
 
     application {
-        var isWindowVisible by remember { mutableStateOf(false) }
+        var windowRef: java.awt.Window? by remember { mutableStateOf(null) }
+        var isWindowVisible by remember { mutableStateOf(true) }
+        var isWindowFocused by remember { mutableStateOf(true) }
         var theme by remember { mutableStateOf(Theme.DARK) }
         var useSystemColors by remember { mutableStateOf(false) }
+
+        val windowState = rememberWindowState(size = DpSize(1000.dp, 700.dp))
 
         SingleInstanceManager.configuration =
             SingleInstanceManager.Configuration(
                 lockFilesDir = Paths.get(FilePathsHelper.getDatabaseDir().path),
                 lockIdentifier = "wg_tunnel",
             )
+
+        fun bringToFront() {
+            val win = windowRef ?: return
+
+            try {
+                (win as? java.awt.Frame)?.extendedState = java.awt.Frame.NORMAL
+            } catch (_: Exception) {}
+
+            win.isAutoRequestFocus = true
+            win.isVisible = true
+        }
+
+        fun handleWindowIntent(intent: WindowIntent) {
+            when (intent) {
+                WindowIntent.SHOW -> {
+                    isWindowVisible = true
+                    windowState.isMinimized = false
+                    bringToFront()
+                }
+
+                WindowIntent.HIDE -> {
+                    isWindowVisible = false
+                }
+
+                WindowIntent.TOGGLE -> {
+                    if (isWindowVisible && !windowState.isMinimized) {
+                        handleWindowIntent(WindowIntent.HIDE)
+                    } else {
+                        handleWindowIntent(WindowIntent.SHOW)
+                    }
+                }
+            }
+        }
+
         val isSingleInstance =
-            SingleInstanceManager.isSingleInstance(onRestoreRequest = { isWindowVisible = true })
+            SingleInstanceManager.isSingleInstance(
+                onRestoreRequest = { handleWindowIntent(WindowIntent.SHOW) }
+            )
 
         if (!isSingleInstance) {
             exitApplication()
@@ -101,7 +141,6 @@ fun main() {
             val appIcon = painterResource(Res.drawable.appicon)
             val appName = stringResource(Res.string.app_name)
 
-            val windowState = rememberWindowState(size = DpSize(1000.dp, 700.dp))
             val toaster = rememberToasterState()
 
             Tray(
@@ -123,13 +162,13 @@ fun main() {
                     }
                 },
                 tooltip = appName,
-                primaryAction = { isWindowVisible = true },
+                primaryAction = { handleWindowIntent(WindowIntent.SHOW) },
             ) {
-                if (!isWindowVisible) {
-                    Item(label = "Open") {
-                        Logger.i { "Open menu item clicked" }
-                        isWindowVisible = true
-                    }
+                if (windowState.isMinimized || !isWindowVisible) {
+                    Item(label = "Open WG Tunnel") { handleWindowIntent(WindowIntent.SHOW) }
+                }
+                if (isWindowVisible && !windowState.isMinimized) {
+                    Item(label = "Minimize to Tray") { handleWindowIntent(WindowIntent.HIDE) }
                 }
                 Item(label = "Exit") { exitApplication() }
             }
@@ -137,34 +176,37 @@ fun main() {
             WGTunnelTheme(theme, useSystemColors) {
                 MaterialDecoratedWindow(
                     visible = isWindowVisible,
-                    onCloseRequest = {
-                        isWindowVisible = false
-                        Logger.i { "OS close requested - hiding to tray" }
-                    },
+                    onCloseRequest = { handleWindowIntent(WindowIntent.HIDE) },
                     title = appName,
                     resizable = false,
                     icon = appIcon,
                     state = windowState,
                 ) {
-                    var isWindowFocused by remember { mutableStateOf(window.isFocused) }
+                    val awtWindow = window as? java.awt.Window
+                    DisposableEffect(awtWindow) {
+                        windowRef = awtWindow
+                        onDispose { windowRef = null }
+                    }
 
                     DisposableEffect(window) {
-                        val listener = object : WindowFocusListener {
-                            override fun windowGainedFocus(e: WindowEvent?) {
-                                isWindowFocused = true
+                        val listener =
+                            object : WindowFocusListener {
+                                override fun windowGainedFocus(e: WindowEvent?) {
+                                    isWindowFocused = true
+                                }
+
+                                override fun windowLostFocus(e: WindowEvent?) {
+                                    isWindowFocused = false
+                                }
                             }
-                            override fun windowLostFocus(e: WindowEvent?) {
-                                isWindowFocused = false
-                            }
-                        }
                         window.addWindowFocusListener(listener)
                         onDispose { window.removeWindowFocusListener(listener) }
                     }
 
                     // improve energy efficiency when minimized and not focused
-                    LaunchedEffect(state.isMinimized, isWindowFocused) {
+                    LaunchedEffect(windowState.isMinimized, isWindowFocused) {
                         when {
-                            state.isMinimized -> {
+                            windowState.isMinimized -> {
                                 EnergyManager.disableLightEfficiencyMode()
                                 EnergyManager.enableEfficiencyMode()
                             }
@@ -185,7 +227,6 @@ fun main() {
                     LaunchedEffect(uiState.theme, uiState.useSystemColors) {
                         theme = uiState.theme
                         useSystemColors = uiState.useSystemColors
-                        if (!isWindowVisible) isWindowVisible = true
                     }
 
                     MaterialTitleBar(modifier = Modifier.newFullscreenControls()) { _ ->
