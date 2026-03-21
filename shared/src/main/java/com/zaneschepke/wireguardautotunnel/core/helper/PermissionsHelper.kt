@@ -306,26 +306,10 @@ object PermissionsHelper {
         }
     }
 
-    private fun getUsernameFromIpcKeyPath(keyFile: File): String? {
-        return try {
-            val wgtunnelFolder = keyFile.parentFile
-            val homeFolder = wgtunnelFolder?.parentFile
-            homeFolder?.name?.takeIf { it.isNotBlank() }
-        } catch (e: Exception) {
-            Logger.w { "Failed to extract username from IPC key path: ${keyFile.absolutePath}" }
-            null
-        }
-    }
-
     private fun isOwnerOnlyWindows(path: Path): Boolean {
-        val keyFile = path.toFile()
-        val username =
-            getUsernameFromIpcKeyPath(keyFile)
-                ?: return false // structure already validated earlier
-
         return try {
             val process = ProcessBuilder(ICACLS, path.toString()).start()
-            val output = process.inputStream.bufferedReader().readText().trim()
+            val output = process.inputStream.bufferedReader(Charsets.UTF_8).readText().trim()
             val exitCode = process.waitFor()
 
             if (exitCode != 0) {
@@ -333,13 +317,25 @@ object PermissionsHelper {
                 return false
             }
 
-            val ownerHasFullControl =
-                output.contains("$username:(F)", ignoreCase = true) ||
-                    output.contains("\\$username:(F)", ignoreCase = true)
-
-            // No dangerous groups with write access
-            val dangerousGroups = listOf("everyone", "users", "authenticated users", "s-1-5-32-545")
             val lowerOutput = output.lowercase()
+
+            // One principal user with full control
+            val hasFullControl = lowerOutput.contains(":(f)")
+
+            // Dangerous groups should have no access
+            val dangerousGroups =
+                listOf(
+                    "everyone",
+                    "s-1-1-0",
+                    "users",
+                    "builtin\\users",
+                    "s-1-5-32-545",
+                    "guests",
+                    "s-1-5-32-546",
+                    "authenticated users",
+                    "s-1-5-11",
+                )
+
             val hasDangerousWrite =
                 dangerousGroups.any { group ->
                     lowerOutput.contains(group) &&
@@ -348,11 +344,20 @@ object PermissionsHelper {
                             lowerOutput.contains("$group:(w)"))
                 }
 
-            if (!ownerHasFullControl)
-                Logger.w { "IPC key owner mismatch or no Full Control for user '$username': $path" }
-            if (hasDangerousWrite) Logger.w { "Dangerous group has write access on IPC key: $path" }
+            if (!hasFullControl) {
+                Logger.w { "IPC key has no principal with Full Control: $path" }
+            }
+            if (hasDangerousWrite) {
+                Logger.w { "Dangerous group has write access on IPC key: $path" }
+            }
 
-            ownerHasFullControl && !hasDangerousWrite
+            val isValid = hasFullControl && !hasDangerousWrite
+
+            if (isValid) {
+                Logger.i { "IPC key ownership verified successfully: $path" }
+            }
+
+            isValid
         } catch (e: Exception) {
             Logger.w(e) { "Windows ACL check failed for $path" }
             false
