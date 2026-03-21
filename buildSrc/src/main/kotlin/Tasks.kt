@@ -39,7 +39,7 @@ fun Project.registerConveyorTask(
         resolvedMachines?.let { args.add("-Kapp.machines=$it") }
         args.addAll(listOf("make", "--output-dir", outputDir.get().asFile.absolutePath, packageType))
 
-        LocalProperties.get("conveyor.passphrase")?.let {
+        (System.getenv("CONVEYOR_PASSPHRASE") ?: LocalProperties.get("conveyor.passphrase"))?.let {
             environment("CONVEYOR_PASSPHRASE", it)
             args.add(1, "--passphrase=env:CONVEYOR_PASSPHRASE")
         }

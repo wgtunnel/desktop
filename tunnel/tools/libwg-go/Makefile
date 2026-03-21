@@ -9,6 +9,7 @@ RESOURCEDIR ?= $(CURDIR)/../../src/main/resources
 
 NDK_GO_ARCH_MAP_x86_64 := amd64
 NDK_GO_ARCH_MAP_aarch64 := arm64
+NDK_GO_ARCH_MAP_arm64 := arm64
 
 GO_VERSION := 1.25.5
 GO_DIR := $(BUILDDIR)/go-$(GO_VERSION)
@@ -24,6 +25,7 @@ GO_HASH_linux-amd64 := 9e9b755d63b36acf30c12a9a3fc379243714c1c6d3dd72861da637f33
 export GOROOT := $(GO_DIR)
 export PATH := $(GO_DIR)/bin:$(PATH)
 export CGO_ENABLED := 1
+export MACOSX_DEPLOYMENT_TARGET := 12.0
 
 HOST_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ifeq ($(HOST_OS),darwin)
@@ -74,7 +76,7 @@ $(DESTDIR)/libwg-windows-arm64.dll: $(GO_DIR)/.prepared go.mod go.sum $(GO_SOURC
 
 $(DESTDIR)/libwg-darwin-amd64.dylib: $(GO_DIR)/.prepared go.mod go.sum $(GO_SOURCES)
 	@mkdir -p "$(DESTDIR)"
-	GOOS=darwin GOARCH=amd64 go build -ldflags="-buildid=" -v -trimpath -buildvcs=false -o "$@" -buildmode=c-shared .
+	GOOS=darwin GOARCH=amd64 CC="clang -target x86_64-apple-macos$(MACOSX_DEPLOYMENT_TARGET)" go build -ldflags="-buildid=" -v -trimpath -buildvcs=false -o "$@" -buildmode=c-shared .
 
 $(DESTDIR)/libwg-darwin-arm64.dylib: $(GO_DIR)/.prepared go.mod go.sum $(GO_SOURCES)
 	@mkdir -p "$(DESTDIR)"

@@ -25,6 +25,7 @@ GO_HASH_linux-amd64  := 9e9b755d63b36acf30c12a9a3fc379243714c1c6d3dd72861da637f3
 export GOROOT     := $(GO_DIR)
 export PATH       := $(GO_DIR)/bin:$(PATH)
 export CGO_ENABLED := 1
+export MACOSX_DEPLOYMENT_TARGET := 12.0
 
 # Standard Go build command with -a (force rebuild)
 # Added -v so you can see the progress in Gradle logs
@@ -61,7 +62,8 @@ $(DESTDIR)/libkeyring-windows-arm64.dll: $(GO_DIR)/.prepared $(wildcard *.go)
 	$(call go-build,windows,arm64,aarch64-w64-mingw32-gcc,$@)
 
 $(DESTDIR)/libkeyring-darwin-amd64.dylib: $(GO_DIR)/.prepared $(wildcard *.go)
-	$(call go-build,darwin,amd64,clang,$@)
+	@mkdir -p "$(DESTDIR)"
+	GOOS=darwin GOARCH=amd64 CC="clang -target x86_64-apple-macos$(MACOSX_DEPLOYMENT_TARGET)" $(GOBUILD) -o "$@" .
 
 $(DESTDIR)/libkeyring-darwin-arm64.dylib: $(GO_DIR)/.prepared $(wildcard *.go)
 	$(call go-build,darwin,arm64,clang,$@)
