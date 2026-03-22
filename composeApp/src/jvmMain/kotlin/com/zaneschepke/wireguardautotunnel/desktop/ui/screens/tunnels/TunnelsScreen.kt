@@ -36,8 +36,10 @@ import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.extension
+import io.github.vinceglb.filekit.nameWithoutExtension
 import io.github.vinceglb.filekit.readBytes
 import io.github.vinceglb.filekit.readString
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -88,34 +90,43 @@ fun TunnelsScreen(appViewModel: AppViewModel, viewModel: TunnelsViewModel = koin
     if (!uiState.isLoaded) return
 
     val scope = rememberCoroutineScope()
-    val pickerLauncher =
-        rememberFilePickerLauncher(mode = FileKitMode.Single) { file: PlatformFile? ->
-            file?.let {
-                when (it.extension) {
+    val pickerLauncher = rememberFilePickerLauncher(
+        mode = FileKitMode.Single
+    ) { platformFile: PlatformFile? ->
+        platformFile?.let { file ->
+            val ext = file.extension.lowercase()
+
+            scope.launch(Dispatchers.Main.immediate) {
+                when (ext) {
                     FileUtils.CONF_FILE_EXTENSION -> {
-                        scope.launch {
-                            val text = it.readString()
-                            viewModel.onConfImport(text, it.file.nameWithoutExtension)
+                        runCatching {
+                            val text = file.readString()
+                            viewModel.onConfImport(text, file.nameWithoutExtension)
+                        }.onFailure {
+                            toaster.show(Toast(ToastType.Error, "Failed to read .conf file"))
                         }
                     }
                     FileUtils.ZIP_FILE_EXTENSION -> {
-                        scope.launch {
-                            val bytes = it.readBytes()
+                        runCatching {
+                            val bytes = file.readBytes()
                             val configMap = FileUtils.readConfigsFromZip(bytes)
                             viewModel.onMultiConfImport(configMap)
+                        }.onFailure {
+                            toaster.show(Toast(ToastType.Error, "Failed to read .zip archive"))
                         }
                     }
                     else -> {
                         toaster.show(
                             Toast(
                                 type = ToastType.Warning,
-                                message = "Only '.conf' or '.zip' files supported",
+                                message = "Only '.conf' or '.zip' files supported"
                             )
                         )
                     }
                 }
             }
         }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
