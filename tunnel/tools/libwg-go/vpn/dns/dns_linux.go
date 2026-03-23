@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -24,7 +22,7 @@ const (
 	dbusPath      = "/org/freedesktop/resolve1"
 
 	resolvConfPath = "/etc/resolv.conf"
-	resolvConfBak  = "/etc/resolv.conf.bak.wgt"
+	resolvConfBak  = "/var/lib/wgtunnel/resolv.conf.bak"
 )
 
 // Conn represents a systemd-resolved dbus connection.
@@ -68,17 +66,21 @@ func (c *Conn) Close() error {
 // SetDns configures DNS servers and search domains, using systemd-resolved if available (per-interface),
 // falling back to overwriting /etc/resolv.conf otherwise.
 func SetDns(iface string, dns []netip.Addr, searchDomains []string, fullTunnel bool, logger *device.Logger) error {
+	if len(dns) == 0 && len(searchDomains) == 0 {
+		logger.Verbosef("Skipping DNS apply (empty)")
+		return nil
+	}
 	index, err := getInterfaceIndex(iface)
 	if isSystemdResolvedActive() {
 		if err != nil {
-			logger.Errorf("Failed to get interface name, falling back to resolv.conf: %w", err)
-			return setDnsFile(dns, searchDomains, fullTunnel)
+			logger.Errorf("Failed to get interface name, falling back to resolv.conf: %v", err)
+			return setDnsFile(dns, searchDomains, fullTunnel, logger)
 		}
 		logger.Verbosef("Configuring systemd-resolver...")
 		return setDnsSystemd(index, dns, searchDomains, fullTunnel)
 	}
 	logger.Verbosef("Systemd-resolver not detected, falling back to resolv.conf...")
-	return setDnsFile(dns, searchDomains, fullTunnel)
+	return setDnsFile(dns, searchDomains, fullTunnel, logger)
 }
 
 func getInterfaceIndex(ifName string) (int, error) {
@@ -95,13 +97,13 @@ func RevertDns(iface string, logger *device.Logger) error {
 	if isSystemdResolvedActive() {
 		if err != nil {
 			logger.Errorf("Failed to get interface name, attempting to revert resolv.conf from backup...")
-			return revertDnsFile()
+			return revertDnsFile(logger)
 		}
 		logger.Verbosef("Reverting systemd-resolver...")
 		return revertDnsSystemd(index)
 	}
 	logger.Verbosef("Systemd-resolver not detected, attempting to revert dns from backup...")
-	return revertDnsFile()
+	return revertDnsFile(logger)
 }
 
 // isSystemdResolvedActive checks if systemd-resolved is available and responsive via DBus.
@@ -216,15 +218,19 @@ func revertDnsSystemd(ifIndex int) error {
 }
 
 // setDnsFile is the fallback: overwrites /etc/resolv.conf and locks if fullTunnel.
-func setDnsFile(dns []netip.Addr, searchDomains []string, fullTunnel bool) error {
-	if err := backupResolvConf(); err != nil {
-		return err
+func setDnsFile(dns []netip.Addr, searchDomains []string, fullTunnel bool, logger *device.Logger) error {
+	logger.Verbosef("--- DNS fallback mode --")
+
+	if err := backupResolvConf(logger); err != nil {
+		logger.Errorf("Backup failed: %v", err)
+	} else {
+		logger.Verbosef("Backup created at %s", resolvConfBak)
 	}
 
-	// Write new conf
+	// Write new resolv.conf
 	f, err := os.Create(resolvConfPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create /etc/resolv.conf: %w", err)
 	}
 	defer f.Close()
 
@@ -234,21 +240,15 @@ func setDnsFile(dns []netip.Addr, searchDomains []string, fullTunnel bool) error
 	if len(searchDomains) > 0 {
 		fmt.Fprintf(f, "search %s\n", strings.Join(searchDomains, " "))
 	}
-
-	// attempt lock if full tunnel
-	if fullTunnel {
-		if err := lockResolvConf(true); err != nil {
-		}
-	}
+	logger.Verbosef("Wrote %d nameservers to /etc/resolv.conf", len(dns))
 
 	return nil
 }
 
 // revertDnsFile is the fallback: restores backup and unlocks.
-func revertDnsFile() error {
-	lockResolvConf(false)
-
+func revertDnsFile(logger *device.Logger) error {
 	if _, err := os.Stat(resolvConfBak); os.IsNotExist(err) {
+		logger.Verbosef("No backup file to restore")
 		return nil
 	}
 
@@ -260,35 +260,19 @@ func revertDnsFile() error {
 		return err
 	}
 	os.Remove(resolvConfBak)
+	logger.Verbosef("Restored original /etc/resolv.conf from backup")
 	return nil
 }
 
 // backupResolvConf backs up resolv.conf if not already done.
-func backupResolvConf() error {
+func backupResolvConf(logger *device.Logger) error {
 	if _, err := os.Stat(resolvConfBak); err == nil {
+		logger.Verbosef("Backup already exists, skipping")
 		return nil
 	}
 	src, err := os.ReadFile(resolvConfPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("read original resolv.conf: %w", err)
 	}
 	return os.WriteFile(resolvConfBak, src, 0644)
-}
-
-// lockResolvConf locks/unlocks with chattr (immutable).
-func lockResolvConf(lock bool) error {
-	arg := "-i"
-	if lock {
-		arg = "+i"
-	}
-	// use filepath.Abs to handle symlinks properly
-	absPath, err := filepath.Abs(resolvConfPath)
-	if err != nil {
-		return err
-	}
-	cmd := exec.Command("chattr", arg, absPath)
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("chattr %s: %w", arg, err)
-	}
-	return nil
 }
