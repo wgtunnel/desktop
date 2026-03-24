@@ -10,40 +10,40 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 
 class ConfigVisualTransformation : VisualTransformation {
+    private val headerRegex = "\\[(Interface|Peer)]".toRegex()
+    private val keyRegex = "(?m)^[a-zA-Z0-9]+(?=\\s*=)".toRegex()
+    private val commentRegex = "#.*".toRegex()
+
     override fun filter(text: AnnotatedString): TransformedText {
-
         val builder = AnnotatedString.Builder(text)
-
         val rawText = text.text
 
-        // highlight headers
-        "\\[(Interface|Peer)]".toRegex().findAll(rawText).forEach {
+        // Headers
+        headerRegex.findAll(rawText).forEach {
             builder.addStyle(
                 SpanStyle(color = Color(0xFFBB86FC), fontWeight = FontWeight.Bold),
                 it.range.first,
-                it.range.last + 1,
+                it.range.last + 1
             )
         }
 
-        // highlight keys
-        "(?m)^[a-zA-Z0-9]+(?=\\s*=)".toRegex().findAll(rawText).forEach {
+        // Keys
+        keyRegex.findAll(rawText).forEach {
             builder.addStyle(
                 SpanStyle(color = Color(0xFF03DAC5)),
                 it.range.first,
-                it.range.last + 1,
+                it.range.last + 1
             )
         }
 
-        // highlight comments
-        "#.*".toRegex().findAll(rawText).forEach {
-            val result = it.value
-            val trimmedLength = result.trimEnd().length
-
-            if (trimmedLength > 0) {
+        // Comments
+        commentRegex.findAll(rawText).forEach { match ->
+            val trimmed = match.value.trimEnd()
+            if (trimmed.isNotEmpty()) {
                 builder.addStyle(
                     SpanStyle(color = Color.Gray, fontStyle = FontStyle.Italic),
-                    it.range.first,
-                    it.range.first + trimmedLength,
+                    match.range.first,
+                    match.range.first + trimmed.length
                 )
             }
         }

@@ -2,8 +2,6 @@ package com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.co
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -16,70 +14,76 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, FlowPreview::class)
 @Composable
-fun ConfigEditor(rawConfig: String, isEditable: Boolean, onConfigChange: (String) -> Unit) {
+fun ConfigEditor(
+    rawConfig: String,
+    isEditable: Boolean,
+    onConfigChange: (String) -> Unit
+) {
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(rawConfig)) }
+
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
 
-    var textFieldValue by remember { mutableStateOf(TextFieldValue(rawConfig)) }
-
-    val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    val coroutineScope = rememberCoroutineScope()
-
+    // One time sync
     LaunchedEffect(rawConfig) {
         if (textFieldValue.text != rawConfig) {
             textFieldValue = TextFieldValue(rawConfig)
         }
     }
 
-    val scrollbarStyle =
-        defaultScrollbarStyle()
-            .copy(
-                thickness = 10.dp,
-                unhoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f),
-                hoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
-            )
+    // Debounce changes
+    LaunchedEffect(textFieldValue) {
+        snapshotFlow { textFieldValue.text }
+            .debounce(100)
+            .onEach { onConfigChange(it) }
+            .launchIn(this)
+    }
+
+    val scrollbarStyle = defaultScrollbarStyle().copy(
+        thickness = 10.dp,
+        unhoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f),
+        hoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
+    )
 
     Box(
-        modifier =
-            Modifier.fillMaxSize()
-                .background(
-                    if (isEditable) MaterialTheme.colorScheme.surfaceContainerLowest
-                    else MaterialTheme.colorScheme.surface
-                )
-                .clipToBounds()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                if (isEditable) MaterialTheme.colorScheme.surfaceContainerLowest
+                else MaterialTheme.colorScheme.surface
+            )
+            .clipToBounds()
     ) {
         BasicTextField(
             value = textFieldValue,
             onValueChange = { newValue ->
                 if (isEditable) {
                     textFieldValue = newValue
-                    onConfigChange(newValue.text)
                 }
             },
-            modifier =
-                Modifier.fillMaxSize()
-                    .verticalScroll(verticalScrollState)
-                    .horizontalScroll(horizontalScrollState)
-                    .bringIntoViewRequester(bringIntoViewRequester)
-                    .padding(16.dp)
-                    .padding(end = 26.dp),
-            textStyle =
-                TextStyle(
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontFamily = FontFamily.Monospace,
-                ),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(verticalScrollState)
+                .horizontalScroll(horizontalScrollState)
+                .padding(16.dp)
+                .padding(end = 26.dp),
+            textStyle = TextStyle(
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontFamily = FontFamily.Monospace,
+            ),
             readOnly = !isEditable,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            visualTransformation = ConfigVisualTransformation(),
-            onTextLayout = { layoutResult ->
-                val cursorRect = layoutResult.getCursorRect(textFieldValue.selection.start)
-                coroutineScope.launch { bringIntoViewRequester.bringIntoView(cursorRect) }
-            },
+            visualTransformation = remember { ConfigVisualTransformation() },
         )
 
         VerticalScrollbar(
