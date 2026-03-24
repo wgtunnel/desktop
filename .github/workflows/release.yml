@@ -11,6 +11,11 @@ on:
     tags:
       - '[0-9]*.[0-9]*.[0-9]*'
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Tag name for release"
+        required: false
+        default: 1.1.1
 
 jobs:
   publish:
@@ -57,6 +62,32 @@ jobs:
         with:
           creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
+      - name: Set latest tag
+        uses: rickstaa/action-create-tag@v1
+        id: tag_creation
+        with:
+          tag: "latest"
+          message: "Automated tag for HEAD commit"
+          force_push_tag: true
+          github_token: ${{ github.token }}
+          tag_exists_error: false
+
+      - name: Get latest release
+        id: latest_release
+        uses: kaliber5/action-get-release@v1
+        with:
+          token: ${{ github.token }}
+          latest: true
+
+      - name: Generate Changelog
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ github.token }}
+          toTag: ${{ steps.latest_release.outputs.tag_name }}
+          fromTag: "latest"
+          writeToFile: false
+
       - name: Build All Inputs
         run: |
           git config --global --add safe.directory /__w/desktop/desktop
@@ -81,3 +112,18 @@ jobs:
           CONVEYOR_PAT: ${{ secrets.CONVEYOR_PAT }}
           PASSPHRASE: ${{ secrets.CONVEYOR_PASSPHRASE }}
           CONVEYOR_AGREE_TO_LICENSE: "1"
+
+      - name: Add Release Changelog
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            ### Changelog
+            ${{ steps.changelog.outputs.changes }}
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.tag_name }}
+          name: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.tag_name }}
+          draft: false
+          prerelease: false
+          make_latest: true
+          append_body: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
