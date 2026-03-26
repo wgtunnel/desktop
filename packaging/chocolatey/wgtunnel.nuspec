@@ -7,11 +7,15 @@
     <title>WG Tunnel</title>
     <authors>Zane Schepke</authors>
     <owners>Zane Schepke</owners>
-    <description>WireGuard and AmneziaWG client with a kill switch.</description>
+    <description>WireGuard and AmneziaWG client with a kill switch. **Windows 11 only.**
+
+    Sponsor / Donate: https://wgtunnel.com/donate</description>
     <projectUrl>https://github.com/wgtunnel/desktop</projectUrl>
-    <packageSourceUrl>https://github.com/wgtunnel/desktop/tree/main/packaging/chocolatey</packageSourceUrl>
-    <tags>wgtunnel wireguard vpn msix</tags>
-    <licenseUrl>https://github.com/wgtunnel/desktop/blob/main/LICENSE</licenseUrl>
+    <packageSourceUrl>https://github.com/wgtunnel/desktop/tree/master/packaging/chocolatey</packageSourceUrl>
+    <tags>wgtunnel wireguard vpn msix windows11 amneziawg killswitch</tags>
+    <licenseUrl>https://github.com/wgtunnel/desktop/blob/master/LICENSE</licenseUrl>
     <copyright>Copyright Zane Schepke</copyright>
+    <releaseNotes>https://github.com/wgtunnel/desktop/releases/tag/$version$</releaseNotes>
+    <iconUrl>https://cdn.jsdelivr.net/gh/wgtunnel/desktop@master/composeApp/src/jvmMain/composeResources/drawable/appicon.png</iconUrl>
   </metadata>
 </package>
