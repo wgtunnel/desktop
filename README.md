@@ -2,6 +2,12 @@
 
 A WireGuard and AmneziaWG client for desktop.
 
+<div style="text-align: left;">
+  <img src="assets/screenshots/main_screen.png" 
+       alt="Main Screen Screenshot" 
+       style="max-width: 100%; width: 800px; height: auto;" />
+</div>
+
 # Supported Platforms
 - macOS (Planned)
 - Windows
