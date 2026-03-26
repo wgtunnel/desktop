@@ -1,0 +1,11 @@
+VERIFICATION
+Verification is intended to assist the Chocolatey community in verifying that this package's contents are trustworthy.
+
+The embedded software can be verified by:
+
+1. Downloading the official MSIX from the GitHub Releases page:
+   https://github.com/wgtunnel/desktop/releases/latest
+
+2. The Chocolatey package downloads that exact same file during installation.
+
+The SHA256 checksum of the MSIX can be verified against the official release assets.

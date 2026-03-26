@@ -1,0 +1,45 @@
+name: Publish to Chocolatey
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag'
+        required: false
+        default: '1.1.1'
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'release') {
+            # Your tags have no 'v' prefix (e.g. 1.0.1)
+            $version = $env:GITHUB_REF -replace 'refs/tags/', ''
+          } else {
+            $version = '${{ github.event.inputs.tag_name }}'
+          }
+          Write-Host "Publishing version: $version"
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Update version in nuspec
+        shell: pwsh
+        run: |
+          (Get-Content packaging\chocolatey\wgtunnel.nuspec) `
+            -replace '<version>.*</version>', "<version>${{ env.VERSION }}</version>" | `
+            Set-Content packaging\chocolatey\wgtunnel.nuspec
+
+      - name: Pack and push to Chocolatey
+        env:
+          CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+        run: |
+          choco pack packaging\chocolatey\wgtunnel.nuspec --outputdirectory .
+          choco push wgtunnel.${{ env.VERSION }}.nupkg `
+            --source https://push.chocolatey.org/ `
+            --api-key $env:CHOCO_API_KEY

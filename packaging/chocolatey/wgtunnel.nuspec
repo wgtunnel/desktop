@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>wgtunnel</id>
+<!-- This is just a static placeholder for the release workflow to replace -->
+    <version>0.0.0</version>
+    <title>WG Tunnel</title>
+    <authors>Zane Schepke</authors>
+    <owners>Zane Schepke</owners>
+    <description>WireGuard and AmneziaWG client with a kill switch.</description>
+    <projectUrl>https://github.com/wgtunnel/desktop</projectUrl>
+    <packageSourceUrl>https://github.com/wgtunnel/desktop/tree/main/packaging/chocolatey</packageSourceUrl>
+    <tags>wgtunnel wireguard vpn msix</tags>
+    <licenseUrl>https://github.com/wgtunnel/desktop/blob/main/LICENSE</licenseUrl>
+    <copyright>Copyright Zane Schepke</copyright>
+  </metadata>
+</package>

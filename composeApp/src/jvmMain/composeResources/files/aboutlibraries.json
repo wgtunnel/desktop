@@ -684,7 +684,7 @@
                     "name": "David M."
                 }
             ],
-            "artifactVersion": "5.1.1",
+            "artifactVersion": "5.2.0",
             "description": "Improved version of the DBus-Java library provided by freedesktop.org (https://dbus.freedesktop.org/doc/dbus-java/).",
             "scm": {
                 "connection": "scm:git:https://github.com/hypfvieh/dbus-java.git/dbus-java-core",
@@ -707,7 +707,7 @@
                     "name": "David M."
                 }
             ],
-            "artifactVersion": "5.1.1",
+            "artifactVersion": "5.2.0",
             "description": "dbus-java transport providing unixsocket support when using Java 16+.",
             "scm": {
                 "connection": "scm:git:https://github.com/hypfvieh/dbus-java.git/dbus-java-transport-native-unixsocket",
@@ -1585,7 +1585,7 @@
                     "name": "Vincent Guillebaud"
                 }
             ],
-            "artifactVersion": "0.12.0",
+            "artifactVersion": "0.13.0",
             "description": "Files, Media, Folder Picker and File saver library for Kotlin Multiplatform and Compose Multiplatform",
             "scm": {
                 "connection": "scm:git:git://github.com/vinceglb/FileKit.git",
@@ -4202,7 +4202,7 @@
                     "name": "JetBrains Team"
                 }
             ],
-            "artifactVersion": "0.8.0",
+            "artifactVersion": "0.9.0",
             "description": "IO support for Kotlin",
             "scm": {
                 "url": "https://github.com/Kotlin/kotlinx-io"
@@ -4224,7 +4224,7 @@
                     "name": "JetBrains Team"
                 }
             ],
-            "artifactVersion": "0.8.0",
+            "artifactVersion": "0.9.0",
             "description": "IO support for Kotlin",
             "scm": {
                 "url": "https://github.com/Kotlin/kotlinx-io"
@@ -4246,7 +4246,7 @@
                     "name": "JetBrains Team"
                 }
             ],
-            "artifactVersion": "1.9.0",
+            "artifactVersion": "1.10.0",
             "description": "Kotlin multiplatform serialization runtime library",
             "scm": {
                 "url": "https://github.com/Kotlin/kotlinx.serialization"
@@ -4268,7 +4268,7 @@
                     "name": "JetBrains Team"
                 }
             ],
-            "artifactVersion": "1.9.0",
+            "artifactVersion": "1.10.0",
             "description": "Kotlin multiplatform serialization runtime library",
             "scm": {
                 "url": "https://github.com/Kotlin/kotlinx.serialization"
@@ -4302,7 +4302,7 @@
             ]
         },
         {
-            "uniqueId": "org.jetbrains.kotlinx:kotlinx-serialization-json-io-jvm",
+            "uniqueId": "org.jetbrains.kotlinx:kotlinx-serialization-json-io",
             "funding": [
                 
             ],
@@ -4312,7 +4312,7 @@
                     "name": "JetBrains Team"
                 }
             ],
-            "artifactVersion": "1.9.0",
+            "artifactVersion": "1.10.0",
             "description": "Kotlin multiplatform serialization runtime library",
             "scm": {
                 "url": "https://github.com/Kotlin/kotlinx.serialization"
