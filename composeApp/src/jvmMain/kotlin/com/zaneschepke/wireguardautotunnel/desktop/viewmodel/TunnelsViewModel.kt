@@ -5,11 +5,13 @@ import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelImportService
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelService
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.DeleteIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.ExportIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
+import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TunnelUiItem
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TunnelsUiState
 import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
 import com.zaneschepke.wireguardautotunnel.desktop.util.asUserMessage
@@ -17,8 +19,6 @@ import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.openFileSaver
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.write
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.map
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 
@@ -26,31 +26,53 @@ class TunnelsViewModel(
     private val tunnelRepository: TunnelRepository,
     private val tunnelService: TunnelService,
     private val tunnelImportService: TunnelImportService,
+    private val backendService: BackendService,
 ) : ContainerHost<TunnelsUiState, AppSideEffect>, ViewModel() {
 
     override val container =
-        container<TunnelsUiState, AppSideEffect>(
-            TunnelsUiState(),
-            buildSettings = { repeatOnSubscribedStopTimeout = 5_000L },
-        ) {
+        container<TunnelsUiState, AppSideEffect>(TunnelsUiState()) {
             intent {
-                tunnelRepository.flow.collect { tunnels ->
-                    reduce { state.copy(tunnels = tunnels, isLoaded = true) }
+                tunnelRepository.flow.collect { configs ->
+                    reduce {
+                        val currentItems = state.tunnelItems
+                        val updatedItems =
+                            configs.map { config ->
+                                val existingStatus =
+                                    currentItems.firstOrNull { it.config.id == config.id }?.status
+                                TunnelUiItem(config = config, status = existingStatus)
+                            }
+                        state.copy(tunnelItems = updatedItems, isLoaded = true)
+                    }
+                }
+            }
+
+            intent {
+                backendService.statusFlow().collect { backendStatus ->
+                    reduce {
+                        val updatedItems =
+                            state.tunnelItems.map { item ->
+                                val newStatus =
+                                    backendStatus.activeTunnels.firstOrNull {
+                                        it.id == item.config.id
+                                    }
+                                item.copy(status = newStatus)
+                            }
+                        state.copy(tunnelItems = updatedItems)
+                    }
                 }
             }
         }
 
     fun onItemsReordered(fromIndex: Int, toIndex: Int) = intent {
-        val list = state.tunnels.toMutableList()
+        val list = state.tunnelItems.toMutableList()
         val item = list.removeAt(fromIndex)
         list.add(toIndex, item)
-
-        reduce { state.copy(tunnels = list) }
+        reduce { state.copy(tunnelItems = list) }
     }
 
     fun onPersistReorder() = intent {
         val updatedTunnels =
-            state.tunnels.mapIndexed { index, tunnel -> tunnel.copy(position = index) }
+            state.tunnelItems.mapIndexed { index, item -> item.config.copy(position = index) }
         tunnelRepository.updateAll(updatedTunnels)
     }
 
@@ -128,7 +150,12 @@ class TunnelsViewModel(
     }
 
     fun onSelectAll() = intent {
-        reduce { state.copy(isSelectionMode = true, selectedTunnels = state.tunnels) }
+        reduce {
+            state.copy(
+                isSelectionMode = true,
+                selectedTunnels = state.tunnelItems.map { it.config },
+            )
+        }
     }
 
     fun onDelete(intent: DeleteIntent) = intent {

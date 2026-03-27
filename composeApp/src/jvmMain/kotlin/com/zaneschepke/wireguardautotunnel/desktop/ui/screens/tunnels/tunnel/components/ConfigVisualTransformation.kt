@@ -23,7 +23,7 @@ class ConfigVisualTransformation : VisualTransformation {
             builder.addStyle(
                 SpanStyle(color = Color(0xFFBB86FC), fontWeight = FontWeight.Bold),
                 it.range.first,
-                it.range.last + 1
+                it.range.last + 1,
             )
         }
 
@@ -32,7 +32,7 @@ class ConfigVisualTransformation : VisualTransformation {
             builder.addStyle(
                 SpanStyle(color = Color(0xFF03DAC5)),
                 it.range.first,
-                it.range.last + 1
+                it.range.last + 1,
             )
         }
 
@@ -43,7 +43,7 @@ class ConfigVisualTransformation : VisualTransformation {
                 builder.addStyle(
                     SpanStyle(color = Color.Gray, fontStyle = FontStyle.Italic),
                     match.range.first,
-                    match.range.first + trimmed.length
+                    match.range.first + trimmed.length,
                 )
             }
         }

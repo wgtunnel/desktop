@@ -248,7 +248,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                             entryProvider =
                                 entryProvider {
                                     currentTab.startRoute
-                                    entry<Route.Tunnels> { TunnelsScreen(viewModel) }
+                                    entry<Route.Tunnels> { TunnelsScreen() }
                                     entry<Route.Tunnel> {
                                         val viewModel: TunnelViewModel =
                                             koinViewModel(parameters = { parametersOf(it.id) })

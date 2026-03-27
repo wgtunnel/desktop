@@ -10,5 +10,4 @@ enum class TunnelState {
     HEALTHY,
     HANDSHAKE_FAILURE,
     RESOLVING_DNS,
-    UNKNOWN,
 }

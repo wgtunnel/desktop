@@ -14,8 +14,6 @@ interface Tunnel {
             data object ResolvingDns : Up()
 
             data object HandshakeFailure : Up()
-
-            data object Unknown : Up()
         }
 
         data object Down : State

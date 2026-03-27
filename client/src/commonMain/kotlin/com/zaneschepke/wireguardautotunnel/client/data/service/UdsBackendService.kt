@@ -18,6 +18,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.utils.io.*
 import io.ktor.websocket.*
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
@@ -131,7 +132,7 @@ class UdsBackendService(
                         }
                     } catch (e: Exception) {
                         if (e is CancellationException) throw e
-                        delay(DAEMON_WS_RECONNECT_DELAY_MILLIS)
+                        delay(DAEMON_WS_RECONNECT_DELAY_MILLIS.milliseconds)
                     }
                 }
 
@@ -142,13 +143,10 @@ class UdsBackendService(
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun statusFlow(): Flow<BackendStatus> =
         basicStatusFlow()
-            .flatMapLatest { basic ->
-                flow {
+            .transformLatest { basic ->
+                while (true) {
                     emit(enrichWithActiveConfigs(basic))
-                    while (true) {
-                        delay(ACTIVE_CONFIG_INTERVAL)
-                        emit(enrichWithActiveConfigs(basic))
-                    }
+                    delay(ACTIVE_CONFIG_INTERVAL.milliseconds)
                 }
             }
             .flowOn(Dispatchers.IO)

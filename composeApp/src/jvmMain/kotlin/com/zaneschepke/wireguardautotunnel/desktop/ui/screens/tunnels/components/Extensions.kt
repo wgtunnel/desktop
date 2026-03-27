@@ -8,8 +8,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WarningAmber
 
 fun TunnelState.asColor(): Color {
     return when (this) {
-        TunnelState.DOWN,
-        TunnelState.UNKNOWN -> Color.Gray
+        TunnelState.DOWN -> Color.Gray
         TunnelState.HEALTHY -> HealthyGreen
         TunnelState.HANDSHAKE_FAILURE -> ErrorRed
         TunnelState.RESOLVING_DNS,
@@ -21,7 +20,6 @@ fun TunnelState.asColor(): Color {
 fun TunnelState.asTooltipMessage(): String {
     return when (this) {
         TunnelState.DOWN,
-        TunnelState.UNKNOWN -> "Unknown"
         TunnelState.STARTING -> "Starting"
         TunnelState.STOPPING -> "Stopping"
         TunnelState.HEALTHY -> "Healthy"

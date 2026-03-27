@@ -27,8 +27,6 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SwitchWithDivider
@@ -48,7 +46,6 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @Composable
 fun TunnelList(
     uiState: TunnelsUiState,
-    tunnelStatuses: List<TunnelStatus>,
     startTunnel: (id: Long) -> Unit,
     stopTunnel: (id: Long) -> Unit,
     onReorder: (Int, Int) -> Unit,
@@ -66,18 +63,6 @@ fun TunnelList(
     val reorderableState =
         rememberReorderableLazyListState(lazyListState) { from, to ->
             onReorder(from.index, to.index)
-        }
-
-    val tunnelIndicators by
-        remember(tunnelStatuses, uiState.tunnels) {
-            derivedStateOf {
-                uiState.tunnels.associate { tunnel ->
-                    val state =
-                        tunnelStatuses.firstOrNull { it.id == tunnel.id }?.state
-                            ?: TunnelState.UNKNOWN
-                    tunnel.id to (state.asColor() to state.asTooltipMessage())
-                }
-            }
         }
 
     LaunchedEffect(reorderableState.isAnyItemDragging) {
@@ -99,7 +84,7 @@ fun TunnelList(
                 }
                 .fillMaxSize(),
     ) {
-        if (uiState.tunnels.isEmpty()) {
+        if (uiState.tunnelItems.isEmpty()) {
             item {
                 Box(
                     modifier = Modifier.fillMaxSize().padding(top = 80.dp),
@@ -111,9 +96,9 @@ fun TunnelList(
             return@LazyColumn
         }
 
-        items(uiState.tunnels, key = { it.id }) { tunnel ->
-            val isSelected = uiState.selectedTunnels.contains(tunnel)
-            ReorderableItem(reorderableState, key = tunnel.id) { isDragging ->
+        items(uiState.tunnelItems, key = { it.config.id }) { item ->
+            val isSelected = uiState.selectedTunnels.contains(item.config)
+            ReorderableItem(reorderableState, key = item.config.id) { isDragging ->
                 val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
 
                 ContextMenuArea(
@@ -122,20 +107,20 @@ fun TunnelList(
                             if (!uiState.isSelectionMode) {
                                 add(
                                     ContextMenuItem("Details") {
-                                        navController.push(Route.Tunnel(tunnel.id))
+                                        navController.push(Route.Tunnel(item.config.id))
                                     }
                                 )
                                 add(
                                     ContextMenuItem("Delete") {
-                                        onDelete(DeleteIntent.Tunnel(tunnel))
+                                        onDelete(DeleteIntent.Tunnel(item.config))
                                     }
                                 )
                                 add(
                                     ContextMenuItem("Export") {
-                                        onExport(ExportIntent.Tunnel(tunnel))
+                                        onExport(ExportIntent.Tunnel(item.config))
                                     }
                                 )
-                                add(ContextMenuItem("Select") { onSelected(tunnel) })
+                                add(ContextMenuItem("Select") { onSelected(item.config) })
                             } else {
                                 add(
                                     ContextMenuItem("Delete selected") {
@@ -155,7 +140,7 @@ fun TunnelList(
                     }
                 ) {
                     SurfaceRow(
-                        title = tunnel.name,
+                        title = item.config.name,
                         modifier =
                             Modifier.shadow(elevation)
                                 .animateItem()
@@ -167,23 +152,22 @@ fun TunnelList(
                                 .then(if (isDragging) Modifier.zIndex(1f) else Modifier),
                         onClick = {
                             if (!uiState.isSelectionMode) {
-                                navController.push(Route.Tunnel(tunnel.id))
+                                navController.push(Route.Tunnel(item.config.id))
                             }
                         },
                         leading = {
-                            val tooltip = tunnelIndicators[tunnel.id]?.second
-                            val indicatorColor = tunnelIndicators[tunnel.id]?.first
+                            val item = uiState.tunnelItems.first { it.config.id == item.config.id }
                             @Composable
                             fun icon() {
                                 Icon(
                                     Icons.Rounded.Circle,
                                     contentDescription = null,
-                                    tint = indicatorColor ?: TunnelState.UNKNOWN.asColor(),
+                                    tint = item.stateColor,
                                     modifier = Modifier.size(14.dp),
                                 )
                             }
-                            if (tooltip != null) {
-                                CustomTooltip(text = tooltip) { icon() }
+                            if (item.tooltipMessage.isNotBlank()) {
+                                CustomTooltip(text = item.tooltipMessage) { icon() }
                             } else {
                                 icon()
                             }
@@ -192,9 +176,10 @@ fun TunnelList(
                         trailing = {
                             if (!uiState.isSelectionMode) {
                                 SwitchWithDivider(
-                                    checked = tunnel.active,
+                                    checked = item.isRunning,
                                     onClick = {
-                                        if (it) startTunnel(tunnel.id) else stopTunnel(tunnel.id)
+                                        if (it) startTunnel(item.config.id)
+                                        else stopTunnel(item.config.id)
                                     },
                                 )
                             }

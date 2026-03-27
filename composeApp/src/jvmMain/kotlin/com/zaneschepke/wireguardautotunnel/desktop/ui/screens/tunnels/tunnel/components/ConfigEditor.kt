@@ -15,19 +15,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class, FlowPreview::class)
 @Composable
-fun ConfigEditor(
-    rawConfig: String,
-    isEditable: Boolean,
-    onConfigChange: (String) -> Unit
-) {
+fun ConfigEditor(rawConfig: String, isEditable: Boolean, onConfigChange: (String) -> Unit) {
     var textFieldValue by remember { mutableStateOf(TextFieldValue(rawConfig)) }
 
     val verticalScrollState = rememberScrollState()
@@ -48,20 +42,22 @@ fun ConfigEditor(
             .launchIn(this)
     }
 
-    val scrollbarStyle = defaultScrollbarStyle().copy(
-        thickness = 10.dp,
-        unhoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f),
-        hoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
-    )
+    val scrollbarStyle =
+        defaultScrollbarStyle()
+            .copy(
+                thickness = 10.dp,
+                unhoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f),
+                hoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
+            )
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                if (isEditable) MaterialTheme.colorScheme.surfaceContainerLowest
-                else MaterialTheme.colorScheme.surface
-            )
-            .clipToBounds()
+        modifier =
+            Modifier.fillMaxSize()
+                .background(
+                    if (isEditable) MaterialTheme.colorScheme.surfaceContainerLowest
+                    else MaterialTheme.colorScheme.surface
+                )
+                .clipToBounds()
     ) {
         BasicTextField(
             value = textFieldValue,
@@ -70,17 +66,18 @@ fun ConfigEditor(
                     textFieldValue = newValue
                 }
             },
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(verticalScrollState)
-                .horizontalScroll(horizontalScrollState)
-                .padding(16.dp)
-                .padding(end = 26.dp),
-            textStyle = TextStyle(
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontFamily = FontFamily.Monospace,
-            ),
+            modifier =
+                Modifier.fillMaxSize()
+                    .verticalScroll(verticalScrollState)
+                    .horizontalScroll(horizontalScrollState)
+                    .padding(16.dp)
+                    .padding(end = 26.dp),
+            textStyle =
+                TextStyle(
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontFamily = FontFamily.Monospace,
+                ),
             readOnly = !isEditable,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             visualTransformation = remember { ConfigVisualTransformation() },

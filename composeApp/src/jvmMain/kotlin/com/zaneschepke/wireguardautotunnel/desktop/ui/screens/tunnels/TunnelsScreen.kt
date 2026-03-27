@@ -30,7 +30,6 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.CustomToolt
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.TunnelList
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
-import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelsViewModel
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitMode
@@ -48,10 +47,9 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TunnelsScreen(appViewModel: AppViewModel, viewModel: TunnelsViewModel = koinViewModel()) {
+fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
 
     val uiState by viewModel.collectAsState()
-    val appUiState by appViewModel.collectAsState()
 
     var pendingDeleteIntent by remember { mutableStateOf<DeleteIntent?>(null) }
 
@@ -90,43 +88,48 @@ fun TunnelsScreen(appViewModel: AppViewModel, viewModel: TunnelsViewModel = koin
     if (!uiState.isLoaded) return
 
     val scope = rememberCoroutineScope()
-    val pickerLauncher = rememberFilePickerLauncher(
-        mode = FileKitMode.Single
-    ) { platformFile: PlatformFile? ->
-        platformFile?.let { file ->
-            val ext = file.extension.lowercase()
+    val pickerLauncher =
+        rememberFilePickerLauncher(mode = FileKitMode.Single) { platformFile: PlatformFile? ->
+            platformFile?.let { file ->
+                val ext = file.extension.lowercase()
 
-            scope.launch(Dispatchers.Main.immediate) {
-                when (ext) {
-                    FileUtils.CONF_FILE_EXTENSION -> {
-                        runCatching {
-                            val text = file.readString()
-                            viewModel.onConfImport(text, file.nameWithoutExtension)
-                        }.onFailure {
-                            toaster.show(Toast(ToastType.Error, "Failed to read .conf file"))
+                scope.launch(Dispatchers.Main.immediate) {
+                    when (ext) {
+                        FileUtils.CONF_FILE_EXTENSION -> {
+                            runCatching {
+                                    val text = file.readString()
+                                    viewModel.onConfImport(text, file.nameWithoutExtension)
+                                }
+                                .onFailure {
+                                    toaster.show(
+                                        Toast(ToastType.Error, "Failed to read .conf file")
+                                    )
+                                }
                         }
-                    }
-                    FileUtils.ZIP_FILE_EXTENSION -> {
-                        runCatching {
-                            val bytes = file.readBytes()
-                            val configMap = FileUtils.readConfigsFromZip(bytes)
-                            viewModel.onMultiConfImport(configMap)
-                        }.onFailure {
-                            toaster.show(Toast(ToastType.Error, "Failed to read .zip archive"))
+                        FileUtils.ZIP_FILE_EXTENSION -> {
+                            runCatching {
+                                    val bytes = file.readBytes()
+                                    val configMap = FileUtils.readConfigsFromZip(bytes)
+                                    viewModel.onMultiConfImport(configMap)
+                                }
+                                .onFailure {
+                                    toaster.show(
+                                        Toast(ToastType.Error, "Failed to read .zip archive")
+                                    )
+                                }
                         }
-                    }
-                    else -> {
-                        toaster.show(
-                            Toast(
-                                type = ToastType.Warning,
-                                message = "Only '.conf' or '.zip' files supported"
+                        else -> {
+                            toaster.show(
+                                Toast(
+                                    type = ToastType.Warning,
+                                    message = "Only '.conf' or '.zip' files supported",
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
         }
-    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -184,7 +187,6 @@ fun TunnelsScreen(appViewModel: AppViewModel, viewModel: TunnelsViewModel = koin
         ) {
             TunnelList(
                 uiState = uiState,
-                tunnelStatuses = appUiState.tunnelStatuses,
                 startTunnel = viewModel::onStartTunnel,
                 stopTunnel = viewModel::onStopTunnel,
                 viewModel::onItemsReordered,

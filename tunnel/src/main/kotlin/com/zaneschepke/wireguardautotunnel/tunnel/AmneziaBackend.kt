@@ -68,44 +68,6 @@ class AmneziaBackend : Backend {
     override suspend fun start(tunnel: Tunnel, config: String): Result<Unit> = runCatching {
         log.i { "Start request for tunnel: ${tunnel.id}" }
 
-        val statusChannel = Channel<Int>(Channel.BUFFERED)
-        val statusCallback =
-            object : StatusCodeCallback {
-                override fun onTunnelStatusCode(handle: Int, statusCode: Int) {
-                    log.v { "Native Callback - Handle: $handle, Code: $statusCode" }
-                    statusChannel.trySend(statusCode)
-                }
-            }
-
-        statusCallbacks[tunnel.id] = statusCallback
-
-        val handle =
-            tunnelMutex.withLock {
-                if (tunnelHandles.containsKey(tunnel.id)) {
-                    log.w { "Tunnel ${tunnel.id} already exists in handles map." }
-                    throw BackendException.StateConflict("Tunnel ${tunnel.id} is already in use")
-                }
-
-                log.d { "Lock acquired. Invoking native turnOn..." }
-                val nativeHandle =
-                    when (currentMode) {
-                        Backend.Mode.Proxy -> tun.awgProxyTurnOn(config, statusCallback)
-                        Backend.Mode.Userspace -> tun.awgTurnOn(config, statusCallback)
-                    }
-
-                if (nativeHandle < 0) {
-                    log.e { "Native turnOn failed: $nativeHandle" }
-                    throw BackendException.InternalError(
-                        "Tunnel failed with internal error code $nativeHandle"
-                    )
-                }
-
-                tunnelHandles[tunnel.id] = nativeHandle
-                nativeHandle
-            }
-
-        log.i { "Tunnel ${tunnel.id} native initialization successful. Handle: $handle" }
-
         tunnel.updateState(Tunnel.State.Starting)
         _status.update {
             it.copy(
@@ -114,12 +76,43 @@ class AmneziaBackend : Backend {
             )
         }
 
+        val statusChannel = Channel<Int>(Channel.BUFFERED)
+        val statusCallback =
+            object : StatusCodeCallback {
+                override fun onTunnelStatusCode(handle: Int, statusCode: Int) {
+                    log.v { "Native Callback - Handle: $handle, Code: $statusCode" }
+                    statusChannel.trySend(statusCode)
+                }
+            }
+        statusCallbacks[tunnel.id] = statusCallback
+
+        val handle =
+            tunnelMutex.withLock {
+                if (tunnelHandles.containsKey(tunnel.id)) {
+                    throw BackendException.StateConflict("Tunnel ${tunnel.id} is already in use")
+                }
+                val nativeHandle =
+                    when (currentMode) {
+                        Backend.Mode.Proxy -> tun.awgProxyTurnOn(config, statusCallback)
+                        Backend.Mode.Userspace -> tun.awgTurnOn(config, statusCallback)
+                    }
+                if (nativeHandle < 0) {
+                    throw BackendException.InternalError(
+                        "Tunnel failed with internal error code $nativeHandle"
+                    )
+                }
+                tunnelHandles[tunnel.id] = nativeHandle
+                nativeHandle
+            }
+
+        log.i { "Tunnel ${tunnel.id} native initialization successful. Handle: $handle" }
+
         tunnelJobs[tunnel.id] =
             backendScope.launch {
                 try {
                     statusChannel.consumeAsFlow().collect { statusCode ->
                         val tunnelState = mapStatusCodeToState(statusCode)
-                        log.d { "Tunnel ${tunnel.id} status update: $statusCode -> $tunnelState" }
+                        log.d { "Tunnel ${tunnel.id} status update: $statusCode → $tunnelState" }
 
                         _status.update {
                             it.copy(
@@ -130,10 +123,7 @@ class AmneziaBackend : Backend {
                         }
                         tunnel.updateState(tunnelState)
                     }
-                } catch (e: Exception) {
-                    log.e(e) { "Error in status flow for tunnel ${tunnel.id}" }
                 } finally {
-                    log.i { "Status collector for tunnel ${tunnel.id} terminating." }
                     statusChannel.close()
                     cleanupTunnelState(tunnel.id)
                     tunnel.updateState(Tunnel.State.Down)
@@ -146,12 +136,10 @@ class AmneziaBackend : Backend {
 
         val handle =
             tunnelHandles[id]
-                ?: run {
-                    log.w { "Stop requested for $id but no handle found." }
-                    return Result.failure(
-                        BackendException.StateConflict("Tunnel $id is not active.")
-                    )
-                }
+                ?: return Result.failure(
+                    BackendException.StateConflict("Tunnel $id is not active.")
+                )
+
         _status.update { current ->
             val key = current.activeTunnels.keys.firstOrNull { it.id == id }
             if (key != null)
@@ -160,15 +148,12 @@ class AmneziaBackend : Backend {
         }
 
         tunnelMutex.withLock {
-            log.d { "Lock acquired for Stop. Calling native turnOff for handle: $handle" }
             when (currentMode) {
                 Backend.Mode.Proxy -> tun.awgProxyTurnOff(handle)
                 Backend.Mode.Userspace -> tun.awgTurnOff(handle)
             }
         }
-
         tunnelJobs[id]?.cancel()
-
         log.i { "Stop command sent and job cancelled for tunnel $id" }
     }
 
@@ -256,7 +241,6 @@ class AmneziaBackend : Backend {
             0 -> Tunnel.State.Up.Healthy
             1 -> Tunnel.State.Up.HandshakeFailure
             2 -> Tunnel.State.Up.ResolvingDns
-            3 -> Tunnel.State.Up.Unknown
             else -> Tunnel.State.Down
         }
     }
