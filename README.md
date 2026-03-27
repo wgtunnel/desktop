@@ -69,8 +69,6 @@ For users on immutable distros, NixOS, or who prefer zero repository footprint.
 1. Download the `tar.gz` file from the latest release.
 2. From the directory where you downloaded the file:
 
-> **Note:** In future versions, these scripts will be bundled with the tarball.
-
 **Install**
 ```bash 
 # Download and extract the tarball, download install script, and execute
