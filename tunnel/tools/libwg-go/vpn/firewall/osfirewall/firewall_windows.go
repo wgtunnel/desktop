@@ -14,10 +14,10 @@ import (
 	"sync/atomic"
 
 	"github.com/amnezia-vpn/amneziawg-go/device"
+	"github.com/tailscale/wf"
 	"github.com/wgtunnel/desktop/tunnel/vpn/firewall"
 	"golang.org/x/net/nettest"
 	"golang.org/x/sys/windows"
-	"inet.af/wf"
 	"tailscale.com/net/netaddr"
 )
 
@@ -32,9 +32,8 @@ type WindowsFirewall struct {
 
 	iface string
 
-	luid  uint64
-	appID string
-
+	luid              uint64
+	appID             string
 	killSwitchEnabled atomic.Bool
 	persistKillSwitch atomic.Bool
 
@@ -92,6 +91,11 @@ func New(logger *device.Logger) (firewall.Firewall, error) {
 
 	if err := f.createSession(); err != nil {
 		return nil, err
+	}
+
+	// try to cache the app id once to prevent https://github.com/tailscale/wf/issues/25
+	if err := f.cacheAppID(); err != nil {
+		f.logger.Errorf("failed to cache daemon AppID: %v", err)
 	}
 
 	return f, nil
@@ -234,6 +238,22 @@ func (f *WindowsFirewall) IsEnabled() bool {
 	return f.killSwitchEnabled.Load()
 }
 
+func (f *WindowsFirewall) cacheAppID() error {
+	currentFile, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	appID, err := wf.AppID(currentFile)
+	if err != nil {
+		return fmt.Errorf("could not get app id for %q: %w", currentFile, err)
+	}
+
+	f.appID = appID
+	f.logger.Verbosef("Cached daemon AppID: %s (will never call wf.AppID again)", appID)
+	return nil
+}
+
 func (f *WindowsFirewall) RemoveTunnelRules() error {
 	tunRulesCopy := make([]*wf.Rule, len(f.tunRules))
 	copy(tunRulesCopy, f.tunRules)
@@ -369,27 +389,26 @@ func (f *WindowsFirewall) Disable() error {
 	return nil
 }
 
-// permitDaemon allows the daemon process through firewall
 func (f *WindowsFirewall) permitDaemon(w weight) error {
+	return f.addDaemonRule()
+}
 
-	currentFile, err := os.Executable()
-	if err != nil {
-		return err
+// addDaemonRule add the daemon bypass using the cached AppID
+func (f *WindowsFirewall) addDaemonRule() error {
+	if f.appID == "" {
+		return fmt.Errorf("AppID not cached")
 	}
 
-	appID, err := wf.AppID(currentFile)
-	f.logger.Verbosef("Adding bypass rule for %s", appID)
-	if err != nil {
-		return fmt.Errorf("could not get app id for %q: %w", currentFile, err)
-	}
-	conditions := []*wf.Match{
-		{
-			Field: wf.FieldALEAppID,
-			Op:    wf.MatchTypeEqual,
-			Value: appID,
-		},
-	}
-	_, err = f.addRules("unrestricted traffic for daemon", w, conditions, wf.ActionPermit, protocolAll, directionBoth)
+	f.logger.Verbosef("Adding bypass rule for daemon (using cached AppID)")
+
+	conditions := []*wf.Match{{
+		Field: wf.FieldALEAppID,
+		Op:    wf.MatchTypeEqual,
+		Value: f.appID,
+	}}
+
+	_, err := f.addRules("unrestricted traffic for daemon", weightDaemonTraffic,
+		conditions, wf.ActionPermit, protocolAll, directionBoth)
 	return err
 }
 
