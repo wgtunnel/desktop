@@ -109,7 +109,7 @@ val serviceModule = module {
     }
     single<DaemonService> { UdsDaemonService(get(), get(), get()) }
     single<TunnelService> { UdsTunnelService(get(), tunnelRepository = get()) }
-    single<BackendService> { UdsBackendService(get(), get(), get(), get(), get()) }
+    single<BackendService> { UdsBackendService(get(), get(), get(), get()) }
 
     single<TunnelImportService> { DefaultTunnelImportService(get()) }
 }

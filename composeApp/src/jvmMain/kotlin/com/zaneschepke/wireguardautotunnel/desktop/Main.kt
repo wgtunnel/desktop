@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import co.touchlab.kermit.Logger
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
@@ -44,6 +45,8 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TrayBadgeState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WGTunnelTheme
+import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
+import com.zaneschepke.wireguardautotunnel.desktop.util.RenderingMode
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
 import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
 import io.github.kdroidfilter.nucleus.hidpi.getLinuxNativeScaleFactor
@@ -62,8 +65,17 @@ import org.orbitmvi.orbit.compose.collectAsState
 
 @OptIn(ExperimentalTrayAppApi::class)
 fun main() {
-    System.setProperty("skiko.renderApi", "SOFTWARE_FASTEST")
+    val appConfig = FileUtils.loadAppConfig()
 
+    when (appConfig.renderingMode) {
+        RenderingMode.SOFTWARE -> {
+            System.setProperty("skiko.renderApi", "SOFTWARE_FASTEST")
+            Logger.i { "Running app with SOFTWARE rendering" }
+        }
+        RenderingMode.HARDWARE -> {
+            Logger.i { "Running app with default hardware acceleration" }
+        }
+    }
     // HiDPI detection for Linux
     if (System.getProperty("sun.java2d.uiScale") == null) {
         val scale = getLinuxNativeScaleFactor()
