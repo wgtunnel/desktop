@@ -16,7 +16,10 @@ data class TunnelsUiState(
 
 data class TunnelUiItem(val config: TunnelConfig, val status: TunnelStatus? = null) {
     val isRunning: Boolean
-        get() = status?.state != TunnelState.DOWN && status?.state != TunnelState.STOPPING && status != null
+        get() =
+            status?.state != TunnelState.DOWN &&
+                status?.state != TunnelState.STOPPING &&
+                status != null
 
     val stateColor: Color
         get() = status?.state?.asColor() ?: TunnelState.DOWN.asColor()

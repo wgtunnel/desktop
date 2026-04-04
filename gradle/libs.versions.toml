@@ -50,6 +50,8 @@ androidx-room = "2.8.4"
 androidx-sqlite = "2.6.2"
 
 lang3 = "3.20.0"
+humanReadable = "1.12.3"
+datetime = "0.7.1"
 
 [bundles]
 ktor-client-jvm = ["ktor-client-core-jvm", "ktor-client-cio-jvm", "ktor-client-content-negotiation-jvm", "ktor-serialization-json-jvm", "ktor-client-okhttp", "ktor-client-websockets-jvm"]
@@ -184,6 +186,9 @@ filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose
 
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "mps" }
 
+human-readable = { module = "nl.jacobras:Human-Readable", version.ref = "humanReadable" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+
 
 [plugins]
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
@@ -198,4 +203,3 @@ buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
 licensee = { id = "app.cash.licensee", version.ref = "licensee" }
 aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
-resources = { id = "org.jetbrains.compose.resources", version.ref = "kotlin" }
