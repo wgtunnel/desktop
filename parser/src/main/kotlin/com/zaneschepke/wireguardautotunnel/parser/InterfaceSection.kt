@@ -16,10 +16,10 @@ data class InterfaceSection(
     @SerialName("Table") val table: String? = null,
     @SerialName("SaveConfig") val saveConfig: Boolean? = null,
     // Desktop or Rooted Android
-    @SerialName("PreUp") val preUp: String? = null,
-    @SerialName("PostUp") val postUp: String? = null,
-    @SerialName("PreDown") val preDown: String? = null,
-    @SerialName("PostDown") val postDown: String? = null,
+    @SerialName("PreUp") val preUp: List<String>? = null,
+    @SerialName("PostUp") val postUp: List<String>? = null,
+    @SerialName("PreDown") val preDown: List<String>? = null,
+    @SerialName("PostDown") val postDown: List<String>? = null,
     // Android
     @SerialName("IncludedApplications") val includedApplications: List<String>? = null,
     @SerialName("ExcludedApplications") val excludedApplications: List<String>? = null,
@@ -42,6 +42,32 @@ data class InterfaceSection(
     @SerialName("I5") val i5: String? = null,
     val comments: List<String> = emptyList(),
 ) {
+
+    val allIncludedApps: List<String>
+        get() = includedApplications.orEmpty()
+
+    val allExcludedApps: List<String>
+        get() = excludedApplications.orEmpty()
+
+    val allPreUp: List<String>
+        get() = preUp.orEmpty()
+
+    val allPostUp: List<String>
+        get() = postUp.orEmpty()
+
+    val allPreDown: List<String>
+        get() = preDown.orEmpty()
+
+    val allPostDown: List<String>
+        get() = postDown.orEmpty()
+
+    val hasScripts: Boolean
+        get() =
+            allPreUp.isNotEmpty() ||
+                allPostUp.isNotEmpty() ||
+                allPreDown.isNotEmpty() ||
+                allPostDown.isNotEmpty()
+
     @Throws(ConfigParseException::class)
     fun validate() {
         if (privateKey.isBlank())
