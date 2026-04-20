@@ -52,7 +52,11 @@ tasks.named<Delete>("clean") {
     delete(file("winsw/artifacts"))
 }
 
-tasks.named("installDist") { dependsOn("buildWinSW") }
+tasks.named("installDist") {
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows) {
+        dependsOn("buildWinSW")
+    }
+}
 
 tasks.register<Exec>("buildWinSW") {
     val winSwDir = "winsw/src/WinSW"

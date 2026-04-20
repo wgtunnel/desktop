@@ -1,0 +1,42 @@
+#!/bin/bash
+# Post-installation script: sign the app, register and start the launchd daemon.
+set -e
+APP="/Applications/WG Tunnel.app"
+LABEL="com.zaneschepke.wgtunnel.daemon"
+PLIST="/Library/LaunchDaemons/${LABEL}.plist"
+
+# Apply ad-hoc signature so macOS accepts the app without a paid Apple Developer certificate.
+# codesign --deep fails on Sparkle.framework (nested app/framework ambiguity), so we sign
+# components manually from inside-out: dylibs → XPC services → frameworks → main app.
+# In production (CI with a real Apple cert + notarization), this block is not needed.
+# Sign all dylibs and native libraries
+find "$APP/Contents" \( -name "*.dylib" -o -name "*.so" \) | while read f; do
+    codesign --force --sign - "$f" 2>/dev/null || true
+done
+# Sign XPC services
+find "$APP/Contents" -type d -name "*.xpc" | while read f; do
+    codesign --force --sign - "$f" 2>/dev/null || true
+done
+# Sign frameworks
+find "$APP/Contents/Frameworks" -maxdepth 1 -type d | while read f; do
+    codesign --force --sign - "$f" 2>/dev/null || true
+done
+# Sign all executables in MacOS/ (main app, daemon, wgtctl, etc.)
+find "$APP/Contents/MacOS" -type f | while read f; do
+    codesign --force --sign - "$f" 2>/dev/null || true
+done
+# Sign the app bundle itself
+codesign --force --sign - "$APP"
+
+# Create directories required by the daemon
+mkdir -p "/Library/Application Support/wgtunnel"
+mkdir -p "/var/log/wgtunnel"
+chmod 755 "/Library/Application Support/wgtunnel"
+
+# Fix plist ownership/permissions required by launchd
+chown root:wheel "$PLIST"
+chmod 644 "$PLIST"
+
+# Register and start the daemon
+launchctl bootstrap system "$PLIST"
+exit 0

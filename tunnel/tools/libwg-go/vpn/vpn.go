@@ -117,7 +117,13 @@ func awgTurnOn(settings *C.char, callback C.StatusCodeCallback) C.int {
 		}
 	}
 
-	ifName := fmt.Sprintf("wgtun%d", handleID)
+	var ifName string
+	if runtime.GOOS == "darwin" {
+		// On macOS, passing "utun" (no number) lets the kernel assign the next free utun interface
+		ifName = "utun"
+	} else {
+		ifName = fmt.Sprintf("wgtun%d", handleID)
+	}
 	tunnel, err := tun.CreateTUN(ifName, conf.Device.MTU)
 	if err != nil {
 		shared.LogError(tag, "Create TUN failed", err)
