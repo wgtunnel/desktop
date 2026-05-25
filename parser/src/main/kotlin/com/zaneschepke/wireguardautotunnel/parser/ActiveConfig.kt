@@ -93,7 +93,12 @@ data class ActiveConfig(val interfaceSection: InterfaceSection, val peers: List<
             }
 
             return ActiveConfig(
-                interfaceSection = Config.buildInterface(interfaceMap, emptyList()),
+                interfaceSection =
+                    Config.buildInterface(
+                        interfaceMap,
+                        InterfaceScriptsBuilder.InterfaceScripts(),
+                        emptyList(),
+                    ),
                 peers = peerMaps.map { Config.buildActivePeer(it) },
             )
         }

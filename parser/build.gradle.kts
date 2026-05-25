@@ -15,6 +15,7 @@ dependencies {
 
     implementation(libs.human.readable)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.commons.validator)
 }
 
 tasks.test { useJUnitPlatform() }
@@ -29,7 +30,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.zaneschepke.wireguardautotunnel"
             artifactId = "amneziawg-parser"
-            version = "1.0.1"
+            version = "1.0.6"
             from(components["java"])
             pom {
                 name.set("AmneziaWG Parser")

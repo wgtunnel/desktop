@@ -20,6 +20,12 @@ object ConfigFormatter {
         sb.appendLine("PrivateKey = ${if (hidePrivateKey) "(hidden)" else iface.privateKey}")
         iface.address?.let { sb.appendLine("Address = $it") }
         iface.dns?.let { sb.appendLine("DNS = $it") }
+
+        iface.preUp?.forEach { sb.appendLine("PreUp = $it") }
+        iface.postUp?.forEach { sb.appendLine("PostUp = $it") }
+        iface.preDown?.forEach { sb.appendLine("PreDown = $it") }
+        iface.postDown?.forEach { sb.appendLine("PostDown = $it") }
+
         iface.listenPort?.let { sb.appendLine("ListenPort = $it") }
         iface.mtu?.let { sb.appendLine("MTU = $it") }
         iface.fwMark?.let { sb.appendLine("FwMark = $it") }

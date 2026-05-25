@@ -52,6 +52,7 @@ androidx-sqlite = "2.6.2"
 lang3 = "3.20.0"
 humanReadable = "1.12.3"
 datetime = "0.7.1"
+commonsValidator = "1.10.1"
 
 [bundles]
 ktor-client-jvm = ["ktor-client-core-jvm", "ktor-client-cio-jvm", "ktor-client-content-negotiation-jvm", "ktor-serialization-json-jvm", "ktor-client-okhttp", "ktor-client-websockets-jvm"]
@@ -188,6 +189,7 @@ multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", vers
 
 human-readable = { module = "nl.jacobras:Human-Readable", version.ref = "humanReadable" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+commons-validator = { module = "commons-validator:commons-validator", version.ref = "commonsValidator" }
 
 
 [plugins]

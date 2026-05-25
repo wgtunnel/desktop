@@ -1079,6 +1079,344 @@
             ]
         },
         {
+            "uniqueId": "commons-beanutils:commons-beanutils",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "Geir Magnusson Jr."
+                },
+                {
+                    "name": "Gary Gregory"
+                },
+                {
+                    "name": "Stian Soiland-Reyes"
+                },
+                {
+                    "name": "Robert Burrell Donkin"
+                },
+                {
+                    "name": "Niall Pemberton"
+                },
+                {
+                    "name": "Scott Sanders"
+                },
+                {
+                    "name": "James Strachan"
+                },
+                {
+                    "name": "Tim O'Brien"
+                },
+                {
+                    "name": "Morgan James Delagrange"
+                },
+                {
+                    "name": "Yoav Shapira"
+                },
+                {
+                    "name": "Rob Tompkins"
+                },
+                {
+                    "name": "Stephen Colebourne"
+                },
+                {
+                    "name": "Craig McClanahan"
+                },
+                {
+                    "name": "James Carman"
+                },
+                {
+                    "name": "John E. Conlon"
+                },
+                {
+                    "name": "Martin van den Bemt"
+                },
+                {
+                    "name": "David Eric Pugh"
+                },
+                {
+                    "name": "Dion Gillard"
+                },
+                {
+                    "name": "Simon Kitching"
+                },
+                {
+                    "name": "Rodney Waldhoff"
+                },
+                {
+                    "name": "Benedikt Ritter"
+                }
+            ],
+            "artifactVersion": "1.9.4",
+            "description": "Apache Commons BeanUtils provides an easy-to-use but flexible wrapper around reflection and introspection.",
+            "scm": {
+                "connection": "scm:svn:http://svn.apache.org/repos/asf/commons/proper/beanutils/tags/BEANUTILS_1_9_3_RC3",
+                "url": "http://svn.apache.org/viewvc/commons/proper/beanutils/tags/BEANUTILS_1_9_3_RC3",
+                "developerConnection": "scm:svn:https://svn.apache.org/repos/asf/commons/proper/beanutils/tags/BEANUTILS_1_9_3_RC3"
+            },
+            "name": "Apache Commons BeanUtils",
+            "website": "https://commons.apache.org/proper/commons-beanutils/",
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "organization": {
+                "url": "https://www.apache.org/",
+                "name": "The Apache Software Foundation"
+            }
+        },
+        {
+            "uniqueId": "commons-collections:commons-collections",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "Stephen Colebourne"
+                },
+                {
+                    "name": "Arun M. Thomas"
+                },
+                {
+                    "name": "Craig McClanahan"
+                },
+                {
+                    "name": "James Carman"
+                },
+                {
+                    "name": "Morgan Delagrange"
+                },
+                {
+                    "name": "Henri Yandell"
+                },
+                {
+                    "name": "Geir Magnusson"
+                },
+                {
+                    "name": "Matthew Hawthorne"
+                },
+                {
+                    "name": "Phil Steitz"
+                },
+                {
+                    "name": "Robert Burrell Donkin"
+                },
+                {
+                    "name": "Rodney Waldhoff"
+                }
+            ],
+            "artifactVersion": "3.2.2",
+            "description": "Types that extend and augment the Java Collections Framework.",
+            "scm": {
+                "connection": "scm:svn:http://svn.apache.org/repos/asf/commons/proper/collections/trunk",
+                "url": "http://svn.apache.org/viewvc/commons/proper/collections/trunk",
+                "developerConnection": "scm:svn:https://svn.apache.org/repos/asf/commons/proper/collections/trunk"
+            },
+            "name": "Apache Commons Collections",
+            "website": "http://commons.apache.org/collections/",
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "organization": {
+                "url": "http://www.apache.org/",
+                "name": "The Apache Software Foundation"
+            }
+        },
+        {
+            "uniqueId": "commons-digester:commons-digester",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "Craig McClanahan"
+                },
+                {
+                    "name": "Tim OBrien"
+                },
+                {
+                    "name": "Rahul Akolkar"
+                },
+                {
+                    "name": "Robert Burrell Donkin"
+                },
+                {
+                    "name": "Jean-Francois Arcand"
+                },
+                {
+                    "name": "Scott Sanders"
+                },
+                {
+                    "name": "James Strachan"
+                },
+                {
+                    "name": "Jason van Zyl"
+                },
+                {
+                    "name": "Simon Kitching"
+                },
+                {
+                    "name": "Simone Tripodi"
+                }
+            ],
+            "artifactVersion": "2.1",
+            "description": "The Digester package lets you configure an XML to Java object mapping module\n    which triggers certain actions called rules whenever a particular \n    pattern of nested XML elements is recognized.",
+            "scm": {
+                "connection": "scm:svn:http://svn.apache.org/repos/asf/commons/proper/digester/tags/DIGESTER_2_1_RC2",
+                "url": "http://svn.apache.org/viewvc/commons/proper/digester/tags/DIGESTER_2_1_RC2",
+                "developerConnection": "scm:svn:https://svn.apache.org/repos/asf/commons/proper/digester/tags/DIGESTER_2_1_RC2"
+            },
+            "name": "Commons Digester",
+            "website": "http://commons.apache.org/digester/",
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "organization": {
+                "url": "http://www.apache.org/",
+                "name": "The Apache Software Foundation"
+            }
+        },
+        {
+            "uniqueId": "commons-logging:commons-logging",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "Juozas Baliuka"
+                },
+                {
+                    "name": "Costin Manolache"
+                },
+                {
+                    "name": "Dennis Lundberg"
+                },
+                {
+                    "name": "Brian Stansberry"
+                },
+                {
+                    "name": "Robert Burrell Donkin"
+                },
+                {
+                    "name": "Scott Sanders"
+                },
+                {
+                    "name": "Thomas Neidhart"
+                },
+                {
+                    "name": "Richard Sitze"
+                },
+                {
+                    "organisationUrl": "https://www.apache.org/",
+                    "name": "Gary Gregory"
+                },
+                {
+                    "name": "Craig McClanahan"
+                },
+                {
+                    "name": "Morgan Delagrange"
+                },
+                {
+                    "name": "Peter Donald"
+                },
+                {
+                    "name": "Simon Kitching"
+                },
+                {
+                    "name": "Rodney Waldhoff"
+                }
+            ],
+            "artifactVersion": "1.3.0",
+            "description": "Apache Commons Logging is a thin adapter allowing configurable bridging to other,\n    well known logging systems.",
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-logging",
+                "url": "https://gitbox.apache.org/repos/asf/commons-logging",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-logging"
+            },
+            "name": "Apache Commons Logging",
+            "website": "https://commons.apache.org/proper/commons-logging/",
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "organization": {
+                "url": "https://www.apache.org/",
+                "name": "The Apache Software Foundation"
+            }
+        },
+        {
+            "uniqueId": "commons-validator:commons-validator",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "Martin Cooper"
+                },
+                {
+                    "name": "James Mitchell"
+                },
+                {
+                    "name": "James Turner"
+                },
+                {
+                    "name": "David Graham"
+                },
+                {
+                    "name": "Rob Leland"
+                },
+                {
+                    "name": "Henri Yandell"
+                },
+                {
+                    "name": "Ben Speakmon"
+                },
+                {
+                    "name": "Niall Pemberton"
+                },
+                {
+                    "organisationUrl": "https://www.apache.org/",
+                    "name": "Gary Gregory"
+                },
+                {
+                    "name": "Ted Husted"
+                },
+                {
+                    "name": "Craig McClanahan"
+                },
+                {
+                    "name": "David Winterfeldt"
+                },
+                {
+                    "name": "SimoneTripodi"
+                },
+                {
+                    "name": "Don Brown"
+                },
+                {
+                    "name": "Nick Burch"
+                },
+                {
+                    "name": "Benedikt Ritter"
+                }
+            ],
+            "artifactVersion": "1.8.0",
+            "description": "Apache Commons Validator provides the building blocks for both client side validation and server side data validation.\n    It may be used standalone or with a framework like Struts.",
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-validator",
+                "url": "https://gitbox.apache.org/repos/asf/commons-validator",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-validator"
+            },
+            "name": "Apache Commons Validator",
+            "website": "http://commons.apache.org/proper/commons-validator/",
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "organization": {
+                "url": "https://www.apache.org/",
+                "name": "The Apache Software Foundation"
+            }
+        },
+        {
             "uniqueId": "de.jangassen:jfa",
             "funding": [
                 

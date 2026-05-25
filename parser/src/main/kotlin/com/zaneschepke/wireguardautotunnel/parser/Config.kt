@@ -39,6 +39,7 @@ data class Config(
 
     companion object {
         fun parseQuickString(configString: String): Config {
+            val scripts = InterfaceScriptsBuilder()
             val interfaceMap = mutableMapOf<String, String>()
             val peerMaps = mutableListOf<Pair<MutableMap<String, String>, List<String>>>()
 
@@ -89,9 +90,23 @@ data class Config(
                 }
 
                 val parts = raw.split("=", limit = 2)
+
                 if (parts.size == 2) {
                     val key = parts[0].trim()
                     var value = parts[1].trim()
+
+                    if (currentSectionMap === interfaceMap) {
+                        when (key) {
+                            "PreUp",
+                            "PostUp",
+                            "PreDown",
+                            "PostDown" -> {
+                                scripts.add(key, value)
+                                return@forEach
+                            }
+                        }
+                    }
+
                     // remove whitespaces
                     if (
                         key in
@@ -99,6 +114,7 @@ data class Config(
                                 "PrivateKey",
                                 "PublicKey",
                                 "PresharedKey",
+                                "PreSharedKey",
                                 "H1",
                                 "H2",
                                 "H3",
@@ -113,12 +129,16 @@ data class Config(
 
             return Config(
                 headerComments = headerComments,
-                `interface` = buildInterface(interfaceMap, interfaceComments),
+                `interface` = buildInterface(interfaceMap, scripts.build(), interfaceComments),
                 peers = peerMaps.map { (map, comments) -> buildPeer(map, comments) },
             )
         }
 
-        internal fun buildInterface(m: Map<String, String>, comments: List<String>) =
+        internal fun buildInterface(
+            m: Map<String, String>,
+            scripts: InterfaceScriptsBuilder.InterfaceScripts,
+            comments: List<String>,
+        ) =
             InterfaceSection(
                 comments = comments,
                 privateKey = m["PrivateKey"] ?: "",
@@ -129,6 +149,10 @@ data class Config(
                 fwMark = m.getInt("FwMark", "Interface"),
                 table = m["Table"],
                 saveConfig = m.getBool("SaveConfig", "Interface"),
+                preUp = scripts.preUp,
+                postUp = scripts.postUp,
+                preDown = scripts.preDown,
+                postDown = scripts.postDown,
                 jC = m.getInt("Jc", "Interface"),
                 jMin = m.getInt("Jmin", "Interface"),
                 jMax = m.getInt("Jmax", "Interface"),
@@ -154,7 +178,7 @@ data class Config(
                 publicKey = m["PublicKey"] ?: "",
                 allowedIPs = m["AllowedIPs"],
                 endpoint = m["Endpoint"],
-                presharedKey = m["PresharedKey"],
+                presharedKey = m["PresharedKey"] ?: m["PreSharedKey"],
                 persistentKeepalive = m.getInt("PersistentKeepalive", "Peer"),
                 comments = comments,
             )
@@ -194,7 +218,7 @@ data class Config(
                 publicKey = m["PublicKey"] ?: "",
                 allowedIPs = m["AllowedIPs"],
                 endpoint = m["Endpoint"],
-                presharedKey = m["PresharedKey"],
+                presharedKey = m["PresharedKey"] ?: m["PreSharedKey"],
                 persistentKeepalive = m.getInt("PersistentKeepalive", "Peer"),
                 lastHandshakeSeconds = m.getLong("LastHandshakeSeconds", "Peer"),
                 lastHandshakeNanos = m.getLong("LastHandshakeNanos", "Peer"),
@@ -202,8 +226,8 @@ data class Config(
                 rxBytes = m.getLong("RxBytes", "Peer"),
             )
 
-        internal fun generatePublicKeyFromPrivate(privateBase64: String): String {
-            val privateKey = Key.fromBase64(privateBase64)
+        fun generatePublicKeyFromPrivateKey(privateKeyBase64: String): String {
+            val privateKey = Key.fromBase64(privateKeyBase64)
             val publicKey = Key.generatePublicKey(privateKey)
             return publicKey.toBase64()
         }

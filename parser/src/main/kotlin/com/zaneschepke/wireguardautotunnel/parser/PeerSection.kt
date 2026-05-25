@@ -25,7 +25,7 @@ data class PeerSection(
         persistentKeepalive?.let {
             if (it !in 0..65535)
                 throw ConfigParseException(
-                    ErrorType.INVALID_KEEPALIVE_NEGATIVE,
+                    ErrorType.INVALID_KEEPALIVE_VALUE,
                     "$prefix.PersistentKeepalive",
                     it,
                 )
@@ -34,7 +34,7 @@ data class PeerSection(
         endpoint?.let {
             val (host, portStr) = Config.parseEndpoint(it)
             val port = portStr?.toIntOrNull()
-            if (host == null || port == null || port !in 0..65535) {
+            if (host == null || port == null || port !in 1..65535) {
                 throw ConfigParseException(
                     ErrorType.INVALID_ENDPOINT_FORMAT,
                     "$prefix.Endpoint",
@@ -47,6 +47,12 @@ data class PeerSection(
                     "$prefix.Endpoint host",
                     host,
                 )
+            }
+        }
+
+        presharedKey?.let {
+            if (!NetworkUtils.isValidBase64(it)) {
+                throw ConfigParseException(ErrorType.INVALID_BASE64_KEY, "$prefix.PresharedKey", it)
             }
         }
 

@@ -1,22 +1,21 @@
 package com.zaneschepke.wireguardautotunnel.parser.util
 
+import com.zaneschepke.wireguardautotunnel.parser.ConfigParseException
+import com.zaneschepke.wireguardautotunnel.parser.ErrorType
 import java.net.InetAddress
+import org.apache.commons.validator.routines.InetAddressValidator
 
 object NetworkUtils {
+
+    private val validator = InetAddressValidator.getInstance()
+
     private val hostnameRegex =
         Regex(
             "^(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$"
         )
 
     fun isValidIp(ip: String): Boolean {
-        val sanitized = ip.removeSurrounding("[", "]")
-        if (sanitized.any { it.lowercaseChar() in 'g'..'z' }) return false
-
-        return try {
-            InetAddress.getAllByName(sanitized).isNotEmpty()
-        } catch (e: Exception) {
-            false
-        }
+        return validator.isValid(ip.removeSurrounding("[", "]"))
     }
 
     fun isValidCidr(cidr: String): Boolean {
@@ -41,7 +40,6 @@ object NetworkUtils {
 
     fun isValidDnsEntry(entry: String): Boolean {
         if (entry.isBlank()) return false
-        // Safe: isValidIp is offline, isValidHostname is regex.
         return isValidIp(entry) || isValidHostname(entry)
     }
 
@@ -51,9 +49,12 @@ object NetworkUtils {
     }
 
     fun isValidBase64(str: String): Boolean {
-        if (str.length != 44 || !str.endsWith("=")) return false
-        val base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
-        return str.all { it in base64Chars }
+        return try {
+            val decoded = kotlin.io.encoding.Base64.decode(str)
+            decoded.size == 32
+        } catch (_: Exception) {
+            false
+        }
     }
 
     fun isValidAmneziaHeader(header: String): Boolean {
@@ -73,10 +74,102 @@ object NetworkUtils {
         }
     }
 
-    fun isValidHexSignature(signature: String): Boolean {
-        val hex = signature.removePrefix("0x").trim()
-        if (hex.isEmpty() || hex.length % 2 != 0) return false
-        val hexChars = "0123456789abcdefABCDEF"
-        return hex.all { it in hexChars }
+    @Throws(ConfigParseException::class)
+    fun validateAmneziaSignaturePacket(value: String, fieldName: String) {
+        if (value.isBlank()) {
+            throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+        }
+
+        var index = 0
+
+        // every tag mush start with <
+        while (index < value.length) {
+            if (value[index] != '<') {
+                throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+            }
+            index++
+
+            val typeStart = index
+            while (index < value.length && value[index].isLetter()) {
+                index++
+            }
+            val tagType = value.substring(typeStart, index).lowercase()
+
+            if (tagType.isEmpty()) {
+                throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+            }
+
+            // All tags except <t> require a space
+            if (tagType != "t") {
+                if (index >= value.length || value[index] != ' ') {
+                    throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+                }
+                index++
+            }
+
+            when (tagType) {
+                "b" -> index = parseStaticBytesTag(value, index, fieldName)
+                "r",
+                "rd",
+                "rc" -> index = parseRandomTag(value, index, fieldName)
+                "t" -> {} // timestamp has no parameter
+                else ->
+                    throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+            }
+
+            // every tag must end with >
+            if (index >= value.length || value[index] != '>') {
+                throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+            }
+            index++
+        }
     }
+
+    private fun parseStaticBytesTag(value: String, start: Int, fieldName: String): Int {
+        var index = start
+
+        // must start with 0x
+        if (
+            index + 2 > value.length ||
+                !value.substring(index, index + 2).equals("0x", ignoreCase = true)
+        ) {
+            throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+        }
+        index += 2
+
+        val hexStart = index
+        while (index < value.length && value[index].isHexDigit()) {
+            index++
+        }
+
+        // must be a valid hex
+        val hexLength = index - hexStart
+        if (hexLength == 0 || hexLength % 2 != 0) {
+            throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+        }
+        return index
+    }
+
+    private fun parseRandomTag(value: String, start: Int, fieldName: String): Int {
+        var index = start
+        val numStart = index
+        while (index < value.length && value[index].isDigit()) {
+            index++
+        }
+
+        // must have at least one digit
+        if (index == numStart) {
+            throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+        }
+
+        // make sure it is a positive number
+        val size = value.substring(numStart, index).toIntOrNull()
+        if (size == null || size <= 0) {
+            throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
+        }
+        return index
+    }
+
+    private fun Char.isHexDigit(): Boolean =
+        this in '0'..'9' || this in 'a'..'f' || this in 'A'..'F'
 }

@@ -92,14 +92,11 @@ data class InterfaceSection(
         }
 
         jC?.let {
-            if (it !in 4..12)
-                throw ConfigParseException(ErrorType.INVALID_JC_RANGE, "Interface.Jc", it)
+            if (it < 0) throw ConfigParseException(ErrorType.INVALID_JC_VALUE, "Interface.Jc", it)
         }
         if (jMin != null && jMax != null) {
             if (jMin > jMax)
                 throw ConfigParseException(ErrorType.INVALID_JMIN_JMAX_ORDER, "Interface.Jmin/Jmax")
-            if (jMax >= (mtu ?: 1500))
-                throw ConfigParseException(ErrorType.INVALID_JMAX_MTU, "Interface.Jmax", jMax)
         }
 
         listOf(s1, s2, s3, s4).forEachIndexed { i, s ->
@@ -121,14 +118,9 @@ data class InterfaceSection(
             }
         }
 
-        listOf(i1, i2, i3, i4, i5).forEachIndexed { i, sig ->
-            if (sig != null && !NetworkUtils.isValidHexSignature(sig)) {
-                throw ConfigParseException(
-                    ErrorType.INVALID_SIGNATURE_FORMAT,
-                    "Interface.I${i + 1}",
-                    sig,
-                )
-            }
+        listOf(i1 to "I1", i2 to "I2", i3 to "I3", i4 to "I4", i5 to "I5").forEach {
+            (sig, shortName) ->
+            sig?.let { NetworkUtils.validateAmneziaSignaturePacket(it, "Interface.$shortName") }
         }
 
         address
