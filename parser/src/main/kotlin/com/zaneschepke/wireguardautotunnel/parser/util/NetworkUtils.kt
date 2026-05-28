@@ -9,11 +9,6 @@ object NetworkUtils {
 
     private val validator = InetAddressValidator.getInstance()
 
-    private val hostnameRegex =
-        Regex(
-            "^(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])*$"
-        )
-
     fun isValidIp(ip: String): Boolean {
         return validator.isValid(ip.removeSurrounding("[", "]"))
     }
@@ -44,8 +39,16 @@ object NetworkUtils {
     }
 
     fun isValidHostname(host: String): Boolean {
-        val cleaned = host.removeSurrounding("[", "]")
-        return hostnameRegex.matches(cleaned) && cleaned.length <= 253
+        val cleaned = host.removeSurrounding("[", "]").trim()
+        if (cleaned.isBlank() || cleaned.length > 253) return false
+        if (cleaned.startsWith(".") || cleaned.endsWith(".") || cleaned.contains("..")) return false
+
+        return cleaned.split('.').all { label ->
+            label.length in 1..63 &&
+                !label.startsWith('-') &&
+                !label.endsWith('-') &&
+                label.matches(Regex("^[a-zA-Z0-9-]+$"))
+        }
     }
 
     fun isValidBase64(str: String): Boolean {

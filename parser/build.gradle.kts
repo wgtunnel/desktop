@@ -30,7 +30,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.zaneschepke.wireguardautotunnel"
             artifactId = "amneziawg-parser"
-            version = "1.0.6"
+            version = "1.0.7"
             from(components["java"])
             pom {
                 name.set("AmneziaWG Parser")
