@@ -1,0 +1,8 @@
+#!/bin/bash
+# Pre-installation script: stop the existing daemon if running.
+LABEL="com.zaneschepke.wgtunnel.daemon"
+PLIST="/Library/LaunchDaemons/${LABEL}.plist"
+if [ -f "$PLIST" ]; then
+    launchctl bootout system "$PLIST" 2>/dev/null || true
+fi
+exit 0

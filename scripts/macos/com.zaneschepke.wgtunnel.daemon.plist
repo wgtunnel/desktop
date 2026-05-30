@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.zaneschepke.wgtunnel.daemon</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>INSTALL_PATH/bin/daemon</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>1</integer>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>WG_TUNNEL_SERVICE</key>
+        <string>1</string>
+        <key>HOME</key>
+        <string>/Library/Application Support/wgtunnel</string>
+    </dict>
+
+    <key>WorkingDirectory</key>
+    <string>INSTALL_PATH</string>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/wgtunnel/daemon.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/var/log/wgtunnel/daemon-error.log</string>
+</dict>
+</plist>
