@@ -14,8 +14,12 @@ import kotlinx.serialization.Serializable
 data class Config(
     @SerialName("Interface") val `interface`: InterfaceSection,
     @SerialName("Peer") val peers: List<PeerSection> = emptyList(),
+    val name: String? = null,
     val headerComments: List<String> = emptyList(),
 ) {
+
+    fun withName(newName: String?): Config =
+        copy(name = newName?.trim()?.takeIf { it.isNotBlank() })
 
     @Throws(ConfigParseException::class)
     fun validate() {
@@ -25,6 +29,7 @@ data class Config(
 
     fun asQuickString(): String =
         buildString {
+                name?.let { appendLine("# Name = $it") }
                 headerComments.forEach { appendLine(it) }
                 ConfigFormatter.appendInterfaceSection(this, `interface`)
                 peers.forEach { ConfigFormatter.appendPeerSection(this, it) }
@@ -92,8 +97,28 @@ data class Config(
                 val parts = raw.split("=", limit = 2)
 
                 if (parts.size == 2) {
-                    val key = parts[0].trim()
-                    var value = parts[1].trim()
+                    val rawKey = parts[0].trim()
+                    val lowerKey = rawKey.lowercase()
+
+                    // Normalize wireguard keys
+                    val key =
+                        when (lowerKey) {
+                            "allowedips" -> "AllowedIPs"
+                            "address" -> "Address"
+                            "dns" -> "DNS"
+                            "presharedkey" -> "PresharedKey"
+                            "privatekey" -> "PrivateKey"
+                            "publickey" -> "PublicKey"
+                            "listenport" -> "ListenPort"
+                            "persistentkeepalive" -> "PersistentKeepalive"
+                            "mtu" -> "MTU"
+                            "table" -> "Table"
+                            "saveconfig" -> "SaveConfig"
+                            else -> rawKey
+                        }
+
+                    // Strip inline comments before trimming
+                    var value = parts[1].substringBefore("#").substringBefore(";").trim()
 
                     if (currentSectionMap === interfaceMap) {
                         when (key) {
@@ -107,14 +132,13 @@ data class Config(
                         }
                     }
 
-                    // remove whitespaces
+                    // Remove whitespaces
                     if (
                         key in
                             listOf(
                                 "PrivateKey",
                                 "PublicKey",
                                 "PresharedKey",
-                                "PreSharedKey",
                                 "H1",
                                 "H2",
                                 "H3",
@@ -123,12 +147,55 @@ data class Config(
                     ) {
                         value = value.replace(Regex("\\s+"), "")
                     }
-                    currentSectionMap?.put(key, value)
+
+                    when (key) {
+                        "AllowedIPs",
+                        "Address",
+                        "DNS" -> {
+                            val existing = currentSectionMap?.get(key)
+                            currentSectionMap?.put(
+                                key,
+                                if (existing.isNullOrEmpty()) value else "$existing, $value",
+                            )
+                        }
+                        "PresharedKey" -> {
+                            currentSectionMap?.put("PresharedKey", value)
+                            currentSectionMap?.put("PreSharedKey", value)
+                        }
+                        else -> {
+                            currentSectionMap?.put(key, value)
+                        }
+                    }
                 }
             }
 
+            val extractedName =
+                headerComments.firstOrNull()?.let { firstComment ->
+                    val content = firstComment.trimStart('#', ' ', '\t').trim()
+
+                    when {
+                        content.startsWith("Name", ignoreCase = true) -> {
+                            content
+                                .substringAfter("Name", "")
+                                .trimStart('=', ' ', '\t')
+                                .trim()
+                                .takeIf { it.isNotBlank() }
+                        }
+                        else -> null
+                    }
+                }
+
+            // prevent name duplicates
+            val cleanedHeaderComments =
+                if (extractedName != null) {
+                    headerComments.drop(1)
+                } else {
+                    headerComments
+                }
+
             return Config(
-                headerComments = headerComments,
+                headerComments = cleanedHeaderComments,
+                name = extractedName,
                 `interface` = buildInterface(interfaceMap, scripts.build(), interfaceComments),
                 peers = peerMaps.map { (map, comments) -> buildPeer(map, comments) },
             )

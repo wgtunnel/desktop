@@ -11,7 +11,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
 
     implementation(libs.crypto.rand)
-    implementation(libs.curve25519.kotlin)
+    implementation(libs.bouncycastle)
 
     implementation(libs.human.readable)
     implementation(libs.kotlinx.datetime)
@@ -30,7 +30,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.zaneschepke.wireguardautotunnel"
             artifactId = "amneziawg-parser"
-            version = "1.0.7"
+            version = "1.1.0"
             from(components["java"])
             pom {
                 name.set("AmneziaWG Parser")

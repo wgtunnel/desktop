@@ -1088,9 +1088,6 @@
                     "name": "Geir Magnusson Jr."
                 },
                 {
-                    "name": "Gary Gregory"
-                },
-                {
                     "name": "Stian Soiland-Reyes"
                 },
                 {
@@ -1113,6 +1110,10 @@
                 },
                 {
                     "name": "Yoav Shapira"
+                },
+                {
+                    "organisationUrl": "https://www.apache.org/",
+                    "name": "Gary Gregory"
                 },
                 {
                     "name": "Rob Tompkins"
@@ -1148,15 +1149,15 @@
                     "name": "Benedikt Ritter"
                 }
             ],
-            "artifactVersion": "1.9.4",
+            "artifactVersion": "1.11.0",
             "description": "Apache Commons BeanUtils provides an easy-to-use but flexible wrapper around reflection and introspection.",
             "scm": {
-                "connection": "scm:svn:http://svn.apache.org/repos/asf/commons/proper/beanutils/tags/BEANUTILS_1_9_3_RC3",
-                "url": "http://svn.apache.org/viewvc/commons/proper/beanutils/tags/BEANUTILS_1_9_3_RC3",
-                "developerConnection": "scm:svn:https://svn.apache.org/repos/asf/commons/proper/beanutils/tags/BEANUTILS_1_9_3_RC3"
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf?p=commons-beanutils.git",
+                "url": "https://gitbox.apache.org/repos/asf?p=commons-beanutils.git",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf?p=commons-beanutils.git"
             },
             "name": "Apache Commons BeanUtils",
-            "website": "https://commons.apache.org/proper/commons-beanutils/",
+            "website": "https://commons.apache.org/proper/commons-beanutils",
             "licenses": [
                 "Apache-2.0"
             ],
@@ -1326,8 +1327,8 @@
                     "name": "Rodney Waldhoff"
                 }
             ],
-            "artifactVersion": "1.3.0",
-            "description": "Apache Commons Logging is a thin adapter allowing configurable bridging to other,\n    well known logging systems.",
+            "artifactVersion": "1.3.5",
+            "description": "Apache Commons Logging is a thin adapter allowing configurable bridging to other,\n    well-known logging systems.",
             "scm": {
                 "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-logging",
                 "url": "https://gitbox.apache.org/repos/asf/commons-logging",
@@ -1399,15 +1400,15 @@
                     "name": "Benedikt Ritter"
                 }
             ],
-            "artifactVersion": "1.8.0",
-            "description": "Apache Commons Validator provides the building blocks for both client side validation and server side data validation.\n    It may be used standalone or with a framework like Struts.",
+            "artifactVersion": "1.10.1",
+            "description": "Apache Commons Validator provides the building blocks for both client-side and server-side data validation.\n    It may be used standalone or with a framework like Struts.",
             "scm": {
-                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-validator",
-                "url": "https://gitbox.apache.org/repos/asf/commons-validator",
-                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-validator"
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-validator.git/commons-validator",
+                "url": "https://gitbox.apache.org/repos/asf?p=commons-validator.git/commons-validator",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-validator.git/commons-validator"
             },
             "name": "Apache Commons Validator",
-            "website": "http://commons.apache.org/proper/commons-validator/",
+            "website": "https://commons.apache.org/proper/commons-validator/",
             "licenses": [
                 "Apache-2.0"
             ],
@@ -1456,90 +1457,6 @@
             },
             "name": "Poko Annotations",
             "website": "https://github.com/drewhamilton/Poko",
-            "licenses": [
-                "Apache-2.0"
-            ]
-        },
-        {
-            "uniqueId": "io.github.andreypfau:curve25519-kotlin",
-            "funding": [
-                
-            ],
-            "developers": [
-                {
-                    "name": "Andrey Pfau"
-                }
-            ],
-            "artifactVersion": "0.0.8",
-            "description": "A pure Kotlin/Multiplatform implementation of group operations on Curve25519.",
-            "scm": {
-                "url": "https://github.com/andreypfau/curve25519-kotlin"
-            },
-            "name": "curve25519-kotlin",
-            "website": "https://github.com/andreypfau/curve25519-kotlin",
-            "licenses": [
-                "Apache-2.0"
-            ]
-        },
-        {
-            "uniqueId": "io.github.andreypfau:kotlinx-crypto-digest",
-            "funding": [
-                
-            ],
-            "developers": [
-                {
-                    "name": "Andrey Pfau"
-                }
-            ],
-            "artifactVersion": "0.0.4",
-            "description": "A multiplatform Kotlin library providing basic cryptographic functions and primitives",
-            "scm": {
-                "url": "https://github.com/andreypfau/kotlinx-crypto"
-            },
-            "name": "kotlinx-crypto-digest",
-            "website": "https://github.com/andreypfau/kotlinx-crypto",
-            "licenses": [
-                "Apache-2.0"
-            ]
-        },
-        {
-            "uniqueId": "io.github.andreypfau:kotlinx-crypto-sha2",
-            "funding": [
-                
-            ],
-            "developers": [
-                {
-                    "name": "Andrey Pfau"
-                }
-            ],
-            "artifactVersion": "0.0.4",
-            "description": "A multiplatform Kotlin library providing basic cryptographic functions and primitives",
-            "scm": {
-                "url": "https://github.com/andreypfau/kotlinx-crypto"
-            },
-            "name": "kotlinx-crypto-sha2",
-            "website": "https://github.com/andreypfau/kotlinx-crypto",
-            "licenses": [
-                "Apache-2.0"
-            ]
-        },
-        {
-            "uniqueId": "io.github.andreypfau:kotlinx-crypto-subtle",
-            "funding": [
-                
-            ],
-            "developers": [
-                {
-                    "name": "Andrey Pfau"
-                }
-            ],
-            "artifactVersion": "0.0.4",
-            "description": "A multiplatform Kotlin library providing basic cryptographic functions and primitives",
-            "scm": {
-                "url": "https://github.com/andreypfau/kotlinx-crypto"
-            },
-            "name": "kotlinx-crypto-subtle",
-            "website": "https://github.com/andreypfau/kotlinx-crypto",
             "licenses": [
                 "Apache-2.0"
             ]
@@ -2582,6 +2499,27 @@
                 "url": "https://www.apache.org/",
                 "name": "The Apache Software Foundation"
             }
+        },
+        {
+            "uniqueId": "org.bouncycastle:bcprov-jdk18on",
+            "funding": [
+                
+            ],
+            "developers": [
+                {
+                    "name": "The Legion of the Bouncy Castle Inc."
+                }
+            ],
+            "artifactVersion": "1.84",
+            "description": "The Bouncy Castle Crypto package is a Java implementation of cryptographic algorithms. This jar contains the  JCA/JCE provider and low-level API for the BC Java version 1.84 for Java 1.8 and later.",
+            "scm": {
+                "url": "https://github.com/bcgit/bc-java"
+            },
+            "name": "Bouncy Castle Provider",
+            "website": "https://www.bouncycastle.org/download/bouncy-castle-java/",
+            "licenses": [
+                "73252b46f36df25ef51a7994de439aea"
+            ]
         },
         {
             "uniqueId": "org.checkerframework:checker-qual",
@@ -5140,6 +5078,11 @@
             "hash": "5a8ab822077668f2bb8a9b65346683ed",
             "url": "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html",
             "name": "GNU Lesser General Public License"
+        },
+        "73252b46f36df25ef51a7994de439aea": {
+            "hash": "73252b46f36df25ef51a7994de439aea",
+            "url": "https://www.bouncycastle.org/licence.html",
+            "name": "Bouncy Castle Licence"
         },
         "8cd94e3ff25fb90fa794464eee297b17": {
             "hash": "8cd94e3ff25fb90fa794464eee297b17",
