@@ -50,12 +50,12 @@ object ConfigFormatter {
         iface.i4?.let { sb.appendLine("I4 = $it") }
         iface.i5?.let { sb.appendLine("I5 = $it") }
 
-        iface.includedApplications?.let {
-            sb.appendLine("IncludedApplications = ${it.joinToString(",")}")
-        }
-        iface.excludedApplications?.let {
-            sb.appendLine("ExcludedApplications = ${it.joinToString(",")}")
-        }
+        iface.includedApplications
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { sb.appendLine("IncludedApplications = ${it.joinToString(",")}") }
+        iface.excludedApplications
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { sb.appendLine("ExcludedApplications = ${it.joinToString(",")}") }
     }
 
     fun appendPeerSection(sb: StringBuilder, peer: PeerSection) {
