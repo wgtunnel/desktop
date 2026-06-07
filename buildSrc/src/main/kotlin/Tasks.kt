@@ -7,6 +7,7 @@ fun Project.registerConveyorTask(
     packageType: String,
     subDir: String,
     configFile: String = "conveyor-local.conf",
+    machines: String? = null,
 ) {
     tasks.register<Exec>(taskName) {
         group = "distribution"
@@ -20,18 +21,25 @@ fun Project.registerConveyorTask(
             environment("CONVEYOR_PAT", it)
         }
 
+        // Resolve target machines: use explicit override, else auto-detect host for mac tasks
+        val resolvedMachines: String? = machines ?: run {
+            if (subDir == "mac") {
+                val arch = System.getProperty("os.arch") ?: ""
+                val macArch = if (arch == "aarch64") "mac.aarch64" else "mac.amd64"
+                macArch
+            } else null
+        }
+
         val args =
             mutableListOf(
                 "conveyor",
                 "-f",
                 configFile,
-                "make",
-                "--output-dir",
-                outputDir.get().asFile.absolutePath,
-                packageType,
             )
+        resolvedMachines?.let { args.add("-Kapp.machines=$it") }
+        args.addAll(listOf("make", "--output-dir", outputDir.get().asFile.absolutePath, packageType))
 
-        LocalProperties.get("conveyor.passphrase")?.let {
+        (System.getenv("CONVEYOR_PASSPHRASE") ?: LocalProperties.get("conveyor.passphrase"))?.let {
             environment("CONVEYOR_PASSPHRASE", it)
             args.add(1, "--passphrase=env:CONVEYOR_PASSPHRASE")
         }

@@ -9,6 +9,7 @@ RESOURCEDIR ?= $(CURDIR)/../../src/main/resources
 
 NDK_GO_ARCH_MAP_x86_64 := amd64
 NDK_GO_ARCH_MAP_aarch64 := arm64
+NDK_GO_ARCH_MAP_arm64 := arm64
 
 GO_VERSION := 1.25.5
 GO_DIR := $(BUILDDIR)/go-$(GO_VERSION)
@@ -24,12 +25,15 @@ GO_HASH_linux-amd64 := 9e9b755d63b36acf30c12a9a3fc379243714c1c6d3dd72861da637f33
 export GOROOT := $(GO_DIR)
 export PATH := $(GO_DIR)/bin:$(PATH)
 export CGO_ENABLED := 1
+export MACOSX_DEPLOYMENT_TARGET := 12.0
 
 HOST_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ifeq ($(HOST_OS),darwin)
 PLATFORMS := darwin-amd64 darwin-arm64 linux-amd64 windows-amd64 windows-arm64
+SED_INPLACE := sed -i ''
 else
 PLATFORMS := linux-amd64 windows-amd64
+SED_INPLACE := sed -i
 endif
 
 default: all
@@ -42,14 +46,17 @@ $(BUILDDIR)/$(GO_TARBALL):
 
 $(GO_DIR)/.prepared: $(BUILDDIR)/$(GO_TARBALL)
 	mkdir -p "$(dir $@)"
-	tar -C "$(dir $@)" --strip-components=1 -xzf "$^"
-	cd "$(dir $@)/src/runtime" && sed -i 's/CLOCK_MONOTONIC/BOOTTIME/g' sys_linux_*.s
-	cd "$(dir $@)/src/runtime" && sed -i 's/ $1/ $7/g' sys_linux_*.s
-	cd "$(dir $@)/src/runtime" && sed -i '/libc_mach_absolute_time/a \//go:cgo_import_dynamic libc_mach_continuous_time mach_continuous_time "/usr/lib/libSystem.B.dylib"' sys_darwin.go
-	cd "$(dir $@)/src/runtime" && sed -i 's/mach_absolute_time/mach_continuous_time/g' sys_darwin_amd64.s sys_darwin_arm64.s
+	tar -C "$(dir $@)" --strip-components=1 --no-same-owner -xzf "$^"
+	chmod -R u+w "$(GO_DIR)"
+	cd "$(dir $@)/src/runtime" && $(SED_INPLACE) 's/CLOCK_MONOTONIC/BOOTTIME/g' sys_linux_*.s
+	cd "$(dir $@)/src/runtime" && $(SED_INPLACE) 's/ $1/ $7/g' sys_linux_*.s
+	cd "$(dir $@)/src/runtime" && awk '/libc_mach_absolute_time/{print; print "//go:cgo_import_dynamic libc_mach_continuous_time mach_continuous_time \"/usr/lib/libSystem.B.dylib\""; next} 1' sys_darwin.go > sys_darwin.go.tmp && mv sys_darwin.go.tmp sys_darwin.go
+	cd "$(dir $@)/src/runtime" && $(SED_INPLACE) 's/mach_absolute_time/mach_continuous_time/g' sys_darwin_amd64.s sys_darwin_arm64.s
 	touch "$@"
 
-$(DESTDIR)/libwg-linux-amd64.so: $(GO_DIR)/.prepared go.mod go.sum $(wildcard *.go) $(wildcard **/*.go)
+GO_SOURCES := $(shell find . -name "*.go" -not -path "./build/*")
+
+$(DESTDIR)/libwg-linux-amd64.so: $(GO_DIR)/.prepared go.mod go.sum $(GO_SOURCES)
 	@mkdir -p "$(DESTDIR)"
 	@if [ "$(HOST_OS)" = "darwin" ]; then \
 		GOOS=linux GOARCH=amd64 CC="zig cc -target x86_64-linux-gnu-musl" CXX="zig c++ -target x86_64-linux-gnu-musl" go build -ldflags="-buildid=" -v -trimpath -buildvcs=false -o "$@" -buildmode=c-shared .; \
@@ -57,21 +64,21 @@ $(DESTDIR)/libwg-linux-amd64.so: $(GO_DIR)/.prepared go.mod go.sum $(wildcard *.
 		GOOS=linux GOARCH=amd64 go build -ldflags="-buildid=" -v -trimpath -buildvcs=false -o "$@" -buildmode=c-shared .; \
 	fi
 
-$(DESTDIR)/libwg-windows-amd64.dll: $(GO_DIR)/.prepared go.mod go.sum $(wildcard *.go) $(wildcard **/*.go)
+$(DESTDIR)/libwg-windows-amd64.dll: $(GO_DIR)/.prepared go.mod go.sum $(GO_SOURCES)
 	@mkdir -p "$(DESTDIR)"
 	GOOS=windows GOARCH=amd64 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ \
 	go build -ldflags="-buildid=" -v -trimpath -buildvcs=false -o "$@" -buildmode=c-shared .
 
-$(DESTDIR)/libwg-windows-arm64.dll: $(GO_DIR)/.prepared go.mod go.sum $(wildcard *.go) $(wildcard **/*.go)
+$(DESTDIR)/libwg-windows-arm64.dll: $(GO_DIR)/.prepared go.mod go.sum $(GO_SOURCES)
 	@mkdir -p "$(DESTDIR)"
 	GOOS=windows GOARCH=arm64 CC=aarch64-w64-mingw32-gcc CXX=aarch64-w64-mingw32-g++ \
 	go build -ldflags="-buildid=" -v -trimpath -buildvcs=false -o "$@" -buildmode=c-shared .
 
-$(DESTDIR)/libwg-darwin-amd64.dylib: $(GO_DIR)/.prepared go.mod go.sum $(wildcard *.go) $(wildcard **/*.go)
+$(DESTDIR)/libwg-darwin-amd64.dylib: $(GO_DIR)/.prepared go.mod go.sum $(GO_SOURCES)
 	@mkdir -p "$(DESTDIR)"
-	GOOS=darwin GOARCH=amd64 go build -ldflags="-buildid=" -v -trimpath -buildvcs=false -o "$@" -buildmode=c-shared .
+	GOOS=darwin GOARCH=amd64 CC="clang -target x86_64-apple-macos$(MACOSX_DEPLOYMENT_TARGET)" go build -ldflags="-buildid=" -v -trimpath -buildvcs=false -o "$@" -buildmode=c-shared .
 
-$(DESTDIR)/libwg-darwin-arm64.dylib: $(GO_DIR)/.prepared go.mod go.sum $(wildcard *.go) $(wildcard **/*.go)
+$(DESTDIR)/libwg-darwin-arm64.dylib: $(GO_DIR)/.prepared go.mod go.sum $(GO_SOURCES)
 	@mkdir -p "$(DESTDIR)"
 	GOOS=darwin GOARCH=arm64 go build -ldflags="-buildid=" -v -trimpath -buildvcs=false -o "$@" -buildmode=c-shared .
 

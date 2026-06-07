@@ -1,0 +1,136 @@
+name: release-macos-pkg
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+
+jobs:
+  build-macos-pkg:
+    name: build-macos-pkg-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    environment: production
+    strategy:
+      matrix:
+        include:
+          - runner: macos-latest
+            arch: aarch64
+            conveyor_machines: mac.aarch64
+          - runner: macos-latest
+            arch: amd64
+            conveyor_machines: mac.amd64
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Install GNU sha256sum shim
+        run: |
+          printf '#!/bin/sh\nexec shasum -a 256 "$@"\n' | sudo tee /usr/local/bin/sha256sum > /dev/null
+          sudo chmod +x /usr/local/bin/sha256sum
+
+      - name: Build Gradle inputs
+        run: |
+          chmod +x gradlew
+          ./gradlew :daemon:installDist \
+                    :composeApp:createDistributable \
+                    :cli:installDist \
+                    :composeApp:writeConveyorConfig
+        env:
+          CONVEYOR_SIGNING_KEY: ${{ secrets.CONVEYOR_SIGNING_KEY }}
+          CONVEYOR_PAT: ${{ secrets.CONVEYOR_PAT }}
+
+      - name: Prepare signing key
+        run: |
+          if [ -n "$REAL_KEY" ]; then
+            echo "CONVEYOR_SIGNING_KEY=$REAL_KEY" >> $GITHUB_ENV
+            echo "CONVEYOR_PASSPHRASE=$REAL_PASS" >> $GITHUB_ENV
+          else
+            # Generate ephemeral self-signed PKCS12 for fork/test builds (no notarization)
+            openssl req -x509 -newkey rsa:2048 -keyout /tmp/key.pem -out /tmp/cert.pem \
+              -days 1 -nodes -subj "/CN=WGTunnel Test/O=Test/C=US" 2>/dev/null
+            openssl pkcs12 -export -out /tmp/signing.p12 \
+              -inkey /tmp/key.pem -in /tmp/cert.pem -passout pass:testpass 2>/dev/null
+            echo "CONVEYOR_SIGNING_KEY=$(openssl base64 -in /tmp/signing.p12 | tr -d '\n')" >> $GITHUB_ENV
+            echo "CONVEYOR_PASSPHRASE=testpass" >> $GITHUB_ENV
+          fi
+        env:
+          REAL_KEY: ${{ secrets.CONVEYOR_SIGNING_KEY }}
+          REAL_PASS: ${{ secrets.CONVEYOR_PASSPHRASE }}
+
+      - name: Install Conveyor
+        run: |
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "arm64" ]; then PLAT="mac-aarch64"; else PLAT="mac-amd64"; fi
+          curl -fsSL "https://downloads.hydraulic.dev/conveyor/conveyor-21.0-${PLAT}.zip" -o /tmp/conveyor.zip
+          unzip -q /tmp/conveyor.zip -d /tmp/conveyor-dist
+          xattr -cr /tmp/conveyor-dist/Conveyor.app
+          echo "CONVEYOR=/tmp/conveyor-dist/Conveyor.app/Contents/MacOS/conveyor" >> $GITHUB_ENV
+
+      - name: Build Mac app with Conveyor
+        run: |
+          "$CONVEYOR" \
+            --agree-to-license=1 \
+            -f conveyor-local.conf \
+            -Kapp.machines=${{ matrix.conveyor_machines }} \
+            --passphrase=env:CONVEYOR_PASSPHRASE \
+            make mac-app --output-dir ./build/conveyor/mac
+        env:
+          CONVEYOR_PAT: ${{ secrets.CONVEYOR_PAT }}
+
+      - name: Build PKG
+        run: |
+          set -e
+          ROOT="build/mac-pkg/root"
+          APP_SRC="build/conveyor/mac"
+          PLIST="scripts/macos/pkg/com.zaneschepke.wgtunnel.daemon.plist"
+          SCRIPTS="scripts/macos/pkg"
+          OUTPUT="build/mac-pkg/WGTunnel.pkg"
+          VERSION=$(./gradlew -q properties | grep '^version:' | awk '{print $2}')
+
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/Applications" "$ROOT/Library/LaunchDaemons"
+
+          APP=$(find "$APP_SRC" -maxdepth 1 -name '*.app' | head -1)
+          [ -z "$APP" ] && { echo "No .app found in $APP_SRC"; exit 1; }
+          cp -r "$APP" "$ROOT/Applications/"
+          cp "$PLIST" "$ROOT/Library/LaunchDaemons/"
+          mkdir -p "$(dirname "$OUTPUT")"
+
+          pkgbuild \
+            --root            "$ROOT"    \
+            --scripts         "$SCRIPTS" \
+            --identifier      "com.zaneschepke.wgtunnel" \
+            --version         "$VERSION" \
+            --install-location "/" \
+            "$OUTPUT"
+          echo "macOS PKG built: $OUTPUT"
+
+      - name: Rename PKG with arch suffix
+        run: mv build/mac-pkg/WGTunnel.pkg build/mac-pkg/WGTunnel-${{ matrix.arch }}.pkg
+
+      - name: Upload PKG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WGTunnel-${{ matrix.arch }}.pkg
+          path: build/mac-pkg/WGTunnel-${{ matrix.arch }}.pkg
+          retention-days: 7
+
+      - name: Upload PKG to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/mac-pkg/WGTunnel-${{ matrix.arch }}.pkg
+          token: ${{ secrets.CONVEYOR_PAT }}

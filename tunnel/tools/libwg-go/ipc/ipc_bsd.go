@@ -10,7 +10,7 @@ import (
 )
 
 func SetupIPC(name string) (net.Listener, error) {
-	var socketDirectory = "/run/wgtunnel"
+	var socketDirectory = "/var/run/wgtunnel"
 
 	uapiFile, err := ipc.UAPIOpen(socketDirectory, name)
 	if err != nil {
