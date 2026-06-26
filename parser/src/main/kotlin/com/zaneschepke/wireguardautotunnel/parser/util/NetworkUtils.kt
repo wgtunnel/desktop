@@ -85,7 +85,7 @@ object NetworkUtils {
 
         var index = 0
 
-        // every tag mush start with <
+        // every tag must start with <
         while (index < value.length) {
             if (value[index] != '<') {
                 throw ConfigParseException(ErrorType.INVALID_SIGNATURE_FORMAT, fieldName, value)
