@@ -7,7 +7,8 @@ HOST_OS      := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ifeq ($(HOST_OS),darwin)
     PLATFORMS := darwin-amd64 darwin-arm64 linux-amd64 windows-amd64 windows-arm64
 else
-    PLATFORMS := linux-amd64 windows-amd64
+    # windows-arm64 needs llvm-mingw
+    PLATFORMS := linux-amd64 windows-amd64 windows-arm64
 endif
 
 export CGO_ENABLED := 1

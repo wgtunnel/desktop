@@ -57,6 +57,12 @@ jobs:
         with:
           go-version: '1.25.5'
 
+      - name: Install llvm-mingw (Windows ARM64 cross toolchain)
+        run: |
+          curl -L -o /tmp/llvm-mingw.tar.xz https://github.com/mstorsjo/llvm-mingw/releases/download/20260826/llvm-mingw-20260826-ucrt-ubuntu-22.04-x86_64.tar.xz
+          tar -C /opt -xf /tmp/llvm-mingw.tar.xz
+          echo "/opt/llvm-mingw-20260826-ucrt-ubuntu-22.04-x86_64/bin" >> $GITHUB_PATH
+
       - name: Azure Login (Client Secret)
         uses: azure/login@v2
         with:
