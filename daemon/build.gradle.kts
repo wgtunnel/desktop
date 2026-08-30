@@ -52,7 +52,10 @@ tasks.named<Delete>("clean") {
     delete(file("winsw/artifacts"))
 }
 
-tasks.named("installDist") { dependsOn("buildWinSW") }
+tasks.named("installDist") {
+    dependsOn("buildWinSW")
+    dependsOn("buildWinSWArm64")
+}
 
 tasks.register<Exec>("buildWinSW") {
     val winSwDir = "winsw/src/WinSW"
@@ -71,8 +74,8 @@ tasks.register<Exec>("buildWinSW") {
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
     outputs
-        .dir(file("$winSwDir/bin/Release/net7.0-windows/win-x64/publish"))
-        .withPropertyName("winSwPublishDir")
+        .file(file("winsw/artifacts/publish/WinSW-x64.exe"))
+        .withPropertyName("winSwPublishExe")
 
     commandLine(
         "dotnet",
@@ -87,5 +90,45 @@ tasks.register<Exec>("buildWinSW") {
         "--self-contained",
         "true",
         "-p:PublishSingleFile=true",
+        // don't let new NuGet audit advisories fail the WinSW build
+        "-p:WarningsNotAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904",
+    )
+}
+
+tasks.register<Exec>("buildWinSWArm64") {
+    val winSwDir = "winsw/src/WinSW"
+    group = "build"
+    description = "Build Windows service wrapper for ARM64."
+    workingDir = file(winSwDir)
+
+    inputs
+        .files(
+            fileTree(winSwDir) {
+                include("**/*.cs", "**/*.csproj", "**/appsettings.json")
+                exclude("bin/**", "obj/**")
+            }
+        )
+        .withPropertyName("winSwSourceFiles")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+
+    outputs
+        .file(file("winsw/artifacts/publish/WinSW-arm64.exe"))
+        .withPropertyName("winSwArm64PublishExe")
+
+    commandLine(
+        "dotnet",
+        "publish",
+        "WinSW.csproj",
+        "-f",
+        "net7.0-windows",
+        "-c",
+        "Release",
+        "-r",
+        "win-arm64",
+        "--self-contained",
+        "true",
+        "-p:PublishSingleFile=true",
+        "-p:PlatformTarget=arm64",
+        "-p:WarningsNotAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904",
     )
 }
