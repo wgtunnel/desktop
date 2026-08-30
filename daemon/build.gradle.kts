@@ -74,8 +74,8 @@ tasks.register<Exec>("buildWinSW") {
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
     outputs
-        .dir(file("$winSwDir/bin/Release/net7.0-windows/win-x64/publish"))
-        .withPropertyName("winSwPublishDir")
+        .file(file("winsw/artifacts/publish/WinSW-x64.exe"))
+        .withPropertyName("winSwPublishExe")
 
     commandLine(
         "dotnet",
@@ -112,8 +112,8 @@ tasks.register<Exec>("buildWinSWArm64") {
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
     outputs
-        .dir(file("$winSwDir/bin/Release/net7.0-windows/win-arm64/publish"))
-        .withPropertyName("winSwArm64PublishDir")
+        .file(file("winsw/artifacts/publish/WinSW-arm64.exe"))
+        .withPropertyName("winSwArm64PublishExe")
 
     commandLine(
         "dotnet",
