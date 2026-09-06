@@ -273,7 +273,7 @@ nucleus.application {
                 deleteAppDataOnUninstall = true
                 installerHeader.set(rootProject.file("packaging/windows/header.bmp"))
                 installerSidebar.set(rootProject.file("packaging/windows/sidebar.bmp"))
-                license.set(project.file("LICENSE"))
+                license.set(rootProject.file("LICENSE"))
             }
             signing {
                 val azureTenant = System.getenv("AZURE_TENANT_ID")
