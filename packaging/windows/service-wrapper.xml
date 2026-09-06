@@ -4,7 +4,7 @@
     <description>__APP_DISPLAY__ Daemon - early kill-switch for leak protection</description>
 
     <workingdirectory>%BASE%</workingdirectory>
-    <executable>%BASE%\daemon.exe</executable>
+    <executable>%BASE%\wgtunnel-daemon.exe</executable>
 
     <env name="WG_TUNNEL_SERVICE" value="1"/>
 

@@ -177,7 +177,7 @@ nucleus.application {
             TargetFormat.Pacman,
             TargetFormat.Tar,
         )
-        appName = appFsName
+        appName = appDisplayName
         packageName = appFsName
         packageVersion = packageSemver
         vendor = "WG Tunnel"
@@ -246,6 +246,7 @@ nucleus.application {
                 oneClick = false
                 allowElevation = true
                 perMachine = true
+                menuCategory = appDisplayName
                 shortcutName = appDisplayName
                 includeScript.set(rootProject.file("packaging/windows/service.nsh"))
                 deleteAppDataOnUninstall = false
