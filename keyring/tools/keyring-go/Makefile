@@ -36,10 +36,17 @@ $(DESTDIR)/libkeyring-linux-amd64.so: $(wildcard *.go)
 	@test -f "$(JAVA_HOME)/include/jni.h" || (echo "jni.h not found; JAVA_HOME=$(JAVA_HOME)"; exit 1)
 	CGO_CFLAGS="$(JDK_JNI_CFLAGS)" GOOS=linux GOARCH=amd64 CC=gcc $(GOBUILD) -o "$@" .
 
+ifeq ($(OS),Windows_NT)
+    WIN_CC := gcc
+else
+    WIN_CC := x86_64-w64-mingw32-gcc
+endif
+
 $(DESTDIR)/libkeyring-windows-amd64.dll: $(wildcard *.go)
 	@mkdir -p "$(DESTDIR)"
+	@test -f "$(JAVA_HOME)/include/jni.h" || (echo "jni.h not found; JAVA_HOME=$(JAVA_HOME)"; exit 1)
 	CGO_CFLAGS="$(JDK_JNI_CFLAGS)" GOOS=windows GOARCH=amd64 \
-		CC=x86_64-w64-mingw32-gcc $(GOBUILD) -o "$@" .
+		CC=$(WIN_CC) $(GOBUILD) -o "$@" .
 
 $(DESTDIR)/libkeyring-windows-arm64.dll: $(wildcard *.go)
 	@mkdir -p "$(DESTDIR)"

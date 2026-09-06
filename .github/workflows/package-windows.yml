@@ -86,8 +86,8 @@ jobs:
 
       - name: Verify Tools
         run: |
-          make --version
-          x86_64-w64-mingw32-gcc --version
+          gcc --version
+          go version
 
       - name: Azure Login
         uses: azure/login@v2
