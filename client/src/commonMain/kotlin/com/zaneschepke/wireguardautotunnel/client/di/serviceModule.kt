@@ -6,6 +6,10 @@ import com.zaneschepke.wireguardautotunnel.client.data.service.UdsBackendService
 import com.zaneschepke.wireguardautotunnel.client.data.service.UdsDaemonService
 import com.zaneschepke.wireguardautotunnel.client.data.service.UdsTunnelService
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
+import com.zaneschepke.wireguardautotunnel.client.orchestration.AutoTunnelCoordinator
+import com.zaneschepke.wireguardautotunnel.client.orchestration.LogCoordinator
+import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelBackendCoordinator
+import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelImportService
@@ -15,6 +19,7 @@ import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.ipc.Headers
 import com.zaneschepke.wireguardautotunnel.core.ipc.IPC
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
+import dev.nucleusframework.nativehttp.ktor.installNativeSsl
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
@@ -27,6 +32,9 @@ import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 
@@ -40,6 +48,7 @@ val serviceModule = module {
     single {
         val json: Json = get()
         HttpClient(CIO) {
+            installNativeSsl()
             defaultRequest {
                 contentType(ContentType.Application.Json)
                 accept(ContentType.Application.Json)
@@ -107,9 +116,70 @@ val serviceModule = module {
             }
         }
     }
-    single<DaemonService> { UdsDaemonService(get(), get(), get()) }
-    single<TunnelService> { UdsTunnelService(get(), tunnelRepository = get()) }
-    single<BackendService> { UdsBackendService(get(), get(), get(), get()) }
+    single { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+    single<DaemonService> {
+        UdsDaemonService(
+            client = get(),
+            lockdownSettingsRepository = get(),
+            generalSettingsRepository = get(),
+            json = get(),
+            scope = get(),
+        )
+    }
+    single {
+        LogCoordinator(
+            monitoringRepository = get(),
+            daemonService = get(),
+            scope = get(),
+        )
+    }
+    single<TunnelService> { UdsTunnelService(get()) }
+    single<BackendService> {
+        UdsBackendService(
+            client = get(),
+            json = get(),
+            lockdownSettingsRepository = get(),
+            daemonService = get(),
+            scope = get(),
+        )
+    }
+
+    single {
+        TunnelCoordinator(
+            tunnelService = get(),
+            backendService = get(),
+            tunnelRepository = get(),
+            settingsRepository = get(),
+            dnsSettingsRepository = get(),
+            monitoringSettingsRepository = get(),
+            proxyRepository = get(),
+            lockdownRepository = get(),
+            scope = get(),
+        )
+    }
+    single {
+        TunnelBackendCoordinator(
+            tunnelCoordinator = get(),
+            backendService = get(),
+            settingsRepository = get(),
+            lockdownRepository = get(),
+            tunnelRepository = get(),
+        )
+    }
+    single {
+        AutoTunnelCoordinator(
+            daemonService = get(),
+            tunnelCoordinator = get(),
+            autoTunnelRepository = get(),
+            tunnelRepository = get(),
+            settingsRepository = get(),
+            dnsSettingsRepository = get(),
+            monitoringSettingsRepository = get(),
+            proxyRepository = get(),
+            lockdownRepository = get(),
+            scope = get(),
+        )
+    }
 
     single<TunnelImportService> { DefaultTunnelImportService(get()) }
 }

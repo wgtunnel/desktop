@@ -1,0 +1,62 @@
+{
+  "reflection": [
+    {
+      "type": "com.zaneschepke.wireguardautotunnel.client.data.AppDatabase_Impl",
+      "allDeclaredConstructors": true,
+      "allDeclaredMethods": true,
+      "allDeclaredFields": true
+    },
+    {
+      "type": "com.zaneschepke.wireguardautotunnel.client.data.AppDatabase_Impl$createOpenDelegate$_openDelegate$1",
+      "allDeclaredConstructors": true,
+      "allDeclaredMethods": true,
+      "allDeclaredFields": true
+    },
+    {
+      "type": "sun.net.www.protocol.http.Handler",
+      "methods": [{ "name": "<init>", "parameterTypes": [] }]
+    },
+    {
+      "type": "sun.net.www.protocol.https.Handler",
+      "methods": [{ "name": "<init>", "parameterTypes": [] }]
+    }
+  ],
+  "jni": [
+    {
+      "type": "androidx.sqlite.driver.bundled.BundledSQLiteDriverKt",
+      "methods": [
+        {
+          "name": "nativeOpen",
+          "parameterTypes": [
+            "java.lang.String",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "androidx.sqlite.SQLiteException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": ["java.lang.String"]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.OutOfMemoryError",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": ["java.lang.String"]
+        }
+      ]
+    }
+  ]
+}

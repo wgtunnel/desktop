@@ -1,0 +1,65 @@
+name: publish-github
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Git tag to publish (e.g. v1.0.2 or v1.0.3-beta)"
+        type: string
+        required: true
+      version:
+        description: "Version written into update YAML"
+        type: string
+        required: true
+      channel:
+        description: "Nucleus update channel: latest, beta, or alpha"
+        type: string
+        required: true
+      release_type:
+        description: "GitHub release type: release, prerelease, or draft"
+        type: string
+        required: true
+      replace_existing:
+        description: "Delete the existing GitHub release/tag before publishing"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: publish-github
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: release-assets-*
+
+      - name: Replace existing release
+        if: inputs.replace_existing
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          gh release delete "$TAG" --yes --cleanup-tag || true
+
+      - name: Generate update YML
+        uses: wgtunnel/Nucleus/.github/actions/generate-update-yml@main
+        with:
+          artifacts-path: artifacts
+          version: ${{ inputs.version }}
+          channel: ${{ inputs.channel }}
+
+      - name: Publish GitHub Release
+        uses: wgtunnel/Nucleus/.github/actions/publish-release@main
+        with:
+          artifacts-path: artifacts
+          tag: ${{ inputs.tag }}
+          release-type: ${{ inputs.release_type }}

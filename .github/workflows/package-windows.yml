@@ -1,0 +1,91 @@
+name: package-windows
+
+on:
+  workflow_call:
+    inputs:
+      variant:
+        description: "App variant (release or beta)"
+        type: string
+        required: true
+      version:
+        description: "Updater and display version (0.0.0 or 0.0.0-beta.1)"
+        type: string
+        required: true
+      package_version:
+        description: "Installer packageVersion MAJOR.MINOR.PATCH"
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "App variant"
+        type: choice
+        options:
+          - release
+          - beta
+        default: release
+      version:
+        description: "Updater and display version (0.0.0 or 0.0.0-beta.1)"
+        type: string
+        default: "0.0.0-test"
+      package_version:
+        description: "Installer packageVersion MAJOR.MINOR.PATCH"
+        type: string
+        default: "0.0.0"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  package:
+    name: package-windows
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: desktop
+          submodules: recursive
+
+      - uses: actions/checkout@v4
+        with:
+          repository: wgtunnel/Nucleus
+          path: Nucleus
+
+      - uses: wgtunnel/Nucleus/.github/actions/setup-nucleus@main
+        with:
+          java-version: "25"
+          setup-gradle: "true"
+          setup-node: "true"
+          graalvm: "true"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+
+      - name: Package NSIS (GraalVM)
+        working-directory: desktop
+        env:
+          WGTUNNEL_VARIANT: ${{ inputs.variant }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./gradlew :composeApp:packageGraalvmNsis --no-daemon --stacktrace -Papp.variant=${{ inputs.variant }} -Papp.version=${{ inputs.version }} -Papp.packageVersion=${{ inputs.package_version }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-Windows-amd64
+          if-no-files-found: error
+          path: |
+            desktop/composeApp/build/compose/binaries/**/*.exe
+            desktop/composeApp/build/compose/binaries/**/*.yml
+            desktop/composeApp/build/compose/binaries/**/*.blockmap

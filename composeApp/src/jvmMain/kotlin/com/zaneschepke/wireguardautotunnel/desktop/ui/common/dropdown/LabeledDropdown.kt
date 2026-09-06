@@ -1,0 +1,38 @@
+package com.zaneschepke.wireguardautotunnel.desktop.ui.common.dropdown
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
+
+@Composable
+fun <T> LabeledDropdown(
+    title: String,
+    description: (@Composable () -> Unit)? = null,
+    leading: @Composable () -> Unit,
+    onSelected: (T?) -> Unit,
+    options: List<T?>,
+    currentValue: T?,
+    optionToString: @Composable (T?) -> String,
+) {
+    var isDropDownExpanded by remember { mutableStateOf(false) }
+
+    SurfaceRow(
+        leading = leading,
+        title = title,
+        description = description,
+        onClick = { isDropDownExpanded = true },
+        trailing = {
+            DropdownSelector(
+                currentValue = currentValue,
+                options = options,
+                onValueSelected = { selected -> onSelected(selected) },
+                isExpanded = isDropDownExpanded,
+                onDismiss = { isDropDownExpanded = false },
+                optionToString = optionToString,
+            )
+        },
+    )
+}

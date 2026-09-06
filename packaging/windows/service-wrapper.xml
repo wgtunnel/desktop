@@ -1,0 +1,24 @@
+<service>
+    <id>__APP_FSNAME__-daemon</id>
+    <name>__APP_DISPLAY__ Daemon</name>
+    <description>__APP_DISPLAY__ Daemon - early kill-switch for leak protection</description>
+
+    <workingdirectory>%BASE%</workingdirectory>
+    <executable>%BASE%\daemon.exe</executable>
+
+    <env name="WG_TUNNEL_SERVICE" value="1"/>
+
+    <startmode>Automatic</startmode>
+    <delayedAutoStart>false</delayedAutoStart>
+    <depend>RpcSs</depend>
+    <priority>high</priority>
+
+    <logpath>C:\ProgramData\__APP_FSNAME__\logs</logpath>
+    <logmode>rotate</logmode>
+
+    <onfailure action="restart" delay="10 sec"/>
+
+    <onuninstall>
+        cmd /c if exist "C:\ProgramData\__APP_FSNAME__" rmdir /s /q "C:\ProgramData\__APP_FSNAME__"
+    </onuninstall>
+</service>

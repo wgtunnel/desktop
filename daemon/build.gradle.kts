@@ -1,37 +1,53 @@
+import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
+
 plugins {
     kotlin("jvm")
-    application
     alias(libs.plugins.serialization)
+    alias(libs.plugins.nucleus)
 }
 
-dependencies {
-    implementation(project(":tunnel"))
-    implementation(project(":parser"))
-    implementation(project(":shared"))
+val daemonJvmArgs =
+    listOf(
+        "-XX:+UseSerialGC",
+        "-Xms16m",
+        "-Xmx96m",
+        "-XX:ReservedCodeCacheSize=48m",
+        "-Xss512k",
+        "-Dkotlinx.coroutines.io.parallelism=16",
+        "--enable-native-access=ALL-UNNAMED"
+    )
 
-    // DI
-    implementation(libs.koin.core)
+dependencies {
+    implementation(project(":shared"))
+    implementation(libs.wgtunnel.backend)
 
     implementation(libs.bundles.ktor.server.jvm)
 
     implementation(libs.kotlinx.coroutines.core)
 
-    // Logging
     implementation(libs.kermit)
-    implementation(libs.logback.classic)
 
     testImplementation(kotlin("test"))
 
-    // caching
-    implementation(libs.multiplatform.settings)
-
     implementation(libs.kotlinx.serialization)
-
-    // Util
-    implementation(libs.apache.commons.lang3)
 }
 
-application { mainClass.set("com.zaneschepke.wireguardautotunnel.daemon.MainKt") }
+nucleus.application {
+    mainClass = "com.zaneschepke.wireguardautotunnel.daemon.MainKt"
+    jvmArgs(*daemonJvmArgs.toTypedArray())
+    graalvm {
+        isEnabled = true
+        imageName = "wgtunnel-daemon"
+        optimization = NativeImageOptimization.SIZE
+        headless = true
+        maxHeapSize = "32m"
+        buildArgs.addAll(GraalvmNativeArgs.daemon(System.getProperty("os.name").orEmpty()))
+    }
+    nativeDistributions {
+        packageName = "wgtunnel-daemon"
+        packageVersion = libs.versions.app.get()
+    }
+}
 
 tasks.test { useJUnitPlatform() }
 
@@ -51,8 +67,6 @@ tasks.named<Delete>("clean") {
     delete(file("winsw/src/WinSW/obj"))
     delete(file("winsw/artifacts"))
 }
-
-tasks.named("installDist") { dependsOn("buildWinSW") }
 
 tasks.register<Exec>("buildWinSW") {
     val winSwDir = "winsw/src/WinSW"

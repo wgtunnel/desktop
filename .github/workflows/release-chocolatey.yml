@@ -8,10 +8,11 @@ on:
       tag_name:
         description: 'Release tag'
         required: false
-        default: '1.1.1'
+        default: 'v1.0.2'
 
 jobs:
   publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event.action == 'published' && !github.event.release.prerelease)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,10 +21,9 @@ jobs:
         shell: pwsh
         run: |
           if ($env:GITHUB_EVENT_NAME -eq 'release') {
-            # Your tags have no 'v' prefix (e.g. 1.0.1)
-            $version = $env:GITHUB_REF -replace 'refs/tags/', ''
+            $version = ($env:GITHUB_REF -replace 'refs/tags/', '') -replace '^v', ''
           } else {
-            $version = '${{ github.event.inputs.tag_name }}'
+            $version = '${{ github.event.inputs.tag_name }}' -replace '^v', ''
           }
           Write-Host "Publishing version: $version"
           echo "VERSION=$version" >> $env:GITHUB_ENV

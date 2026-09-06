@@ -23,7 +23,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import com.dokar.sonner.Toast
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_selected_tunnels
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel_message
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnels
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.yes
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.InfoDialog
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.CustomTooltip
@@ -70,15 +74,15 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                 pendingDeleteIntent = null
             },
             onDismiss = { pendingDeleteIntent = null },
-            title = "Delete tunnel",
-            confirmText = "Yes",
+            title = stringResource(Res.string.delete_tunnel),
+            confirmText = stringResource(Res.string.yes),
             body = {
                 when (intent) {
                     DeleteIntent.Selected -> {
-                        Text("Are you sure you want to delete the selected tunnels?")
+                        Text(stringResource(Res.string.delete_selected_tunnels))
                     }
                     is DeleteIntent.Tunnel -> {
-                        Text("Are you sure you want to delete ${intent.tunnel.name}?")
+                        Text(stringResource(Res.string.delete_tunnel_message))
                     }
                 }
             },
@@ -97,9 +101,9 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                     when (ext) {
                         FileUtils.CONF_FILE_EXTENSION -> {
                             runCatching {
-                                    val text = file.readString()
-                                    viewModel.onConfImport(text, file.nameWithoutExtension)
-                                }
+                                val text = file.readString()
+                                viewModel.onConfImport(text, file.nameWithoutExtension)
+                            }
                                 .onFailure {
                                     toaster.show(
                                         Toast(ToastType.Error, "Failed to read .conf file")
@@ -108,10 +112,10 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                         }
                         FileUtils.ZIP_FILE_EXTENSION -> {
                             runCatching {
-                                    val bytes = file.readBytes()
-                                    val configMap = FileUtils.readConfigsFromZip(bytes)
-                                    viewModel.onMultiConfImport(configMap)
-                                }
+                                val bytes = file.readBytes()
+                                val configMap = FileUtils.readConfigsFromZip(bytes)
+                                viewModel.onMultiConfImport(configMap)
+                            }
                                 .onFailure {
                                     toaster.show(
                                         Toast(ToastType.Error, "Failed to read .zip archive")

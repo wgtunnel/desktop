@@ -6,21 +6,18 @@ import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSett
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.FlagRequest
-import com.zaneschepke.wireguardautotunnel.parser.ActiveConfig
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.KillSwitchConfigDto
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.KillSwitchRequest
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
-import io.ktor.http.*
 import io.ktor.utils.io.*
 import io.ktor.websocket.*
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -32,43 +29,34 @@ class UdsBackendService(
     private val json: Json,
     private val lockdownSettingsRepository: LockdownSettingsRepository,
     private val daemonService: DaemonService,
+    scope: CoroutineScope,
 ) : BackendService {
 
-    companion object {
-        const val ACTIVE_CONFIG_INTERVAL = 3_000L
-    }
-
-    override suspend fun setMode(mode: BackendMode): Result<Unit> = safeDaemonCall {
-        client.put(Routes.BACKEND_MODE) { setBody(mode) }
-    }
-
-    override suspend fun setKillSwitch(enabled: Boolean): Result<Unit> {
+    override suspend fun setKillSwitch(
+        enabled: Boolean,
+        config: KillSwitchConfigDto?,
+    ): Result<Unit> {
         lockdownSettingsRepository.updateEnabled(enabled)
         if (!enabled) {
             val settings = lockdownSettingsRepository.get()
-            if (settings.bypassLan) {
-                setKillSwitchLanBypass(false)
-            }
             if (settings.restoreOnBoot) {
                 daemonService.setRestoreKillSwitch(false)
             }
         }
-        return safeDaemonCall {
-                val request = FlagRequest(enabled)
-                client.put(Routes.BACKEND_KILL_SWITCH) { setBody(request) }
-                Unit
-            }
-            .onFailure { lockdownSettingsRepository.updateEnabled(!enabled) }
-    }
 
-    override suspend fun setKillSwitchLanBypass(enabled: Boolean): Result<Unit> {
-        lockdownSettingsRepository.updateBypassLan(enabled)
+        val resolvedConfig =
+            config
+                ?: if (enabled) {
+                    lockdownSettingsRepository.get().toDto()
+                } else null
+
         return safeDaemonCall {
-                val request = FlagRequest(enabled)
-                client.put(Routes.BACKEND_KILL_SWITCH_BYPASS) { setBody(request) }
-                Unit
+            client.put(Routes.BACKEND_KILL_SWITCH) {
+                setBody(KillSwitchRequest(enabled = enabled, config = resolvedConfig))
             }
-            .onFailure { lockdownSettingsRepository.updateBypassLan(!enabled) }
+            Unit
+        }
+            .onFailure { lockdownSettingsRepository.updateEnabled(!enabled) }
     }
 
     override suspend fun getStatus(): Result<BackendStatus> = runCatching {
@@ -76,78 +64,31 @@ class UdsBackendService(
         response.body<BackendStatus>()
     }
 
-    private suspend fun getActiveConfig(id: Long): Result<String?> = runCatching {
-        val response = client.get(Routes.BACKEND_ACTIVE_CONFIG.replace("{id}", id.toString()))
-        if (response.status == HttpStatusCode.OK) {
-            response.body<String>()
-        } else {
-            null
-        }
-    }
+    override fun statusFlow(): Flow<BackendStatus> = status
 
-    private suspend fun enrichWithActiveConfigs(basicStatus: BackendStatus): BackendStatus {
-        val updatedTunnels =
-            basicStatus.activeTunnels.map { tunnelStatus ->
-                if (tunnelStatus.state != TunnelState.DOWN) {
-                    val configResult = getActiveConfig(tunnelStatus.id)
-                    val activeConfig =
-                        configResult.getOrNull()?.let { str ->
-                            try {
-                                ActiveConfig.parseFromIpc(str)
-                            } catch (e: Exception) {
-                                Logger.e(e) {
-                                    "Failed to parse active config for tunnel ${tunnelStatus.id}"
-                                }
-                                null
-                            }
+    private val status: Flow<BackendStatus> = callbackFlow {
+        while (isActive) {
+            try {
+                getStatus().onSuccess { trySend(it) }
+                client.webSocket(path = Routes.BACKEND_STATUS_WS) {
+                    Logger.d { "Client: WS Connected" }
+                    for (frame in incoming) {
+                        if (frame is Frame.Text) {
+                            val text = frame.readText()
+                            val parsed = json.decodeFromString<BackendStatus>(text)
+                            trySend(parsed)
                         }
-                    tunnelStatus.copy(activeConfig = activeConfig)
-                } else {
-                    tunnelStatus.copy(activeConfig = null)
-                }
-            }
-        return basicStatus.copy(activeTunnels = updatedTunnels)
-    }
-
-    private fun basicStatusFlow(): Flow<BackendStatus> =
-        callbackFlow {
-                var initialSent = false
-
-                while (isActive) {
-                    try {
-                        if (!initialSent) {
-                            getStatus().onSuccess { trySend(it) }
-                            initialSent = true
-                        }
-
-                        client.webSocket(path = Routes.BACKEND_STATUS_WS) {
-                            Logger.d { "Client: WS Connected" }
-                            for (frame in incoming) {
-                                if (frame is Frame.Text) {
-                                    val text = frame.readText()
-                                    val status = json.decodeFromString<BackendStatus>(text)
-                                    trySend(status)
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        if (e is CancellationException) throw e
-                        delay(DAEMON_WS_RECONNECT_DELAY_MILLIS.milliseconds)
                     }
                 }
-
-                awaitClose {}
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
             }
-            .flowOn(Dispatchers.IO)
+            if (isActive) delay(DAEMON_WS_RECONNECT_DELAY_MILLIS.milliseconds)
+        }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override fun statusFlow(): Flow<BackendStatus> =
-        basicStatusFlow()
-            .transformLatest { basic ->
-                while (true) {
-                    emit(enrichWithActiveConfigs(basic))
-                    delay(ACTIVE_CONFIG_INTERVAL.milliseconds)
-                }
-            }
-            .flowOn(Dispatchers.IO)
+        awaitClose {}
+    }
+        .distinctUntilChanged()
+        .flowOn(Dispatchers.IO)
+        .shareIn(scope, SharingStarted.WhileSubscribed(5_000), replay = 1)
 }

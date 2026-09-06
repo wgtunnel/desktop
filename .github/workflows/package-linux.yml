@@ -1,0 +1,98 @@
+name: package-linux
+
+on:
+  workflow_call:
+    inputs:
+      variant:
+        description: "App variant (release or beta)"
+        type: string
+        required: true
+      version:
+        description: "Updater and display version (0.0.0 or 0.0.0-beta.1)"
+        type: string
+        required: true
+      package_version:
+        description: "Installer packageVersion MAJOR.MINOR.PATCH"
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "App variant"
+        type: choice
+        options:
+          - release
+          - beta
+        default: release
+      version:
+        description: "Updater and display version (0.0.0 or 0.0.0-beta.1)"
+        type: string
+        default: "0.0.0-test"
+      package_version:
+        description: "Installer packageVersion MAJOR.MINOR.PATCH"
+        type: string
+        default: "0.0.0"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: package-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: desktop
+          submodules: recursive
+
+      - uses: actions/checkout@v4
+        with:
+          repository: wgtunnel/Nucleus
+          path: Nucleus
+
+      - uses: wgtunnel/Nucleus/.github/actions/setup-nucleus@main
+        with:
+          java-version: "25"
+          packaging-tools: "true"
+          setup-gradle: "true"
+          setup-node: "true"
+          graalvm: "true"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Install keyring cross-compile toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
+
+      - name: Package Linux (GraalVM)
+        working-directory: desktop
+        env:
+          WGTUNNEL_VARIANT: ${{ inputs.variant }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          chmod +x gradlew
+          ./gradlew \
+            :composeApp:packageGraalvmDeb \
+            :composeApp:packageGraalvmRpm \
+            :composeApp:packageGraalvmPacman \
+            :composeApp:packageGraalvmTar \
+            --no-daemon --stacktrace \
+            -Papp.variant=${{ inputs.variant }} \
+            -Papp.version=${{ inputs.version }} \
+            -Papp.packageVersion=${{ inputs.package_version }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-Linux-amd64
+          if-no-files-found: error
+          path: |
+            desktop/composeApp/build/compose/binaries/**/*.deb
+            desktop/composeApp/build/compose/binaries/**/*.rpm
+            desktop/composeApp/build/compose/binaries/**/*.pacman
+            desktop/composeApp/build/compose/binaries/**/*.pkg.tar.zst
+            desktop/composeApp/build/compose/binaries/**/*.tar.gz
+            desktop/composeApp/build/compose/binaries/**/*.yml
+            desktop/composeApp/build/compose/binaries/**/*.blockmap

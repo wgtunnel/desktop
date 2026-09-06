@@ -1,0 +1,8 @@
+[tools]
+java = "temurin-25"
+node = "22"
+go = "1.25"
+dotnet = "8"
+
+[settings]
+experimental = true

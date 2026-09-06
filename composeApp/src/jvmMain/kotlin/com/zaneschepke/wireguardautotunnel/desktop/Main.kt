@@ -3,32 +3,50 @@ package com.zaneschepke.wireguardautotunnel.desktop
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.platformLogWriter
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
-import com.kdroid.composetray.tray.api.ExperimentalTrayAppApi
-import com.kdroid.composetray.tray.api.Tray
-import com.kdroid.composetray.utils.SingleInstanceManager
+import com.wgtunnel.backend.BackendLog
+import com.wgtunnel.backend.LogLevel
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.di.databaseModule
 import com.zaneschepke.wireguardautotunnel.client.di.serviceModule
@@ -38,6 +56,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.appico
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.titleicon
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
+import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.di.viewModelModule
 import com.zaneschepke.wireguardautotunnel.desktop.ui.WindowIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asColor
@@ -45,16 +64,16 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TrayBadgeState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WGTunnelTheme
-import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
-import com.zaneschepke.wireguardautotunnel.desktop.util.RenderingMode
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
-import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
-import io.github.kdroidfilter.nucleus.hidpi.getLinuxNativeScaleFactor
-import io.github.kdroidfilter.nucleus.window.material.MaterialDecoratedWindow
-import io.github.kdroidfilter.nucleus.window.material.MaterialTitleBar
-import io.github.kdroidfilter.nucleus.window.newFullscreenControls
-import java.awt.event.WindowEvent
-import java.awt.event.WindowFocusListener
+import dev.nucleusframework.application.NucleusBackend
+import dev.nucleusframework.application.NucleusWindow
+import dev.nucleusframework.application.nucleusApplication
+import dev.nucleusframework.composenativetray.tray.api.Tray
+import dev.nucleusframework.core.runtime.SingleInstanceManager
+import dev.nucleusframework.energymanager.EnergyManager
+import dev.nucleusframework.window.material.MaterialDecoratedWindow
+import dev.nucleusframework.window.material.MaterialTitleBar
+import dev.nucleusframework.window.newFullscreenControls
 import java.nio.file.Paths
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -63,72 +82,65 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
 import org.orbitmvi.orbit.compose.collectAsState
 
-@OptIn(ExperimentalTrayAppApi::class)
-fun main() {
-    val appConfig = FileUtils.loadAppConfig()
+fun main(args: Array<String>) {
+    Logger.setLogWriters(CommonWriter())
+    AppVariant.applyProcessDefaults()
+    Logger.setLogWriters(platformLogWriter())
+    Logger.setTag("App")
+    BackendLog.setMinLevel(
+        if (AppVariant.current == AppVariant.DEBUG) LogLevel.Debug else LogLevel.Info
+    )
+    Logger.i { "App variant=${AppVariant.current.id} packaged=${AppVariant.isPackaged()}" }
 
-    when (appConfig.renderingMode) {
-        RenderingMode.SOFTWARE -> {
-            System.setProperty("skiko.renderApi", "SOFTWARE_FASTEST")
-            Logger.i { "Running app with SOFTWARE rendering" }
-        }
-        RenderingMode.HARDWARE -> {
-            Logger.i { "Running app with default hardware acceleration" }
-        }
-    }
-    // HiDPI detection for Linux
-    if (System.getProperty("sun.java2d.uiScale") == null) {
-        val scale = getLinuxNativeScaleFactor()
-        if (scale > 0.0) {
-            System.setProperty("sun.java2d.uiScale", scale.toString())
-        }
-    }
+    // Allow variants of the app to run as single instance
+    SingleInstanceManager.configuration =
+        SingleInstanceManager.Configuration(
+            lockFilesDir = Paths.get(FilePathsHelper.getDatabaseDir().path),
+            lockIdentifier = AppVariant.current.lockIdentifier,
+        )
 
-    application {
-        var windowRef: java.awt.Window? by remember { mutableStateOf(null) }
-        var isWindowVisible by remember { mutableStateOf(true) }
-        var isWindowFocused by remember { mutableStateOf(true) }
+    nucleusApplication(args = args, backend = NucleusBackend.Tao) {
+        var nucleusWindowRef: NucleusWindow? by remember { mutableStateOf(null) }
+        var isMainWindowVisible by remember { mutableStateOf(true) }
+
         var theme by remember { mutableStateOf(Theme.DARK) }
         var useSystemColors by remember { mutableStateOf(false) }
 
         val windowState = rememberWindowState(size = DpSize(1000.dp, 700.dp))
 
-        SingleInstanceManager.configuration =
-            SingleInstanceManager.Configuration(
-                lockFilesDir = Paths.get(FilePathsHelper.getDatabaseDir().path),
-                lockIdentifier = "wg_tunnel",
-            )
-
         fun bringToFront() {
-            val win = windowRef ?: return
-
-            try {
-                (win as? java.awt.Frame)?.extendedState = java.awt.Frame.NORMAL
-            } catch (_: Exception) {}
-
-            win.isAutoRequestFocus = true
-            win.isVisible = true
+            val win = nucleusWindowRef ?: return
+            win.setMinimized(false)
+            win.show()
+            win.toFront()
+            win.requestFocus()
         }
 
         fun handleWindowIntent(intent: WindowIntent) {
             when (intent) {
                 WindowIntent.SHOW -> {
-                    isWindowVisible = true
+                    isMainWindowVisible = true
                     windowState.isMinimized = false
                     bringToFront()
                 }
 
                 WindowIntent.HIDE -> {
-                    isWindowVisible = false
+                    isMainWindowVisible = false
                 }
 
                 WindowIntent.TOGGLE -> {
-                    if (isWindowVisible && !windowState.isMinimized) {
+                    if (isMainWindowVisible) {
                         handleWindowIntent(WindowIntent.HIDE)
                     } else {
                         handleWindowIntent(WindowIntent.SHOW)
                     }
                 }
+            }
+        }
+
+        LaunchedEffect(windowState.isMinimized) {
+            if (windowState.isMinimized) {
+                handleWindowIntent(WindowIntent.HIDE)
             }
         }
 
@@ -139,100 +151,98 @@ fun main() {
 
         if (!isSingleInstance) {
             exitApplication()
-            return@application
+            return@nucleusApplication
         }
 
         var trayBadgeState: TrayBadgeState? by remember { mutableStateOf(null) }
+        val appIcon = painterResource(Res.drawable.appicon)
+        val appName = stringResource(Res.string.app_name)
 
-        KoinApplication(
-            configuration =
-                koinConfiguration(
-                    declaration = { modules(databaseModule, serviceModule, viewModelModule) }
-                )
-        ) {
-            val appIcon = painterResource(Res.drawable.appicon)
-            val appName = stringResource(Res.string.app_name)
+        Tray(
+            iconContent = {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Image(
+                        painter = appIcon,
+                        contentDescription = appName,
+                        modifier = Modifier.fillMaxSize(),
+                    )
 
-            val toaster = rememberToasterState()
-
-            Tray(
-                iconContent = {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Image(
-                            painter = appIcon,
-                            contentDescription = appName,
-                            modifier = Modifier.fillMaxSize(),
+                    trayBadgeState?.let {
+                        Icon(
+                            imageVector = Icons.Filled.Circle,
+                            contentDescription = it.description,
+                            modifier = Modifier.size(40.dp).align(Alignment.TopEnd),
+                            tint = it.iconColor,
                         )
-                        trayBadgeState?.let {
-                            Icon(
-                                imageVector = Icons.Filled.Circle,
-                                contentDescription = it.description,
-                                modifier = Modifier.size(40.dp).align(Alignment.TopEnd),
-                                tint = it.iconColor,
-                            )
-                        }
                     }
-                },
-                tooltip = appName,
-                primaryAction = { handleWindowIntent(WindowIntent.SHOW) },
+                }
+            },
+            tooltip = appName,
+            primaryAction = { handleWindowIntent(WindowIntent.SHOW) },
+        ) {
+            Item(label = "Open WG Tunnel") { handleWindowIntent(WindowIntent.SHOW) }
+            Item(label = "Minimize to Tray") { handleWindowIntent(WindowIntent.HIDE) }
+            Item(label = "Exit") { exitApplication() }
+        }
+
+        WGTunnelTheme(theme, useSystemColors) {
+            MaterialDecoratedWindow(
+                visible = isMainWindowVisible,
+                onCloseRequest = ::exitApplication,
+                title = appName + AppVariant.current.displaySuffix,
+                resizable = true,
+                icon = appIcon,
+                state = windowState,
+                minimumSize = DpSize(640.dp, 480.dp),
+                nativePopupLayers = false,
+                nativeContextMenu = true,
             ) {
-                if (windowState.isMinimized || !isWindowVisible) {
-                    Item(label = "Open WG Tunnel") { handleWindowIntent(WindowIntent.SHOW) }
+                DisposableEffect(nucleusWindow) {
+                    nucleusWindowRef = nucleusWindow
+                    onDispose { nucleusWindowRef = null }
                 }
-                if (isWindowVisible && !windowState.isMinimized) {
-                    Item(label = "Minimize to Tray") { handleWindowIntent(WindowIntent.HIDE) }
-                }
-                Item(label = "Exit") { exitApplication() }
-            }
 
-            WGTunnelTheme(theme, useSystemColors) {
-                MaterialDecoratedWindow(
-                    visible = isWindowVisible,
-                    onCloseRequest = { handleWindowIntent(WindowIntent.HIDE) },
-                    title = appName,
-                    resizable = false,
-                    icon = appIcon,
-                    state = windowState,
+                val density = LocalDensity.current
+                LaunchedEffect(density.density) {
+                    Logger.i {
+                        "Tao window density=${density.density} fontScale=${density.fontScale}"
+                    }
+                }
+
+                val isWindowFocused by nucleusWindow.focusFlow.collectAsState()
+
+                LaunchedEffect(
+                    windowState.isMinimized,
+                    isMainWindowVisible,
+                    isWindowFocused,
                 ) {
-                    val awtWindow = window as? java.awt.Window
-                    DisposableEffect(awtWindow) {
-                        windowRef = awtWindow
-                        onDispose { windowRef = null }
-                    }
+                    when {
+                        !isMainWindowVisible || windowState.isMinimized -> {
+                            EnergyManager.disableLightEfficiencyMode()
+                            EnergyManager.enableEfficiencyMode()
+                        }
 
-                    DisposableEffect(window) {
-                        val listener =
-                            object : WindowFocusListener {
-                                override fun windowGainedFocus(e: WindowEvent?) {
-                                    isWindowFocused = true
-                                }
+                        !isWindowFocused -> {
+                            EnergyManager.disableEfficiencyMode()
+                            EnergyManager.enableLightEfficiencyMode()
+                        }
 
-                                override fun windowLostFocus(e: WindowEvent?) {
-                                    isWindowFocused = false
-                                }
-                            }
-                        window.addWindowFocusListener(listener)
-                        onDispose { window.removeWindowFocusListener(listener) }
-                    }
-
-                    // improve energy efficiency when minimized and not focused
-                    LaunchedEffect(windowState.isMinimized, isWindowFocused) {
-                        when {
-                            windowState.isMinimized -> {
-                                EnergyManager.disableLightEfficiencyMode()
-                                EnergyManager.enableEfficiencyMode()
-                            }
-                            !isWindowFocused -> {
-                                EnergyManager.disableEfficiencyMode()
-                                EnergyManager.enableLightEfficiencyMode()
-                            }
-                            else -> {
-                                EnergyManager.disableEfficiencyMode()
-                                EnergyManager.disableLightEfficiencyMode()
-                            }
+                        else -> {
+                            EnergyManager.disableEfficiencyMode()
+                            EnergyManager.disableLightEfficiencyMode()
                         }
                     }
+                }
 
+                KoinApplication(
+                    configuration =
+                        koinConfiguration(
+                            declaration = {
+                                modules(databaseModule, serviceModule, viewModelModule)
+                            }
+                        )
+                ) {
+                    val toaster = rememberToasterState()
                     val viewModel: AppViewModel = koinViewModel()
                     val uiState by viewModel.collectAsState()
 
@@ -262,32 +272,32 @@ fun main() {
                     }
 
                     LaunchedEffect(uiState.tunnelStatuses, uiState.lockdownActive) {
-                        if (uiState.tunnelStatuses.isEmpty() && !uiState.lockdownActive) {
-                            trayBadgeState = null
-                            return@LaunchedEffect
-                        }
-
-                        val state: TunnelState? =
-                            (uiState.tunnelStatuses.firstOrNull {
-                                    it.state == TunnelState.HANDSHAKE_FAILURE
-                                }
-                                    ?: uiState.tunnelStatuses.firstOrNull {
+                        val state =
+                            uiState.tunnelStatuses
+                                .firstOrNull { it.state == TunnelState.HANDSHAKE_FAILURE }
+                                ?.state
+                                ?: uiState.tunnelStatuses
+                                    .firstOrNull {
                                         it.state == TunnelState.RESOLVING_DNS ||
                                             it.state == TunnelState.STOPPING ||
                                             it.state == TunnelState.STARTING
                                     }
-                                    ?: uiState.tunnelStatuses.firstOrNull {
-                                        it.state == TunnelState.HEALTHY
-                                    })
-                                ?.state
+                                    ?.state
+                                ?: uiState.tunnelStatuses
+                                    .firstOrNull { it.state == TunnelState.HEALTHY }
+                                    ?.state
+                                ?: uiState.tunnelStatuses
+                                    .firstOrNull { it.state == TunnelState.DOWN }
+                                    ?.state
 
-                        val (color, description) =
+                        trayBadgeState =
                             when {
-                                uiState.lockdownActive && state == null ->
-                                    ErrorRed to "Lockdown active"
-                                else -> state!!.asColor() to state.asTooltipMessage()
+                                uiState.lockdownActive &&
+                                    (state == null || state == TunnelState.DOWN) ->
+                                    TrayBadgeState(ErrorRed, "Lockdown active")
+                                state == null || state == TunnelState.DOWN -> null
+                                else -> TrayBadgeState(state.asColor(), state.asTooltipMessage())
                             }
-                        trayBadgeState = TrayBadgeState(color, description)
                     }
 
                     Surface(

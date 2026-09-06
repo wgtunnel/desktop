@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
@@ -21,7 +22,12 @@ import kotlinx.coroutines.flow.onEach
 
 @OptIn(ExperimentalFoundationApi::class, FlowPreview::class)
 @Composable
-fun ConfigEditor(rawConfig: String, isEditable: Boolean, onConfigChange: (String) -> Unit) {
+fun ConfigEditor(
+    rawConfig: String,
+    isEditable: Boolean,
+    onConfigChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var textFieldValue by remember { mutableStateOf(TextFieldValue(rawConfig)) }
 
     val verticalScrollState = rememberScrollState()
@@ -37,7 +43,7 @@ fun ConfigEditor(rawConfig: String, isEditable: Boolean, onConfigChange: (String
     // Debounce changes
     LaunchedEffect(textFieldValue) {
         snapshotFlow { textFieldValue.text }
-            .debounce(100)
+            .debounce(100.milliseconds)
             .onEach { onConfigChange(it) }
             .launchIn(this)
     }
@@ -52,7 +58,8 @@ fun ConfigEditor(rawConfig: String, isEditable: Boolean, onConfigChange: (String
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
+            modifier
+                .fillMaxSize()
                 .background(
                     if (isEditable) MaterialTheme.colorScheme.surfaceContainerLowest
                     else MaterialTheme.colorScheme.surface

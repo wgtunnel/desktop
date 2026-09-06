@@ -9,7 +9,7 @@ assignees: zaneschepke
 
 **Platform (please complete the following information):**
 
-- OS: [e.g. Debian, Arch, Fedora, Windows 11]
+- OS: [Debian, Arch, Fedora, Windows 11, Windows 10]
 
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]

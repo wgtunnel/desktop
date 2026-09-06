@@ -1,91 +1,63 @@
 package com.zaneschepke.wireguardautotunnel.daemon.routes
 
 import co.touchlab.kermit.Logger
+import com.wgtunnel.backend.Backend
+import com.wgtunnel.backend.exception.BackendException
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.FlagRequest
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.KillSwitchRequest
+import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
+import com.zaneschepke.wireguardautotunnel.daemon.dto.toCore
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toDto
-import com.zaneschepke.wireguardautotunnel.daemon.dto.toInternal
-import com.zaneschepke.wireguardautotunnel.parser.ActiveConfig
-import com.zaneschepke.wireguardautotunnel.tunnel.Backend
-import com.zaneschepke.wireguardautotunnel.tunnel.Tunnel
-import com.zaneschepke.wireguardautotunnel.tunnel.util.BackendException
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.utils.io.CancellationException
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
-@OptIn(ExperimentalCoroutinesApi::class)
-fun Route.backendRoutes(backend: Backend) {
+private val log = Logger.withTag("BackendRoutes")
 
-    put(Routes.BACKEND_MODE) {
-        val mode = call.receive<BackendMode>()
-
-        Logger.i { "Setting backend mode to $mode" }
-        backend.setMode(mode.toInternal())
-        call.respond(HttpStatusCode.OK, "Backend mode set to $mode")
-    }
-
-    put(Routes.BACKEND_KILL_SWITCH_BYPASS) {
-        val request = call.receive<FlagRequest>()
-        Logger.i { "Setting backend bypass lan to $request" }
-        backend
-            .setKillSwitchLanBypass(request.value)
-            .onSuccess {
-                call.respond(
-                    HttpStatusCode.OK,
-                    "Bypass LAN for kill switch set to ${request.value} successfully",
-                )
-            }
-            .onFailure { call.respond(HttpStatusCode.BadRequest, it.message ?: "Unknown error") }
-    }
+fun Route.backendRoutes(backend: Backend, cacheRepository: DaemonCacheRepository) {
 
     put(Routes.BACKEND_KILL_SWITCH) {
-        val request = call.receive<FlagRequest>()
+        val request = call.receive<KillSwitchRequest>()
+        log.i { "Setting kill switch enabled=${request.enabled}" }
 
-        Logger.i { "Setting kill switch to enabled: ${request.value}" }
-        backend
-            .setKillSwitch(request.value)
+        val result =
+            if (request.enabled) {
+                val config =
+                    request.config?.toCore()
+                        ?: return@put call.respond(
+                            HttpStatusCode.BadRequest,
+                            "Kill switch config is required when enabling",
+                        )
+                backend.setKillSwitch(config)
+            } else {
+                backend.disableKillSwitch()
+            }
+
+        result
             .onSuccess {
-                call.respond(HttpStatusCode.OK, "Kill switch set to ${request.value} successfully")
+                cacheRepository.updateKillSwitchEnabled(request.enabled)
+                cacheRepository.updateKillSwitchConfig(request.config)
+                call.respond(
+                    HttpStatusCode.OK,
+                    "Kill switch set to ${request.enabled} successfully",
+                )
             }
-            .onFailure {
-                if (it is BackendException.StateConflict)
-                    call.respond(HttpStatusCode.BadRequest, it.message)
-                else
-                    call.respond(HttpStatusCode.InternalServerError, "Failed to toggle kill switch")
-            }
-    }
-
-    get(Routes.BACKEND_ACTIVE_CONFIG) {
-        val id =
-            call.parameters["id"]?.toLongOrNull()
-                ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
-
-        backend
-            .getActiveConfig(id)
-            .onSuccess { configStr ->
-                if (configStr == null) {
-                    call.respond(HttpStatusCode.NotFound, "No config available for tunnel $id")
-                } else {
-                    call.respondText(configStr, ContentType.Text.Plain, HttpStatusCode.OK)
-                }
-            }
-            .onFailure { e ->
-                if (e is BackendException.StateConflict) {
-                    call.respond(HttpStatusCode.Conflict, e.message)
-                } else {
-                    call.respond(HttpStatusCode.InternalServerError, "Failed to retrieve config")
+            .onFailure { error ->
+                log.e(error) { "Failed to set kill switch" }
+                when (error) {
+                    is BackendException ->
+                        call.respond(HttpStatusCode.BadRequest, error.message ?: "Backend error")
+                    else ->
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            "Failed to toggle kill switch",
+                        )
                 }
             }
     }
@@ -96,47 +68,15 @@ fun Route.backendRoutes(backend: Backend) {
     }
 
     webSocket(Routes.BACKEND_STATUS_WS) {
-        Logger.i { "Client connected to backend status stream" }
+        log.i { "Client connected to backend status stream" }
         try {
             backend.status
-                .distinctUntilChanged()
-                .flatMapLatest { status ->
-                    flow {
-                        while (true) {
-                            val tunnelStatuses =
-                                status.activeTunnels.map { (key, state) ->
-                                    val activeConfig =
-                                        if (state is Tunnel.State.Up) {
-                                            backend.getActiveConfig(key.id).getOrNull()?.let { str
-                                                ->
-                                                try {
-                                                    ActiveConfig.parseFromIpc(str)
-                                                } catch (e: Exception) {
-                                                    Logger.e(e) {
-                                                        "Failed to parse active config for tunnel ${key.id}"
-                                                    }
-                                                    null
-                                                }
-                                            }
-                                        } else null
-                                    TunnelStatus(key.id, key.name, state.toDto(), activeConfig)
-                                }
-                            val dto =
-                                BackendStatus(
-                                    status.killSwitchEnabled,
-                                    status.mode.toDto(),
-                                    tunnelStatuses,
-                                )
-                            emit(dto)
-                            delay(3000)
-                        }
-                    }
-                }
+                .map { it.toDto() }
                 .distinctUntilChanged()
                 .collect { dto -> sendSerialized(dto) }
         } catch (e: Exception) {
             if (e !is CancellationException) {
-                Logger.e(e) { "Error streaming status" }
+                log.e(e) { "Error streaming status" }
             }
         }
     }

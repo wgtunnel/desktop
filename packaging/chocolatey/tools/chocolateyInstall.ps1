@@ -1,14 +1,17 @@
 $ErrorActionPreference = 'Stop'
 $packageName = $env:ChocolateyPackageName
 $toolsDir    = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$version     = $env:ChocolateyPackageVersion
 
-$url = "https://github.com/wgtunnel/desktop/releases/download/$env:ChocolateyPackageVersion/wgtunnel-$env:ChocolateyPackageVersion.x64.msix"
+$url64 = "https://github.com/wgtunnel/desktop/releases/download/$version/wgtunnel-$version-windows-x64-nsis.exe"
 
-$msixFile = "$toolsDir\$packageName.msix"
+$packageArgs = @{
+  packageName    = $packageName
+  fileType       = 'exe'
+  url64bit       = $url64
+  silentArgs     = '/S'
+  validExitCodes = @(0)
+  softwareName   = 'WG Tunnel*'
+}
 
-Write-Host "Downloading wgtunnel..." -ForegroundColor Cyan
-Invoke-WebRequest -Uri $url -OutFile $msixFile
-
-Write-Host "Installing wgtunnel..." -ForegroundColor Cyan
-
-Add-AppxPackage -Path $msixFile
+Install-ChocolateyPackage @packageArgs

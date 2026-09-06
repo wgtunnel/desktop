@@ -13,9 +13,13 @@ import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermissions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.apache.commons.lang3.SystemUtils
 
 object PermissionsHelper {
+    private val log = Logger.withTag("Permissions")
+
+    private val osName by lazy { System.getProperty("os.name").lowercase() }
+    private val isWindows: Boolean
+        get() = osName.contains("win")
 
     val socketRetryPolicy =
         binaryExponentialBackoff<Throwable>(min = 10L, max = 250L) + stopAtAttempts(25)
@@ -54,9 +58,9 @@ object PermissionsHelper {
                     path,
                     PosixFilePermissions.fromString(OWNER_FULL_CONTROL_SYMBOLIC),
                 )
-                Logger.i { "Successfully set daemon data directory permission" }
+                log.i { "Successfully set daemon data directory permission" }
             } catch (e: Exception) {
-                Logger.e { "POSIX native permissions failed: ${e.message} → falling back to chmod" }
+                log.e { "POSIX native permissions failed: ${e.message} → falling back to chmod" }
                 try {
                     val exitCode =
                         ProcessBuilder("chmod", OWNER_FULL_CONTROL_OCTAL, runtimeDirPath)
@@ -64,23 +68,23 @@ object PermissionsHelper {
                             .waitFor()
 
                     if (exitCode == 0) {
-                        Logger.i { "Successfully set directory permissions using chmod" }
+                        log.i { "Successfully set directory permissions using chmod" }
                     } else {
-                        Logger.e { "chmod failed with exit code $exitCode" }
+                        log.e { "chmod failed with exit code $exitCode" }
                     }
                 } catch (chmodEx: Exception) {
-                    Logger.e { "Failed to execute chmod: ${chmodEx.message}" }
+                    log.e { "Failed to execute chmod: ${chmodEx.message}" }
                 }
             }
         } else {
-            Logger.w { "Runtime directory $runtimeDirPath not found" }
+            log.w { "Runtime directory $runtimeDirPath not found" }
         }
     }
 
     fun secureDaemonDataDirectory(path: Path) {
         val pathString = path.toString()
         try {
-            if (SystemUtils.IS_OS_WINDOWS) {
+            if (isWindows) {
                 val process =
                     ProcessBuilder(
                             ICACLS,
@@ -95,11 +99,11 @@ object PermissionsHelper {
 
                 val exitCode = process.waitFor()
                 if (exitCode == 0) {
-                    Logger.i { "Successfully secured Windows directory: $pathString" }
+                    log.i { "Successfully secured Windows directory: $pathString" }
                     logWindowsACLs(pathString)
                 } else {
                     val error = process.errorStream.bufferedReader().use { it.readText() }
-                    Logger.e { "Failed to secure Windows directory: $error" }
+                    log.e { "Failed to secure Windows directory: $error" }
                 }
             } else {
                 try {
@@ -107,25 +111,23 @@ object PermissionsHelper {
                         path,
                         PosixFilePermissions.fromString(OWNER_ONLY_PRIVATE_DIR),
                     )
-                    Logger.i { "Successfully set POSIX permissions for directory: $pathString" }
+                    log.i { "Successfully set POSIX permissions for directory: $pathString" }
                 } catch (e: Exception) {
-                    Logger.e {
+                    log.e {
                         "POSIX native permissions failed: ${e.message} → falling back to chmod"
                     }
                     val exitCode = ProcessBuilder("chmod", "700", pathString).start().waitFor()
                     if (exitCode == 0) {
-                        Logger.i {
-                            "Successfully set directory permissions using chmod: $pathString"
-                        }
+                        log.i { "Successfully set directory permissions using chmod: $pathString" }
                     } else {
-                        Logger.e { "chmod failed with exit code $exitCode for: $pathString" }
+                        log.e { "chmod failed with exit code $exitCode for: $pathString" }
                     }
                 }
                 val finalPerms = Files.getPosixFilePermissions(path)
-                Logger.i { "Final directory permissions: $finalPerms for $pathString" }
+                log.i { "Final directory permissions: $finalPerms for $pathString" }
             }
         } catch (e: Exception) {
-            Logger.e(e) { "Error securing directory: $pathString" }
+            log.e(e) { "Error securing directory: $pathString" }
         }
     }
 
@@ -146,10 +148,10 @@ object PermissionsHelper {
 
             if (process.waitFor() != 0) {
                 val error = process.errorStream.bufferedReader().use { it.readText() }
-                Logger.e { "icacls directory setup failed: $error" }
+                log.e { "icacls directory setup failed: $error" }
             }
         } catch (e: Exception) {
-            Logger.e(e) { "Failed to set Windows directory ACLs" }
+            log.e(e) { "Failed to set Windows directory ACLs" }
         }
     }
 
@@ -158,18 +160,18 @@ object PermissionsHelper {
             val socketFile = File(socketPath)
 
             runCatching {
-                    retry(socketRetryPolicy) {
-                        if (!socketFile.exists()) {
-                            throw FileNotFoundException("Socket $socketPath not found yet")
-                        }
-                        setupSocketPermissionsUnix(socketPath)
+                retry(socketRetryPolicy) {
+                    if (!socketFile.exists()) {
+                        throw FileNotFoundException("Socket $socketPath not found yet")
                     }
-
-                    val socketPerms = Files.getPosixFilePermissions(Paths.get(socketPath))
-                    Logger.i { "Final socket permissions: $socketPerms" }
+                    setupSocketPermissionsUnix(socketPath)
                 }
+
+                val socketPerms = Files.getPosixFilePermissions(Paths.get(socketPath))
+                log.i { "Final socket permissions: $socketPerms" }
+            }
                 .onFailure {
-                    Logger.e {
+                    log.e {
                         "Socket $socketPath failed to appear. Daemon likely failed to start: ${it.message}"
                     }
                 }
@@ -179,15 +181,14 @@ object PermissionsHelper {
         withContext(Dispatchers.IO) {
             val socketFile = File(socketPath)
             runCatching {
-                    retry(socketRetryPolicy) {
-                        if (!socketFile.exists())
-                            throw FileNotFoundException("Socket not found yet")
-                        setupDirectoryPermissionsWindows(socketPath)
-                    }
-                    logWindowsACLs(socketPath)
+                retry(socketRetryPolicy) {
+                    if (!socketFile.exists()) throw FileNotFoundException("Socket not found yet")
+                    setupDirectoryPermissionsWindows(socketPath)
                 }
+                logWindowsACLs(socketPath)
+            }
                 .onFailure {
-                    Logger.e { "Socket $socketPath failed to appear on Windows: ${it.message}" }
+                    log.e { "Socket $socketPath failed to appear on Windows: ${it.message}" }
                 }
         }
 
@@ -198,22 +199,22 @@ object PermissionsHelper {
                 path,
                 PosixFilePermissions.fromString(WORLD_READWRITE_SYMBOLIC),
             )
-            Logger.i { "Successfully set socket permissions to 0666" }
+            log.i { "Successfully set socket permissions to 0666" }
         } catch (e: Exception) {
-            Logger.e { "POSIX native permissions failed: ${e.message} → falling back to chmod" }
+            log.e { "POSIX native permissions failed: ${e.message} → falling back to chmod" }
 
             try {
                 val exitCode =
                     ProcessBuilder("chmod", WORLD_WRITABLE_OCTAL, socketPath).start().waitFor()
 
                 if (exitCode == 0) {
-                    Logger.i { "Successfully set socket permissions using chmod" }
+                    log.i { "Successfully set socket permissions using chmod" }
                 } else {
-                    Logger.e { "chmod failed with exit code $exitCode" }
+                    log.e { "chmod failed with exit code $exitCode" }
                     throw IllegalStateException("chmod exited with non-zero status")
                 }
             } catch (chmodEx: Exception) {
-                Logger.e { "All POSIX methods failed: ${chmodEx.message} → using JVM fallback" }
+                log.e { "All POSIX methods failed: ${chmodEx.message} → using JVM fallback" }
 
                 //  try file API
                 val socketFile = path.toFile()
@@ -221,11 +222,9 @@ object PermissionsHelper {
                 val writeOk = socketFile.setWritable(true, false)
 
                 if (readOk && writeOk) {
-                    Logger.w {
-                        "Applied weak Java fallback permissions (readable/writable for all)"
-                    }
+                    log.w { "Applied weak Java fallback permissions (readable/writable for all)" }
                 } else {
-                    Logger.e { "Failed to set any permissions on socket $socketPath" }
+                    log.e { "Failed to set any permissions on socket $socketPath" }
                 }
             }
         }
@@ -233,13 +232,13 @@ object PermissionsHelper {
 
     fun setOwnerOnly(path: Path) {
         try {
-            if (SystemUtils.IS_OS_WINDOWS) {
+            if (isWindows) {
                 applyWindowsOwnerOnlyPermissions(path)
             } else {
                 applyPosixOwnerOnlyPermissions(path)
             }
         } catch (e: Exception) {
-            Logger.e(e) { "Failed to set permissions for: $path" }
+            log.e(e) { "Failed to set permissions for: $path" }
         }
     }
 
@@ -270,27 +269,27 @@ object PermissionsHelper {
             val exitCode = process.waitFor()
             if (exitCode != 0) {
                 val error = process.errorStream.bufferedReader().use { it.readText() }
-                Logger.e { "icacls IPC key setup failed: $error" }
+                log.e { "icacls IPC key setup failed: $error" }
             }
         } catch (e: Exception) {
-            Logger.e(e) { "Error applying read-only Windows perms to IPC key" }
+            log.e(e) { "Error applying read-only Windows perms to IPC key" }
         }
     }
 
     fun isOwnerOnly(path: Path): Boolean {
         if (!Files.exists(path) || !Files.isRegularFile(path)) {
-            Logger.w { "isOwnerOnly check failed basic validation: $path" }
+            log.w { "isOwnerOnly check failed basic validation: $path" }
             return false
         }
 
         return try {
-            if (SystemUtils.IS_OS_WINDOWS) {
+            if (isWindows) {
                 isOwnerOnlyWindows(path)
             } else {
                 isOwnerOnlyPosix(path)
             }
         } catch (e: Exception) {
-            Logger.e(e) { "Failed to verify owner-only permissions for: $path" }
+            log.e(e) { "Failed to verify owner-only permissions for: $path" }
             false
         }
     }
@@ -301,7 +300,7 @@ object PermissionsHelper {
             // Exact match to what setOwnerOnly applies
             perms == PosixFilePermissions.fromString(OWNER_ONLY_PRIVATE_FILE)
         } catch (e: Exception) {
-            Logger.w(e) { "POSIX permission read failed for $path" }
+            log.w(e) { "POSIX permission read failed for $path" }
             false
         }
     }
@@ -313,7 +312,7 @@ object PermissionsHelper {
             val exitCode = process.waitFor()
 
             if (exitCode != 0) {
-                Logger.w { "icacls failed (exit $exitCode) checking $path" }
+                log.w { "icacls failed (exit $exitCode) checking $path" }
                 return false
             }
 
@@ -336,30 +335,29 @@ object PermissionsHelper {
                     "s-1-5-11",
                 )
 
-            val hasDangerousWrite =
-                dangerousGroups.any { group ->
-                    lowerOutput.contains(group) &&
-                        (lowerOutput.contains("$group:(f)") ||
-                            lowerOutput.contains("$group:(m)") ||
-                            lowerOutput.contains("$group:(w)"))
-                }
+            val hasDangerousWrite = dangerousGroups.any { group ->
+                lowerOutput.contains(group) &&
+                    (lowerOutput.contains("$group:(f)") ||
+                        lowerOutput.contains("$group:(m)") ||
+                        lowerOutput.contains("$group:(w)"))
+            }
 
             if (!hasFullControl) {
-                Logger.w { "IPC key has no principal with Full Control: $path" }
+                log.w { "IPC key has no principal with Full Control: $path" }
             }
             if (hasDangerousWrite) {
-                Logger.w { "Dangerous group has write access on IPC key: $path" }
+                log.w { "Dangerous group has write access on IPC key: $path" }
             }
 
             val isValid = hasFullControl && !hasDangerousWrite
 
             if (isValid) {
-                Logger.i { "IPC key ownership verified successfully: $path" }
+                log.i { "IPC key ownership verified successfully: $path" }
             }
 
             isValid
         } catch (e: Exception) {
-            Logger.w(e) { "Windows ACL check failed for $path" }
+            log.w(e) { "Windows ACL check failed for $path" }
             false
         }
     }
@@ -368,7 +366,7 @@ object PermissionsHelper {
         runCatching {
             val output =
                 ProcessBuilder(ICACLS, path).start().inputStream.bufferedReader().readText()
-            Logger.i { "Final ACLs for $path: $output" }
+            log.i { "Final ACLs for $path: $output" }
         }
     }
 }

@@ -25,68 +25,73 @@ A WireGuard and AmneziaWG client for desktop.
 
 ## Windows
 
-> **Note:** Only Windows 11 and 10 patch `10.0.19041.0` and greater are supported.
-
-1. Download the `.msix` file from latest release.
-2. Launch the installer by double-clicking on the download.
-3. Proceed through the installation prompts (will require relaunching the installer as administrator).
+1. Download the Windows installer (`.exe`) from the latest release.
+2. Run the installer. Accept the UAC prompt so the daemon can be installed as a system service.
+3. Existing MSIX installs must be uninstalled first; this is a new package format.
 
 ## Linux
 
 > **Note:** Only `systemd`-based Linux systems are currently supported. Also, the firewall must use `nftables` or `iptables` with the nft backend (`iptables-nft`).
 
-### Debian Install
-
-This is the easiest method and gives you **automatic updates** for the app and daemon through your normal system package manager.
+### Debian / Ubuntu
 
 1. Download the `.deb` file from the latest release.
 2. From the directory where you downloaded the file:
 
-**Install**
 ```bash
 sudo apt install ./wgtunnel*.deb
 ```
 
+Packaged installs can also update in-app.
+
+### Fedora / RHEL
+
+From the GitHub release:
+
+```bash
+sudo rpm -Uvh wgtunnel*.rpm
+```
+
+Or from COPR (see `packaging/RELEASE_LINUX.md`):
+
+```bash
+sudo dnf copr enable <fedora-user>/wgtunnel
+sudo dnf install wgtunnel
+```
+
 ### Arch Linux
 
-For Arch, the app is available on the [AUR](https://aur.archlinux.org/packages/wgtunnel-bin).  
-You can install it using an AUR helper such as `yay`:
+From the GitHub release:
 
-**Install**
+```bash
+sudo pacman -U wgtunnel*.pacman
+```
+
+Or from the AUR (`packaging/aur`, published as `wgtunnel-bin`):
+
 ```bash
 yay -S wgtunnel-bin
 ```
 
-**Start Daemon**
+Snap, Flatpak, and AppImage are not shipped. They cannot install a privileged systemd daemon (`CAP_NET_ADMIN`, lockdown, `/etc/resolv.conf`).
+
+# Building from source
+
+Toolchains are pinned in `.mise.toml` (Temurin 25, Node 22, Go 1.25, .NET 8). Gradle uses the same JDK 25 via `gradle/gradle-daemon-jvm.properties` and Foojay, so a missing JDK is downloaded even without mise.
+
 ```bash
-sudo systemctl enable --now wgtunnel-daemon.service
+# once per machine
+curl https://mise.run | sh
+mise trust
+mise install
+
+./gradlew :composeApp:packageGraalvmDeb      # also packageGraalvmRpm, packageGraalvmPacman, packageGraalvmTar
+./gradlew :composeApp:packageGraalvmNsis     # Windows
 ```
 
-### Linux Tarball Installation (Manual updates only)
+If Gradle was previously running on another JDK, stop its daemon once: `./gradlew --stop`.
 
-For users on immutable distros, NixOS, or who prefer zero repository footprint.
-
-1. Download the `tar.gz` file from the latest release.
-2. From the directory where you downloaded the file:
-
-**Install**
-```bash 
-# Download and extract the tarball, download install script, and execute
-tar -xzf wgtunnel-*.tar.gz && \
-cd wgtunnel-*/ && \
-curl -LO https://raw.githubusercontent.com/wgtunnel/desktop/master/scripts/linux/install.sh && \
-chmod +x install.sh && \
-./install.sh
-```
-
-**Uninstall** (Optional)
-```bash
-curl -LO https://raw.githubusercontent.com/wgtunnel/desktop/master/scripts/linux/uninstall.sh && \
-chmod +x uninstall.sh && \
-./uninstall.sh
-```
-
-## Known issues
+# Known issues
 
 On Windows, switching the active network interface (like switching Ethernet → Wi-Fi or Wi-Fi → Ethernet) while a tunnel is active may cause the connection to drop.
 

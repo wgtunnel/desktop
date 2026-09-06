@@ -54,13 +54,13 @@ fun SurfaceRow(
                     if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                     else MaterialTheme.colorScheme.surface
                 )
-                // Full-row clickable + ripple (this is the important part)
                 .combinedClickable(
                     onClick = onClick ?: {},
                     onLongClick = onLongClick,
                     enabled = enabled && onClick != null,
                     interactionSource = interactionSource,
-                    indication = null, // we add the ripple manually below so it covers the whole row
+                    indication =
+                        null, // we add the ripple manually below so it covers the whole row
                 )
                 .indication(interactionSource, ripple())
                 .padding(horizontal = 16.dp, vertical = 8.dp)

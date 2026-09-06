@@ -1,6 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.client.domain.repository
 
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.client.domain.model.GeneralSettings
 import kotlinx.coroutines.flow.Flow
 
@@ -20,4 +21,12 @@ interface GeneralSettingRepository {
     suspend fun updateRestoreTunnelOnBoot(enabled: Boolean)
 
     suspend fun updateSystemColors(enabled: Boolean)
+
+    suspend fun updateTunnelMode(mode: TunnelMode)
+
+    suspend fun updateSeamlessRecovery(enabled: Boolean)
+
+    suspend fun updateSeamlessRecoveryBounceDelay(seconds: Int)
+
+    suspend fun updateGlobalAmneziaEnabled(enabled: Boolean)
 }

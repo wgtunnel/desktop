@@ -1,19 +1,41 @@
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.jvm.toolchain.JvmVendorSpec
+import org.gradle.kotlin.dsl.getByType
+
 plugins { kotlin("jvm") }
 
-dependencies { implementation(libs.jna.platform) }
+dependencies { implementation(libs.nucleus.core.runtime) }
+
+// CGO needs jni.h. Point Make at the same Temurin 25 toolchain Gradle compiles with.
+val keyringJdkHome =
+    extensions
+        .getByType<JavaToolchainService>()
+        .launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(libs.versions.jvm.get().toInt()))
+            vendor.set(JvmVendorSpec.ADOPTIUM)
+        }
+        .map { it.metadata.installationPath.asFile.absolutePath }
 
 tasks.register<Exec>("buildGoLibs") {
-    val libDir = "tools/keyring-go"
+    val goDir = "tools/keyring-go"
     group = "build"
-    description = "Builds Go shared libs using Makefile"
-    workingDir = file(libDir)
+    description = "Builds keyring JNI shared libs using Makefile"
+    workingDir = file(goDir)
 
     inputs
-        .dir(file(libDir))
-        .withPropertyName("goSourceDir")
+        .files(
+            fileTree(goDir) {
+                include("**/*.go", "**/go.mod", "**/go.sum", "Makefile")
+                exclude("out/**", "build/**", ".gocache/**")
+            }
+        )
+        .withPropertyName("goSourceFiles")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
-    outputs.dir(file("src/main/resources")).withPropertyName("outputResourcesDir")
+    outputs.dir(file("src/main/resources/nucleus/native")).withPropertyName("outputResourcesDir")
+
+    environment("JAVA_HOME", keyringJdkHome)
 
     commandLine("make", "all")
 }
@@ -24,10 +46,12 @@ val cleanGoLibs =
     tasks.register<Exec>("cleanGoLibs") {
         workingDir = file("tools/keyring-go")
         commandLine("make", "clean")
+        isIgnoreExitValue = true
     }
 
 tasks.named<Delete>("clean") {
     dependsOn(cleanGoLibs)
     delete(file("tools/keyring-go/out"))
-    delete(file("src/main/resources"))
+    delete(file("src/main/resources/nucleus/native"))
+    delete(file("src/main/resources/natives"))
 }

@@ -1,14 +1,20 @@
 package com.zaneschepke.wireguardautotunnel.daemon
 
 import co.touchlab.kermit.Logger
+import com.wgtunnel.backend.Backend
+import com.wgtunnel.parser.Config
 import com.zaneschepke.wireguardautotunnel.core.helper.PermissionsHelper
+import com.zaneschepke.wireguardautotunnel.daemon.autotunnel.AutoTunnelSupervisor
 import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
+import com.zaneschepke.wireguardautotunnel.daemon.dto.toBackendMode
+import com.zaneschepke.wireguardautotunnel.daemon.dto.toCore
+import com.zaneschepke.wireguardautotunnel.daemon.log.DaemonLogService
 import com.zaneschepke.wireguardautotunnel.daemon.plugin.hmacShieldPlugin
 import com.zaneschepke.wireguardautotunnel.daemon.routes.backendRoutes
 import com.zaneschepke.wireguardautotunnel.daemon.routes.daemonRoutes
 import com.zaneschepke.wireguardautotunnel.daemon.routes.tunnelRoutes
+import com.zaneschepke.wireguardautotunnel.daemon.tunnel.DesktopNetworkMonitor
 import com.zaneschepke.wireguardautotunnel.daemon.tunnel.RunningTunnel
-import com.zaneschepke.wireguardautotunnel.tunnel.Backend
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
@@ -26,71 +32,69 @@ import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import org.apache.commons.lang3.SystemUtils
+
+private val daemonLog = Logger.withTag("TunnelDaemon")
 
 class TunnelDaemon(
     private val json: Json,
     private val backend: Backend,
     private val cacheRepository: DaemonCacheRepository,
     private val socketPath: String,
+    private val autoTunnelSupervisor: AutoTunnelSupervisor,
+    private val networkMonitor: DesktopNetworkMonitor? = null,
+    private val daemonLogService: DaemonLogService,
+    private val scope: CoroutineScope,
 ) {
     private var server: EmbeddedServer<*, *>? = null
     private val running = AtomicBoolean(false)
     private val shutdownLatch = CountDownLatch(1)
-    private val scope = CoroutineScope(Dispatchers.IO)
 
-    // run the daemon
     internal fun run() {
-        Logger.i {
-            "Daemon starting on ${SystemUtils.OS_NAME} — enabling kill-switch first for leak protection"
+        daemonLog.i {
+            "Daemon starting on ${osName()} — enabling kill-switch first for leak protection"
         }
 
-        // try to start the kill switch as early as possible to prevent leaks, blocking
         runBlocking {
             val restoreKillSwitch = cacheRepository.getKillSwitchRestore()
-            if (restoreKillSwitch) {
-                Logger.i { "Restoring kill switch from previous state" }
-                backend
-                    .setKillSwitch(true)
-                    .onFailure { Logger.e(it) { "Failed to restore kill switch" } }
-                    .onSuccess { Logger.i { "Kill switch restored successfully" } }
-
-                val bypassLan = cacheRepository.getKillSwitchBypassLan()
-                if (bypassLan) {
+            if (restoreKillSwitch && cacheRepository.getKillSwitchEnabled()) {
+                val config = cacheRepository.getKillSwitchConfig()?.toCore()
+                if (config != null) {
+                    daemonLog.i { "Restoring kill switch from previous state" }
                     backend
-                        .setKillSwitchLanBypass(true)
-                        .onFailure { Logger.e(it) { "Failed to restore LAN bypass" } }
-                        .onSuccess { Logger.i { "Kill switch LAN bypass restored" } }
+                        .setKillSwitch(config)
+                        .onFailure { daemonLog.e(it) { "Failed to restore kill switch" } }
+                        .onSuccess { daemonLog.i { "Kill switch restored successfully" } }
+                } else {
+                    daemonLog.w { "Kill switch restore requested but no config cached — skipping" }
                 }
             } else {
-                Logger.i { "Kill switch restore disabled in settings — skipping" }
+                daemonLog.i { "Kill switch restore disabled in settings — skipping" }
             }
         }
         startUdsServer()
-        shutdownLatch.await() // block main thread until stop()
+        daemonLog.i { "Binding Unix socket at: $socketPath" }
+        shutdownLatch.await()
     }
 
     fun startUdsServer() {
         if (!running.compareAndSet(false, true)) return
 
-        Logger.i { "Starting IPC server" }
+        daemonLog.i { "Starting IPC server" }
 
         val socketFile = File(socketPath)
         val runtimeDir = socketFile.parentFile
         runtimeDir.mkdirs()
 
-        when {
-            SystemUtils.IS_OS_WINDOWS ->
-                PermissionsHelper.setupDirectoryPermissionsWindows(runtimeDir.absolutePath)
-            SystemUtils.IS_OS_UNIX ->
-                PermissionsHelper.setupDirectoryPermissionsUnix(runtimeDir.absolutePath)
+        if (isWindows()) {
+            PermissionsHelper.setupDirectoryPermissionsWindows(runtimeDir.absolutePath)
+        } else {
+            PermissionsHelper.setupDirectoryPermissionsUnix(runtimeDir.absolutePath)
         }
 
-        socketFile.delete() // delete old socket if exists
+        socketFile.delete()
 
         server =
             embeddedServer(CIO, configure = { unixConnector(socketPath) }) {
@@ -110,9 +114,8 @@ class TunnelDaemon(
                             )
                         }
 
-                        // catch all
                         exception<Throwable> { call, cause ->
-                            Logger.e(cause) { "Unhandled exception in daemon" }
+                            daemonLog.e(cause) { "Unhandled exception in daemon" }
                             call.respond(
                                 HttpStatusCode.InternalServerError,
                                 mapOf("error" to cause.message),
@@ -121,45 +124,64 @@ class TunnelDaemon(
                     }
                     install(hmacShieldPlugin)
                     routing {
-                        daemonRoutes(cacheRepository)
-                        tunnelRoutes(backend, cacheRepository)
-                        backendRoutes(backend)
+                        daemonRoutes(cacheRepository, autoTunnelSupervisor, daemonLogService)
+                        tunnelRoutes(backend, cacheRepository, autoTunnelSupervisor)
+                        backendRoutes(backend, cacheRepository)
                     }
                     monitor.subscribe(ApplicationStarted) {
-                        Logger.i { "IPC server started successfully" }
+                        daemonLog.i { "IPC server started successfully" }
                     }
                 }
                 .start(wait = false)
 
         scope.launch {
-            when {
-                SystemUtils.IS_OS_UNIX ->
-                    PermissionsHelper.setupSocketPermissionsWithPollUnix(socketPath)
-                SystemUtils.IS_OS_WINDOWS ->
-                    PermissionsHelper.setupSocketPermissionsWithPollWindows(socketPath)
+            if (isWindows()) {
+                PermissionsHelper.setupSocketPermissionsWithPollWindows(socketPath)
+            } else {
+                PermissionsHelper.setupSocketPermissionsWithPollUnix(socketPath)
             }
         }
 
         scope.launch {
-            val restoreTun = cacheRepository.getRestoreTunnelOnBoot()
-            if (restoreTun) {
-                Logger.i { "Attempting to restore previous tunnel" }
-                val config = cacheRepository.getLastActiveTunnelConfig() ?: return@launch
-                val name = cacheRepository.getLastActiveTunnelName() ?: return@launch
-                val id = cacheRepository.getLastActiveTunnelId() ?: return@launch
-                val tunnel = RunningTunnel(id, name)
-                backend.start(tunnel, config)
+            autoTunnelSupervisor.restoreFromCache()
+            if (autoTunnelSupervisor.status.running) {
+                daemonLog.i { "Skipping last-tunnel restore; auto-tunnel will select the tunnel" }
+                return@launch
             }
+            val restoreTun = cacheRepository.getRestoreTunnelOnBoot()
+            if (!restoreTun) return@launch
+            daemonLog.i { "Attempting to restore previous tunnel" }
+            val (id, request) = cacheRepository.getLastStartRequest() ?: return@launch
+            val config =
+                runCatching { Config.parseQuickString(request.quickConfig) }
+                    .onFailure { daemonLog.e(it) { "Failed to parse restored tunnel config" } }
+                    .getOrNull() ?: return@launch
+            val tunnel = RunningTunnel.fromRequest(id.toInt(), request)
+            backend
+                .start(tunnel, request.toBackendMode(config), request.tunnelDns?.toCore())
+                .onFailure { daemonLog.e(it) { "Failed to restore tunnel ${request.name}" } }
+                .onSuccess { daemonLog.i { "Restored tunnel ${request.name}" } }
         }
     }
 
     fun stop() {
         if (!running.compareAndSet(true, false)) return
-        Logger.i { "Daemon stop initiated - closing all tunnels" }
-        backend.shutdown()
-        Logger.i { "All tunnels closed - stopping server" }
+        daemonLog.i { "Daemon stop initiated - closing all tunnels" }
+        autoTunnelSupervisor.stop()
+        runBlocking {
+            backend.stopAllActiveTunnels()
+            backend.disableKillSwitch()
+        }
+        networkMonitor?.stop()
+        daemonLog.i { "All tunnels closed - stopping server" }
         server?.stop(gracePeriodMillis = 1_000, timeoutMillis = 2_000)
         shutdownLatch.countDown()
-        Logger.i { "UDS server fully stopped" }
+        daemonLog.i { "UDS server fully stopped" }
+    }
+
+    private companion object {
+        fun osName(): String = System.getProperty("os.name").orEmpty()
+
+        fun isWindows(): Boolean = osName().startsWith("Windows", ignoreCase = true)
     }
 }

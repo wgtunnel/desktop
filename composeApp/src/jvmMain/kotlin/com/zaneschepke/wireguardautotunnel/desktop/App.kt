@@ -37,15 +37,26 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Tab
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.functions.rememberNavBackStack
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.functions.rememberNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.autotunnel.AutoTunnelScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.autotunnel.preferred.PreferredTunnelScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.autotunnel.wifi.WifiSettingsScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.SettingsScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.appearance.AppearanceScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.appearance.display.DisplayScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.dns.DnsSettingsScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.globals.GlobalConfigScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.globals.TunnelGlobalsScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.lockdown.LockdownSettingsScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.logs.LogsScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.monitoring.MonitoringScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.proxy.ProxySettingsScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.recovery.TunnelRecoveryScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.SupportScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.DonateScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.crypto.AddressesScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.license.LicenseScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.TunnelsScreen
-import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.TunnelScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.ConfigScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.TunnelSettingsScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
@@ -252,10 +263,32 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                                     entry<Route.Tunnel> {
                                         val viewModel: TunnelViewModel =
                                             koinViewModel(parameters = { parametersOf(it.id) })
-                                        TunnelScreen(viewModel)
+                                        TunnelSettingsScreen(viewModel)
+                                    }
+                                    entry<Route.Config> {
+                                        val viewModel: TunnelViewModel =
+                                            koinViewModel(parameters = { parametersOf(it.id) })
+                                        ConfigScreen(viewModel, live = false)
+                                    }
+                                    entry<Route.LiveConfig> {
+                                        val viewModel: TunnelViewModel =
+                                            koinViewModel(parameters = { parametersOf(it.id) })
+                                        ConfigScreen(viewModel, live = true)
                                     }
                                     entry<Route.Settings> { SettingsScreen() }
+                                    entry<Route.Logs> { LogsScreen() }
+                                    entry<Route.Dns> { DnsSettingsScreen() }
+                                    entry<Route.TunnelGlobals> { TunnelGlobalsScreen() }
+                                    entry<Route.ConfigGlobal> { GlobalConfigScreen() }
+                                    entry<Route.ProxySettings> { ProxySettingsScreen() }
+                                    entry<Route.LockdownSettings> { LockdownSettingsScreen() }
+                                    entry<Route.TunnelRecovery> { TunnelRecoveryScreen() }
+                                    entry<Route.TunnelMonitoring> { MonitoringScreen() }
                                     entry<Route.AutoTunnel> { AutoTunnelScreen() }
+                                    entry<Route.WifiPreferences> { WifiSettingsScreen() }
+                                    entry<Route.PreferredTunnel> {
+                                        PreferredTunnelScreen(it.tunnelNetwork)
+                                    }
                                     entry<Route.Support> { SupportScreen() }
                                     entry<Route.License> { LicenseScreen() }
                                     entry<Route.Donate> { DonateScreen(viewModel) }

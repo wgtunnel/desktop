@@ -5,9 +5,9 @@ import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
+import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelImportService
-import com.zaneschepke.wireguardautotunnel.client.service.TunnelService
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.DeleteIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.ExportIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
@@ -15,32 +15,33 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TunnelUiItem
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TunnelsUiState
 import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
 import com.zaneschepke.wireguardautotunnel.desktop.util.asUserMessage
+import com.zaneschepke.wireguardautotunnel.desktop.util.toConfigErrorMessage
 import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 import io.github.vinceglb.filekit.dialogs.openFileSaver
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.write
-import org.orbitmvi.orbit.ContainerHost
-import org.orbitmvi.orbit.viewmodel.container
+import org.orbitmvi.orbit.OrbitContainerHost
+import org.orbitmvi.orbit.viewmodel.orbitContainer
 
 class TunnelsViewModel(
     private val tunnelRepository: TunnelRepository,
-    private val tunnelService: TunnelService,
+    private val tunnelCoordinator: TunnelCoordinator,
     private val tunnelImportService: TunnelImportService,
     private val backendService: BackendService,
-) : ContainerHost<TunnelsUiState, AppSideEffect>, ViewModel() {
+) : OrbitContainerHost<TunnelsUiState, TunnelsUiState, AppSideEffect>, ViewModel() {
 
     override val container =
-        container<TunnelsUiState, AppSideEffect>(TunnelsUiState()) {
+        orbitContainer<TunnelsUiState, AppSideEffect>(TunnelsUiState()) {
             intent {
-                tunnelRepository.flow.collect { configs ->
+                tunnelRepository.userTunnelsFlow.collect { configs ->
                     reduce {
                         val currentItems = state.tunnelItems
-                        val updatedItems =
-                            configs.map { config ->
-                                val existingStatus =
-                                    currentItems.firstOrNull { it.config.id == config.id }?.status
-                                TunnelUiItem(config = config, status = existingStatus)
-                            }
+                        val updatedItems = configs.map { config ->
+                            val existingStatus =
+                                currentItems.firstOrNull { it.config.id == config.id }?.status
+                            TunnelUiItem(config = config, status = existingStatus)
+                        }
                         state.copy(tunnelItems = updatedItems, isLoaded = true)
                     }
                 }
@@ -77,14 +78,20 @@ class TunnelsViewModel(
     }
 
     fun onStartTunnel(id: Long) = intent {
-        tunnelService.startTunnel(id).onFailure {
+        val tunnel =
+            tunnelRepository.getById(id)
+                ?: run {
+                    postSideEffect(AppSideEffect.Toast("Tunnel not found", ToastType.Error))
+                    return@intent
+                }
+        tunnelCoordinator.startTunnel(tunnel).onFailure {
             val message = (it as? ClientException).asUserMessage()
             postSideEffect(AppSideEffect.Toast(message, ToastType.Error))
         }
     }
 
     fun onStopTunnel(id: Long) = intent {
-        tunnelService.stopTunnel(id).onFailure {
+        tunnelCoordinator.stopTunnel(id).onFailure {
             val message = (it as? ClientException).asUserMessage()
             postSideEffect(AppSideEffect.Toast(message, ToastType.Error))
         }
@@ -106,11 +113,15 @@ class TunnelsViewModel(
     }
 
     fun onMultiConfImport(configMap: Map<String, String>) = intent {
-        tunnelImportService.import(configMap)
+        tunnelImportService.import(configMap).onFailure {
+            postSideEffect(AppSideEffect.Toast(it.toConfigErrorMessage(), ToastType.Error))
+        }
     }
 
     fun onConfImport(quickString: String, name: String?) = intent {
-        tunnelImportService.import(quickString, name)
+        tunnelImportService.import(quickString, name).onFailure {
+            postSideEffect(AppSideEffect.Toast(it.toConfigErrorMessage(), ToastType.Error))
+        }
     }
 
     fun onExportIntent(intent: ExportIntent) = intent {
@@ -125,13 +136,19 @@ class TunnelsViewModel(
                     }
                     val configMap = state.selectedTunnels.associate { it.name to it.quickConfig }
                     val zipBytes = FileUtils.createZipArchive(configMap)
-                    FileKit.openFileSaver("tunnels", extension = FileUtils.ZIP_FILE_EXTENSION) to
-                        zipBytes
+                    FileKit.openFileSaver(
+                        suggestedName = "tunnels",
+                        defaultExtension = FileUtils.ZIP_FILE_EXTENSION,
+                        directory = null,
+                        dialogSettings = FileKitDialogSettings.createDefault(),
+                    ) to zipBytes
                 }
                 is ExportIntent.Tunnel -> {
                     FileKit.openFileSaver(
-                        intent.tunnel.name,
-                        extension = FileUtils.CONF_FILE_EXTENSION,
+                        suggestedName = intent.tunnel.name,
+                        defaultExtension = FileUtils.CONF_FILE_EXTENSION,
+                        directory = null,
+                        dialogSettings = FileKitDialogSettings.createDefault(),
                     ) to intent.tunnel.quickConfig.toByteArray()
                 }
             }

@@ -3,11 +3,10 @@ package com.zaneschepke.wireguardautotunnel.desktop.ui.theme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import com.kdroid.composetray.lib.mac.MacOSMenuBarThemeDetector.isDark
 import com.materialkolor.rememberDynamicColorScheme
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
-import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
-import io.github.kdroidfilter.nucleus.systemcolor.systemAccentColor
+import dev.nucleusframework.darkmodedetector.isSystemInDarkMode
+import dev.nucleusframework.systemcolor.systemAccentColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

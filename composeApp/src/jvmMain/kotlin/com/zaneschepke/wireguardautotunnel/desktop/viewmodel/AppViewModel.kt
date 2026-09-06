@@ -1,29 +1,40 @@
 package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
+import com.zaneschepke.wireguardautotunnel.client.orchestration.AutoTunnelCoordinator
+import com.zaneschepke.wireguardautotunnel.client.orchestration.LogCoordinator
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
+import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
+import dev.nucleusframework.updater.UpdateResult
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import org.orbitmvi.orbit.ContainerHost
-import org.orbitmvi.orbit.viewmodel.container
+import org.orbitmvi.orbit.OrbitContainerHost
+import org.orbitmvi.orbit.viewmodel.orbitContainer
 
 class AppViewModel(
     private val settingsRepository: GeneralSettingRepository,
+    private val tunnelRepository: TunnelRepository,
     private val daemonService: DaemonService,
     private val backendService: BackendService,
-) : ContainerHost<AppUiState, AppSideEffect>, ViewModel() {
+    private val appUpdater: AppUpdater,
+    @Suppress("unused") private val autoTunnelCoordinator: AutoTunnelCoordinator,
+    @Suppress("unused") private val logCoordinator: LogCoordinator,
+) : OrbitContainerHost<AppUiState, AppUiState, AppSideEffect>, ViewModel() {
 
     override val container =
-        container<AppUiState, AppSideEffect>(
+        orbitContainer<AppUiState, AppSideEffect>(
             AppUiState(),
             buildSettings = { repeatOnSubscribedStopTimeout = 5_000L },
         ) {
+            intent { tunnelRepository.ensureGlobalConfigExists() }
             intent {
                 settingsRepository.flow.collect { settings ->
                     if (!state.isLoaded || settings.locale != state.locale) {
@@ -51,6 +62,19 @@ class AppViewModel(
                             state.copy(tunnelStatuses = tunnelStates, lockdownActive = lockdown)
                         }
                     }
+            }
+            intent {
+                if (!appUpdater.isSupported()) return@intent
+                when (val result = appUpdater.check()) {
+                    is UpdateResult.Available ->
+                        postSideEffect(
+                            AppSideEffect.Toast(
+                                "Update ${result.info.version} is available in Support",
+                                ToastType.Info,
+                            )
+                        )
+                    else -> Unit
+                }
             }
         }
 

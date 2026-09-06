@@ -1,0 +1,475 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "8fbd101e96f12a6ba6d01133e86eb72f",
+    "entities": [
+      {
+        "tableName": "tunnel_config",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `quick_config` TEXT NOT NULL, `is_primary_tunnel` INTEGER NOT NULL DEFAULT 0, `prefer_ipv6` INTEGER NOT NULL DEFAULT 0, `ipv6_restore_enabled` INTEGER NOT NULL DEFAULT 0, `is_ddns_tunnel` INTEGER NOT NULL DEFAULT 0, `position` INTEGER NOT NULL DEFAULT 0, `tunnel_networks` TEXT NOT NULL DEFAULT '[]', `is_ethernet_tunnel` INTEGER NOT NULL DEFAULT 0, `tunnel_bssids` TEXT NOT NULL DEFAULT '[]')",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quickConfig",
+            "columnName": "quick_config",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPrimaryTunnel",
+            "columnName": "is_primary_tunnel",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "preferIpv6",
+            "columnName": "prefer_ipv6",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "ipv6RestoreEnabled",
+            "columnName": "ipv6_restore_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "isDdnsTunnel",
+            "columnName": "is_ddns_tunnel",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "tunnelNetworks",
+            "columnName": "tunnel_networks",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'[]'"
+          },
+          {
+            "fieldPath": "isEthernetTunnel",
+            "columnName": "is_ethernet_tunnel",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "tunnelBssids",
+            "columnName": "tunnel_bssids",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'[]'"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_tunnel_config_name",
+            "unique": true,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_tunnel_config_name` ON `${TABLE_NAME}` (`name`)"
+          }
+        ]
+      },
+      {
+        "tableName": "lockdown_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `lockdown_enabled` INTEGER NOT NULL DEFAULT 0, `restore_on_boot` INTEGER NOT NULL DEFAULT 0, `bypass_lan` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enabled",
+            "columnName": "lockdown_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "restoreOnBoot",
+            "columnName": "restore_on_boot",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "bypassLan",
+            "columnName": "bypass_lan",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "general_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `theme` TEXT NOT NULL DEFAULT 'DARK', `locale` TEXT, `already_donated` INTEGER NOT NULL DEFAULT 0, `restore_tunnel_on_boot` INTEGER NOT NULL DEFAULT 0, `use_system_colors` INTEGER NOT NULL DEFAULT 0, `tunnel_mode` INTEGER NOT NULL DEFAULT 0, `seamless_recovery` INTEGER NOT NULL DEFAULT 1, `seamless_recovery_bounce_delay_sec` INTEGER NOT NULL DEFAULT 30, `global_amnezia_enabled` INTEGER NOT NULL DEFAULT 0)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "theme",
+            "columnName": "theme",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'DARK'"
+          },
+          {
+            "fieldPath": "locale",
+            "columnName": "locale",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "alreadyDonated",
+            "columnName": "already_donated",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "restoreTunnelOnBoot",
+            "columnName": "restore_tunnel_on_boot",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "useSystemColors",
+            "columnName": "use_system_colors",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "tunnelMode",
+            "columnName": "tunnel_mode",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "seamlessRecoveryEnabled",
+            "columnName": "seamless_recovery",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "seamlessRecoveryBounceDelaySec",
+            "columnName": "seamless_recovery_bounce_delay_sec",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "30"
+          },
+          {
+            "fieldPath": "isGlobalAmneziaEnabled",
+            "columnName": "global_amnezia_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "dns_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dns_bootstrap_protocol` INTEGER NOT NULL DEFAULT 0, `dns_bootstrap_endpoint` TEXT, `global_tunnel_config_dns_enabled` INTEGER NOT NULL DEFAULT 0, `tunnel_dns_mode` INTEGER NOT NULL DEFAULT 0, `tunnel_dns_protocol` INTEGER NOT NULL DEFAULT 0, `use_tunnel_dns_split` INTEGER NOT NULL DEFAULT 1, `tunnel_dns_endpoint` TEXT, `local_suffixes` TEXT, `transit_dns_policy` INTEGER NOT NULL DEFAULT 0, `split_suffix_target` INTEGER NOT NULL DEFAULT 0)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bootstrapDnsProtocol",
+            "columnName": "dns_bootstrap_protocol",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "bootstrapDnsEndpoint",
+            "columnName": "dns_bootstrap_endpoint",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isGlobalTunnelConfigDnsEnabled",
+            "columnName": "global_tunnel_config_dns_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "tunnelDnsMode",
+            "columnName": "tunnel_dns_mode",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "tunnelDnsProtocol",
+            "columnName": "tunnel_dns_protocol",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "useTunnelDnsServersInSplit",
+            "columnName": "use_tunnel_dns_split",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "tunnelDnsEndpoint",
+            "columnName": "tunnel_dns_endpoint",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "localSuffixes",
+            "columnName": "local_suffixes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "transitDnsPolicy",
+            "columnName": "transit_dns_policy",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "splitSuffixTarget",
+            "columnName": "split_suffix_target",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "monitoring_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `is_local_logs_enabled` INTEGER NOT NULL DEFAULT 0, `tunnel_statistics_enabled` INTEGER NOT NULL DEFAULT 1, `tunnel_statistics_poll_interval` INTEGER NOT NULL DEFAULT 3)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isLocalLogsEnabled",
+            "columnName": "is_local_logs_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "tunnelStatisticsEnabled",
+            "columnName": "tunnel_statistics_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "tunnelStatisticsPollInterval",
+            "columnName": "tunnel_statistics_poll_interval",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "3"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "proxy_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `socks5_proxy_enabled` INTEGER NOT NULL DEFAULT 1, `socks5_proxy_bind_address` TEXT, `http_proxy_enable` INTEGER NOT NULL DEFAULT 1, `http_proxy_bind_address` TEXT, `proxy_username` TEXT, `proxy_password` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "socks5ProxyEnabled",
+            "columnName": "socks5_proxy_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "socks5ProxyBindAddress",
+            "columnName": "socks5_proxy_bind_address",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "httpProxyEnabled",
+            "columnName": "http_proxy_enable",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "httpProxyBindAddress",
+            "columnName": "http_proxy_bind_address",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "proxyUsername",
+            "columnName": "proxy_username",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "proxyPassword",
+            "columnName": "proxy_password",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "auto_tunnel_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `is_tunnel_enabled` INTEGER NOT NULL DEFAULT 0, `trusted_network_ssids` TEXT NOT NULL DEFAULT '[]', `is_tunnel_on_ethernet_enabled` INTEGER NOT NULL DEFAULT 0, `is_tunnel_on_wifi_enabled` INTEGER NOT NULL DEFAULT 0, `is_wildcards_enabled` INTEGER NOT NULL DEFAULT 0, `is_stop_on_no_internet_enabled` INTEGER NOT NULL DEFAULT 0, `start_on_boot` INTEGER NOT NULL DEFAULT 0, `trusted_network_bssids` TEXT NOT NULL DEFAULT '[]')",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isAutoTunnelEnabled",
+            "columnName": "is_tunnel_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "trustedNetworkSsids",
+            "columnName": "trusted_network_ssids",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'[]'"
+          },
+          {
+            "fieldPath": "isTunnelOnEthernetEnabled",
+            "columnName": "is_tunnel_on_ethernet_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "isTunnelOnWifiEnabled",
+            "columnName": "is_tunnel_on_wifi_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "isWildcardsEnabled",
+            "columnName": "is_wildcards_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "isStopOnNoInternetEnabled",
+            "columnName": "is_stop_on_no_internet_enabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "startOnBoot",
+            "columnName": "start_on_boot",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "trustedNetworkBssids",
+            "columnName": "trusted_network_bssids",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'[]'"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8fbd101e96f12a6ba6d01133e86eb72f')"
+    ]
+  }
+}

@@ -2,6 +2,7 @@ package com.zaneschepke.wireguardautotunnel.desktop.util
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.ClipEntry
+import com.wgtunnel.parser.ConfigParseException
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import java.awt.datatransfer.StringSelection
 
@@ -21,5 +22,12 @@ fun ClientException?.asUserMessage(): String {
         is ClientException.UnauthorizedException -> "Unauthorized, please try again."
         is ClientException.UnknownError,
         null -> "An unknown error occurred, please try again."
+    }
+}
+
+fun Throwable.toConfigErrorMessage(): String {
+    return when (this) {
+        is ConfigParseException -> "Bad config. ${errorType.name} at location: $field."
+        else -> message?.takeIf { it.isNotBlank() } ?: "Invalid config"
     }
 }
