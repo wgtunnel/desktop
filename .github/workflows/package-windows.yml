@@ -1,6 +1,7 @@
 name: package-windows
 
 on:
+  push:
   workflow_call:
     inputs:
       variant:
