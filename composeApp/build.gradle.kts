@@ -134,7 +134,7 @@ val stagePackagingSidecars =
                 project(":daemon")
                     .layout
                     .projectDirectory
-                    .dir("winsw/src/WinSW/bin/Release/net7.0-windows/win-x64/publish")
+                    .dir("winsw/artifacts/bin/WinSW/x64/Release/net7.0-windows/win-x64/publish")
             )
         }
     }

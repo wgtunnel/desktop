@@ -63,8 +63,6 @@ tasks.named<Delete>("clean") {
 
     delete(file("output"))
     // Clean up WinSW specific artifacts
-    delete(file("winsw/src/WinSW/bin"))
-    delete(file("winsw/src/WinSW/obj"))
     delete(file("winsw/artifacts"))
 }
 
@@ -85,7 +83,7 @@ tasks.register<Exec>("buildWinSW") {
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
     outputs
-        .dir(file("$winSwDir/bin/Release/net7.0-windows/win-x64/publish"))
+        .dir(file("winsw/artifacts/bin/WinSW/x64/Release/net7.0-windows/win-x64/publish"))
         .withPropertyName("winSwPublishDir")
 
     commandLine(
