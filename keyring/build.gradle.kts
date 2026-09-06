@@ -1,6 +1,5 @@
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
-import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.gradle.kotlin.dsl.getByType
 
 plugins { kotlin("jvm") }
@@ -13,7 +12,6 @@ val keyringJdkHome =
         .getByType<JavaToolchainService>()
         .launcherFor {
             languageVersion.set(JavaLanguageVersion.of(libs.versions.jvm.get().toInt()))
-            vendor.set(JvmVendorSpec.ADOPTIUM)
         }
         .map { it.metadata.installationPath.asFile.absolutePath }
 

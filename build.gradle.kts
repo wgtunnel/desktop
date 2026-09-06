@@ -1,7 +1,6 @@
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import org.gradle.api.plugins.JavaApplication
 import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.gradle.jvm.toolchain.JvmVendorSpec
 
 plugins {
   alias(libs.plugins.composeHotReload) apply false
@@ -23,19 +22,13 @@ allprojects {
   version = version
   plugins.withId("org.jetbrains.kotlin.jvm") {
     extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
-      jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(jvmVersion))
-        vendor.set(JvmVendorSpec.ADOPTIUM)
-      }
+      jvmToolchain { languageVersion.set(JavaLanguageVersion.of(jvmVersion)) }
     }
   }
 
   plugins.withId("org.jetbrains.kotlin.multiplatform") {
     extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension> {
-      jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(jvmVersion))
-        vendor.set(JvmVendorSpec.ADOPTIUM)
-      }
+      jvmToolchain { languageVersion.set(JavaLanguageVersion.of(jvmVersion)) }
     }
   }
 }
