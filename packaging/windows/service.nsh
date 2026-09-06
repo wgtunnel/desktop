@@ -1,11 +1,22 @@
+; Force NSIS to require Admin (adds the UAC shield to the .exe)
+RequestExecutionLevel admin
+
 !macro StopDaemon
   IfFileExists "$INSTDIR\service-wrapper.exe" 0 +3
     nsExec::ExecToLog '"$INSTDIR\service-wrapper.exe" stop --no-elevate'
     Pop $0
 !macroend
 
-; Stop the service before NSIS extracts files so updates can replace the daemon binary.
 !macro customInit
+  ; Hard check to ensure it's actually running as Admin before extracting
+  UserInfo::GetAccountType
+  Pop $0
+  StrCmp $0 "Admin" is_admin
+    MessageBox MB_ICONSTOP "Administrator rights are required to install the WG Tunnel daemon."
+    SetErrorLevel 740 ; ERROR_ELEVATION_REQUIRED
+    Quit
+  is_admin:
+
   !insertmacro StopDaemon
 !macroend
 

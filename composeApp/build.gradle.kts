@@ -4,6 +4,7 @@ import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
 import dev.nucleusframework.desktop.application.dsl.ReleaseChannel
 import dev.nucleusframework.desktop.application.dsl.ReleaseType
 import dev.nucleusframework.desktop.application.dsl.TargetFormat
+import jdk.jfr.internal.JVM.include
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -208,7 +209,27 @@ nucleus.application {
             "jdk.zipfs",
         )
         cleanupNativeLibs = true
+
+        // Include WinSW and XML
         appContent.from(stagePackagingSidecars)
+
+        // Include the compiled GraalVM daemon
+        appContent.from(
+            fileTree(project(":daemon").layout.buildDirectory.dir("compose/tmp/main/graalvm/nativeCompile")) {
+                include("wgtunnel-daemon", "wgtunnel-daemon.exe")
+                builtBy(":daemon:nativeImageCompile")
+            }
+        )
+
+        if (isWindows) {
+            val arch = System.getProperty("os.arch").orEmpty().lowercase()
+            val wintunArch = if (arch.contains("aarch64") || arch.contains("arm64")) "arm64" else "amd64"
+            appContent.from(
+                fileTree(rootProject.file("native/wintun/$wintunArch")) {
+                    include("wintun.dll")
+                }
+            )
+        }
 
         publish {
             github {
@@ -227,7 +248,7 @@ nucleus.application {
             debDepends = listOf("systemd")
             rpmRequires = listOf("systemd")
             pacmanDepends = listOf("systemd")
-            iconFile.set(rootProject.file("icon.png"))
+            iconFile.set(rootProject.file("packaging/linux/icon.png"))
             afterInstall.set(rootProject.file("packaging/linux/after-install.sh"))
             afterRemove.set(rootProject.file("packaging/linux/after-remove.sh"))
             beforeInstall.set(rootProject.file("packaging/linux/before-install.sh"))
@@ -241,7 +262,7 @@ nucleus.application {
 
         windows {
             packageName = appFsName
-            iconFile.set(rootProject.file("icon.ico"))
+            iconFile.set(rootProject.file("packaging/windows/icon.ico"))
             nsis {
                 oneClick = false
                 allowElevation = true
@@ -249,7 +270,10 @@ nucleus.application {
                 menuCategory = appDisplayName
                 shortcutName = appDisplayName
                 includeScript.set(rootProject.file("packaging/windows/service.nsh"))
-                deleteAppDataOnUninstall = false
+                deleteAppDataOnUninstall = true
+                installerHeader.set(project.file("packaging/windows/header.bmp"))
+                installerSidebar.set(project.file("packaging/windows/sidebar.bmp"))
+                license.set(project.file("LICENSE"))
             }
             signing {
                 val azureTenant = System.getenv("AZURE_TENANT_ID")
