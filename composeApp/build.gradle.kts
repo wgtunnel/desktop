@@ -271,8 +271,8 @@ nucleus.application {
                 shortcutName = appDisplayName
                 includeScript.set(rootProject.file("packaging/windows/service.nsh"))
                 deleteAppDataOnUninstall = true
-                installerHeader.set(project.file("packaging/windows/header.bmp"))
-                installerSidebar.set(project.file("packaging/windows/sidebar.bmp"))
+                installerHeader.set(rootProject.file("packaging/windows/header.bmp"))
+                installerSidebar.set(rootProject.file("packaging/windows/sidebar.bmp"))
                 license.set(project.file("LICENSE"))
             }
             signing {
