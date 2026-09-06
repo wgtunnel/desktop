@@ -16,6 +16,11 @@ on:
         description: "Installer packageVersion MAJOR.MINOR.PATCH"
         type: string
         required: true
+      nucleus_ref:
+        description: "wgtunnel/Nucleus ref (includeBuild ../Nucleus)"
+        type: string
+        required: false
+        default: feat/linux-scripts
   workflow_dispatch:
     inputs:
       variant:
@@ -33,6 +38,10 @@ on:
         description: "Installer packageVersion MAJOR.MINOR.PATCH"
         type: string
         default: "0.0.0"
+      nucleus_ref:
+        description: "wgtunnel/Nucleus ref (includeBuild ../Nucleus)"
+        type: string
+        default: feat/linux-scripts
 
 permissions:
   contents: read
@@ -52,9 +61,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: wgtunnel/Nucleus
+          ref: ${{ inputs.nucleus_ref || 'feat/linux-scripts' }}
           path: Nucleus
 
-      - uses: wgtunnel/Nucleus/.github/actions/setup-nucleus@main
+      - uses: ./Nucleus/.github/actions/setup-nucleus
         with:
           java-version: "25"
           setup-gradle: "true"
@@ -80,7 +90,7 @@ jobs:
           WGTUNNEL_VARIANT: ${{ inputs.variant }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: ./gradlew :composeApp:packageGraalvmNsis --no-daemon --stacktrace -Papp.variant=${{ inputs.variant }} -Papp.version=${{ inputs.version }} -Papp.packageVersion=${{ inputs.package_version }}
+        run: ./gradlew :composeApp:packageGraalvmNsis --no-daemon --stacktrace -Papp.variant=${{ inputs.variant || 'release' }} -Papp.version=${{ inputs.version || github.ref_name }} -Papp.packageVersion=${{ inputs.package_version || '0.0.0' }}
 
       - uses: actions/upload-artifact@v4
         with:
