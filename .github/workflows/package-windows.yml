@@ -90,7 +90,7 @@ jobs:
           WGTUNNEL_VARIANT: ${{ inputs.variant }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: ./gradlew :composeApp:packageGraalvmNsis --no-daemon --stacktrace -Papp.variant=${{ inputs.variant || 'release' }} -Papp.version=${{ inputs.version || github.ref_name }} -Papp.packageVersion=${{ inputs.package_version || '0.0.0' }}
+        run: ./gradlew :composeApp:packageGraalvmNsis --no-daemon --stacktrace "-Papp.variant=${{ inputs.variant || 'release' }}" "-Papp.version=${{ inputs.version || github.ref_name }}" "-Papp.packageVersion=${{ inputs.package_version || '0.0.0' }}"
 
       - uses: actions/upload-artifact@v4
         with:
