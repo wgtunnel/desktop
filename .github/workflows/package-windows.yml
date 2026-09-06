@@ -79,8 +79,14 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Install Build Tools (Make & MinGW)
-        run: choco install make mingw -y
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Set up MinGW
+        uses: egor-tensin/setup-mingw@v3
+        with:
+          platform: x64
 
       - name: Verify Tools
         run: |
