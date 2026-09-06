@@ -1330,6 +1330,53 @@
             ]
         },
         {
+            "uniqueId": "com.wgtunnel:backend",
+            "artifactVersion": "1.5.3",
+            "name": "WG Tunnel Backend",
+            "description": "The core backend library for WG Tunnel apps.",
+            "website": "https://github.com/wgtunnel/core",
+            "developers": [
+                {
+                    "name": "Zane Schepke"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:git://github.com/wgtunnel/core.git",
+                "developerConnection": "scm:git:ssh://git@github.com/wgtunnel/core.git",
+                "url": "https://github.com/wgtunnel/core"
+            },
+            "licenses": [
+                "MIT",
+                "45fca19abbf3a17e83c7613ce327e298"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "com.wgtunnel:parser",
+            "artifactVersion": "1.5.3",
+            "name": "WG Tunnel Parser",
+            "description": "WireGuard / Amnezia config parser for WG Tunnel.",
+            "website": "https://github.com/wgtunnel/core",
+            "developers": [
+                {
+                    "name": "Zane Schepke"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:git://github.com/wgtunnel/core.git",
+                "developerConnection": "scm:git:ssh://git@github.com/wgtunnel/core.git",
+                "url": "https://github.com/wgtunnel/core"
+            },
+            "licenses": [
+                "MIT"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "commons-beanutils:commons-beanutils",
             "artifactVersion": "1.11.0",
             "name": "Apache Commons BeanUtils",
@@ -5472,6 +5519,11 @@
         }
     ],
     "licenses": {
+        "45fca19abbf3a17e83c7613ce327e298": {
+            "name": "BSD 3-Clause License",
+            "url": "https://github.com/wgtunnel/core/blob/master/LICENSES/BSD-3-Clause.txt",
+            "hash": "45fca19abbf3a17e83c7613ce327e298"
+        },
         "Apache-2.0": {
             "name": "Apache License 2.0",
             "url": "https://spdx.org/licenses/Apache-2.0.html",
