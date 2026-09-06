@@ -79,6 +79,14 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
+      - name: Install Build Tools (Make & MinGW)
+        run: choco install make mingw -y
+
+      - name: Verify Tools
+        run: |
+          make --version
+          x86_64-w64-mingw32-gcc --version
+
       - name: Azure Login
         uses: azure/login@v2
         with:
