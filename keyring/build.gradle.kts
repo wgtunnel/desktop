@@ -13,7 +13,7 @@ val keyringJdkHome =
         .launcherFor {
             languageVersion.set(JavaLanguageVersion.of(libs.versions.jvm.get().toInt()))
         }
-        .map { it.metadata.installationPath.asFile.absolutePath }
+        .map { it.metadata.installationPath.asFile.absolutePath.replace('\\', '/') }
 
 tasks.register<Exec>("buildGoLibs") {
     val goDir = "tools/keyring-go"

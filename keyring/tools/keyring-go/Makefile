@@ -3,21 +3,26 @@
 
 DESTDIR      ?= $(CURDIR)/out
 RESOURCEDIR  ?= $(CURDIR)/../../src/main/resources/nucleus/native
-HOST_OS      := $(shell uname -s | tr '[:upper:]' '[:lower:]')
-JAVA_HOME    ?= $(shell dirname $$(dirname $$(readlink -f $$(which java))))
-ifeq ($(wildcard $(JAVA_HOME)/include/jni.h),)
-  override JAVA_HOME := $(shell dirname $$(dirname $$(readlink -f $$(which java))))
+# Backslashes in JAVA_HOME break CFLAGS on Windows (`\x64` is a hex escape).
+JAVA_HOME    := $(subst \,/,$(JAVA_HOME))
+ifeq ($(OS),Windows_NT)
+    HOST_OS := windows
+else
+    HOST_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 endif
+ifeq ($(wildcard $(JAVA_HOME)/include/jni.h),)
+  override JAVA_HOME := $(subst \,/,$(shell dirname $$(dirname $$(readlink -f $$(which java)))))
+endif
+
+# jni_md.h lives under include/<os>/; list all so native and cross builds work.
+JDK_JNI_CFLAGS := -I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/win32" -I"$(JAVA_HOME)/include/linux" -I"$(JAVA_HOME)/include/darwin"
 
 ifeq ($(HOST_OS),darwin)
     PLATFORMS := darwin-amd64 darwin-arm64 linux-amd64 windows-amd64 windows-arm64
-    JDK_JNI_CFLAGS := -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/darwin
-else ifeq ($(HOST_OS),linux)
+else ifeq ($(filter linux,$(HOST_OS)),linux)
     PLATFORMS := linux-amd64 windows-amd64
-    JDK_JNI_CFLAGS := -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 else
     PLATFORMS := windows-amd64
-    JDK_JNI_CFLAGS := -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/win32
 endif
 
 export CGO_ENABLED := 1

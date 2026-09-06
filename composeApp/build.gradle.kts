@@ -241,7 +241,7 @@ nucleus.application {
 
         windows {
             packageName = appFsName
-            iconFile.set(rootProject.file("icon.png"))
+            iconFile.set(rootProject.file("icon.ico"))
             nsis {
                 oneClick = false
                 allowElevation = true
