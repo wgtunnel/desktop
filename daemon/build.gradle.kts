@@ -51,6 +51,23 @@ nucleus.application {
 
 tasks.test { useJUnitPlatform() }
 
+val printDevRunInfo =
+    tasks.register("printDevRunInfo") {
+        group = "application"
+        description = "Prints the dev daemon run info."
+        dependsOn(tasks.named("classes"))
+
+        val runtimeClasspath = sourceSets.main.get().runtimeClasspath
+        val javaHome = System.getProperty("java.home")
+        val jvmArgsLine = daemonJvmArgs.joinToString(" ")
+
+        doLast {
+            println("$javaHome/bin/java")
+            println(jvmArgsLine)
+            println(runtimeClasspath.asPath)
+        }
+    }
+
 val cleanDotNet =
     tasks.register<Exec>("cleanDotNet") {
         group = "build"
