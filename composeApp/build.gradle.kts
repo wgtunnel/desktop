@@ -262,7 +262,6 @@ nucleus.application {
                 installerLanguages = listOf(
                     "en_US",
                     "ru_RU",
-                    "fa_IR",
                     "de_DE",
                     "nl_NL",
                     "fr_FR",
