@@ -200,6 +200,7 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                 viewModel::onClearSelectionMode,
                 { intent -> pendingDeleteIntent = intent },
                 viewModel::onExportIntent,
+                viewModel::onDaemonRequiredToast,
             )
         }
     }

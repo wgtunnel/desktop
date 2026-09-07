@@ -1,7 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.client.data.service
 
 import co.touchlab.kermit.Logger
-import com.zaneschepke.wireguardautotunnel.client.data.service.UdsDaemonService.Companion.DAEMON_WS_RECONNECT_DELAY_MILLIS
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
@@ -15,11 +14,9 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.utils.io.*
 import io.ktor.websocket.*
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
@@ -67,10 +64,16 @@ class UdsBackendService(
     override fun statusFlow(): Flow<BackendStatus> = status
 
     private val status: Flow<BackendStatus> = callbackFlow {
+        var failureCount = 0
         while (isActive) {
+            var connected = false
             try {
-                getStatus().onSuccess { trySend(it) }
+                getStatus().onSuccess {
+                    connected = true
+                    trySend(it)
+                }
                 client.webSocket(path = Routes.BACKEND_STATUS_WS) {
+                    connected = true
                     Logger.d { "Client: WS Connected" }
                     for (frame in incoming) {
                         if (frame is Frame.Text) {
@@ -83,7 +86,8 @@ class UdsBackendService(
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
             }
-            if (isActive) delay(DAEMON_WS_RECONNECT_DELAY_MILLIS.milliseconds)
+            failureCount = if (connected) 0 else failureCount + 1
+            if (isActive) UdsDaemonService.reconnectDelay(failureCount)
         }
 
         awaitClose {}

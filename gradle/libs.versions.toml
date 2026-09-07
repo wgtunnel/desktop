@@ -42,7 +42,7 @@ sqlite = "2.7.0"
 
 lang3 = "3.20.0"
 humanReadable = "1.13.1"
-core = "1.5.4"
+core = "1.5.5"
 
 [bundles]
 ktor-client-jvm = ["ktor-client-core-jvm", "ktor-client-cio-jvm", "ktor-client-content-negotiation-jvm", "ktor-serialization-json-jvm", "ktor-client-okhttp", "ktor-client-websockets-jvm"]

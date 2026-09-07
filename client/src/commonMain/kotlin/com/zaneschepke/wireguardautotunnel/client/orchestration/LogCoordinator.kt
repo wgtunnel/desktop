@@ -14,7 +14,10 @@ import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 
@@ -35,14 +38,27 @@ class LogCoordinator(
                 .collect { settings ->
                     if (settings.isLocalLogsEnabled) {
                         recorder.start()
-                        daemonService.setLocalLogging(true).onFailure {
-                            log.w(it) { "Failed to enable daemon local logging" }
-                        }
                     } else {
                         recorder.stop()
-                        daemonService.setLocalLogging(false)
                     }
+                    syncDaemonLocalLogging(settings.isLocalLogsEnabled)
                 }
+        }
+        // One-time sync for logger to keep daemon in sync
+        scope.launch {
+            daemonService.alive
+                .distinctUntilChanged()
+                .filter { it }
+                .collect {
+                    val enabled = monitoringRepository.flow.first().isLocalLogsEnabled
+                    syncDaemonLocalLogging(enabled)
+                }
+        }
+    }
+
+    private suspend fun syncDaemonLocalLogging(enabled: Boolean) {
+        daemonService.setLocalLogging(enabled).onFailure {
+            log.w(it) { "Failed to sync daemon local logging" }
         }
     }
 

@@ -12,6 +12,7 @@ data class TunnelsUiState(
     val selectedTunnels: List<TunnelConfig> = emptyList(),
     val isSelectionMode: Boolean = false,
     val isLoaded: Boolean = false,
+    val hasBackendStatus: Boolean = false,
 )
 
 data class TunnelUiItem(val config: TunnelConfig, val status: TunnelStatus? = null) {

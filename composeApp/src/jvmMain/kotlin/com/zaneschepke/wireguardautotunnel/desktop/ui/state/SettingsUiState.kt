@@ -17,6 +17,7 @@ data class SettingsUiState(
     val updateBusy: Boolean = false,
     val updateMessage: String? = null,
     val pendingUpdateVersion: String? = null,
+    val daemonConnected: Boolean = false,
 ) {
     val tunnelMode: TunnelMode
         get() = settings.selectableTunnelMode

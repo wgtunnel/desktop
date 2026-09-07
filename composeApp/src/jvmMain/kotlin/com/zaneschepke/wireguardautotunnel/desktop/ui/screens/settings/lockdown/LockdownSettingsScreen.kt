@@ -22,14 +22,15 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bypass
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.configuration
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown_settings
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.protect_on_startup
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.requires_daemon_running
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.DisabledReasonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
-import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Disabled
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.SettingsViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -67,33 +68,36 @@ fun LockdownSettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     description = {
                         DescriptionText(stringResource(Res.string.bypass_lan_for_kill_switch))
                     },
+                    enabled = uiState.daemonConnected,
                     trailing = {
-                        ThemedSwitch(
-                            checked = uiState.lockdown.bypassLan,
-                            onClick = { viewModel.onBypassLan(it) },
-                        )
+                        DisabledReasonTooltip(
+                            enabled = uiState.daemonConnected,
+                            reason = stringResource(Res.string.requires_daemon_running),
+                        ) {
+                            ThemedSwitch(
+                                checked = uiState.lockdown.bypassLan,
+                                enabled = uiState.daemonConnected,
+                                onClick = { viewModel.onBypassLan(it) },
+                            )
+                        }
                     },
                     onClick = { viewModel.onBypassLan(!uiState.lockdown.bypassLan) },
                 )
                 SurfaceRow(
-                    leading = {
-                        Icon(
-                            Icons.Outlined.RestartAlt,
-                            contentDescription = null,
-                            tint =
-                                if (uiState.lockdownEnabled) {
-                                    androidx.compose.material3.LocalContentColor.current
-                                } else Disabled,
-                        )
-                    },
+                    leading = { Icon(Icons.Outlined.RestartAlt, contentDescription = null) },
                     title = stringResource(Res.string.protect_on_startup),
-                    enabled = uiState.lockdownEnabled,
+                    enabled = uiState.lockdownEnabled && uiState.daemonConnected,
                     trailing = {
-                        ThemedSwitch(
-                            checked = uiState.lockdown.restoreOnBoot,
-                            enabled = uiState.lockdownEnabled,
-                            onClick = { viewModel.onRestoreKillSwitchOnBoot(it) },
-                        )
+                        DisabledReasonTooltip(
+                            enabled = uiState.daemonConnected,
+                            reason = stringResource(Res.string.requires_daemon_running),
+                        ) {
+                            ThemedSwitch(
+                                checked = uiState.lockdown.restoreOnBoot,
+                                enabled = uiState.lockdownEnabled && uiState.daemonConnected,
+                                onClick = { viewModel.onRestoreKillSwitchOnBoot(it) },
+                            )
+                        }
                     },
                     onClick = {
                         viewModel.onRestoreKillSwitchOnBoot(!uiState.lockdown.restoreOnBoot)

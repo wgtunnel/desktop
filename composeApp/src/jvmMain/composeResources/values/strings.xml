@@ -518,6 +518,7 @@
     <string name="domain_suffixes">Domain suffixes</string>
     <string name="kill_switch_label">Kill switch</string>
     <string name="kill_switch_desc">Block all non-tunnel traffic while a tunnel is running</string>
+    <string name="requires_daemon_running">Requires the daemon to be running</string>
     <string name="protect_on_startup">Protect on system startup</string>
     <string name="restore_tunnel_on_boot">Restore tunnel on system startup</string>
     <string name="copied_to_clipboard">Copied to clipboard: %1$s</string>

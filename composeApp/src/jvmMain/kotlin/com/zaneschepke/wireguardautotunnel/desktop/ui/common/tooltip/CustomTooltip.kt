@@ -32,3 +32,17 @@ fun CustomTooltip(
         content()
     }
 }
+
+@Composable
+fun DisabledReasonTooltip(
+    enabled: Boolean,
+    reason: String,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    if (enabled) {
+        content()
+    } else {
+        CustomTooltip(modifier = modifier, text = reason, content = content)
+    }
+}

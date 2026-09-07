@@ -48,7 +48,6 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSett
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
-import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Disabled
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.orbitmvi.orbit.compose.collectAsState
@@ -149,22 +148,10 @@ fun TunnelSettingsScreen(viewModel: TunnelViewModel) {
                 )
                 val ipv6Enabled = tunnel.preferIpv6
                 SurfaceRow(
-                    leading = {
-                        Icon(
-                            Icons.Outlined.Restore,
-                            contentDescription = null,
-                            tint =
-                                if (ipv6Enabled) MaterialTheme.colorScheme.onSurface else Disabled,
-                        )
-                    },
+                    leading = { Icon(Icons.Outlined.Restore, contentDescription = null) },
                     title = stringResource(Res.string.restore_ipv6),
                     enabled = ipv6Enabled,
-                    description = {
-                        DescriptionText(
-                            stringResource(Res.string.restore_ipv6_desc),
-                            disabled = !ipv6Enabled,
-                        )
-                    },
+                    description = { DescriptionText(stringResource(Res.string.restore_ipv6_desc)) },
                     trailing = {
                         ThemedSwitch(
                             checked = tunnel.ipv6RestoreEnabled,

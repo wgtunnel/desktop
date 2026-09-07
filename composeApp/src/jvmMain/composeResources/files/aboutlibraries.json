@@ -1331,7 +1331,7 @@
         },
         {
             "uniqueId": "com.wgtunnel:backend",
-            "artifactVersion": "1.5.4",
+            "artifactVersion": "1.5.5",
             "name": "WG Tunnel Backend",
             "description": "The core backend library for WG Tunnel apps.",
             "website": "https://github.com/wgtunnel/core",
@@ -1355,7 +1355,7 @@
         },
         {
             "uniqueId": "com.wgtunnel:parser",
-            "artifactVersion": "1.5.4",
+            "artifactVersion": "1.5.5",
             "name": "WG Tunnel Parser",
             "description": "WireGuard / Amnezia config parser for WG Tunnel.",
             "website": "https://github.com/wgtunnel/core",
@@ -3100,6 +3100,48 @@
             ]
         },
         {
+            "uniqueId": "io.sellmair:evas",
+            "artifactVersion": "1.4.0",
+            "name": "Evas",
+            "description": "Events and States Library for Kotlin (Multiplatform)",
+            "website": "https://github.com/sellmair/evas",
+            "developers": [
+                {
+                    "name": "Sebastian Sellmair"
+                }
+            ],
+            "scm": {
+                "url": "https://github.com/sellmair/evas"
+            },
+            "licenses": [
+                "MIT"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "io.sellmair:evas-compose",
+            "artifactVersion": "1.4.0",
+            "name": "Evas",
+            "description": "Compose (Multiplatform) extensions for evas",
+            "website": "https://github.com/sellmair/evas",
+            "developers": [
+                {
+                    "name": "Sebastian Sellmair"
+                }
+            ],
+            "scm": {
+                "url": "https://github.com/sellmair/evas"
+            },
+            "licenses": [
+                "MIT"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "net.java.dev.jna:jna",
             "artifactVersion": "5.19.1",
             "name": "Java Native Access",
@@ -3301,6 +3343,47 @@
             },
             "licenses": [
                 "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.javassist:javassist",
+            "artifactVersion": "3.30.2-GA",
+            "name": "Javassist",
+            "description": "Javassist (JAVA programming ASSISTant) makes Java bytecode manipulation\n    simple. It is a class library for editing bytecodes in Java.",
+            "website": "https://www.javassist.org/",
+            "developers": [
+                {
+                    "name": "Andrew Dinn",
+                    "organisationUrl": "https://www.jboss.org/"
+                },
+                {
+                    "name": "Shigeru Chiba",
+                    "organisationUrl": "https://www.javassist.org/"
+                },
+                {
+                    "name": "Kabir Khan",
+                    "organisationUrl": "https://www.jboss.org/"
+                },
+                {
+                    "name": "Scott Marlow",
+                    "organisationUrl": "https://www.jboss.org/"
+                }
+            ],
+            "organization": {
+                "name": "Shigeru Chiba, www.javassist.org"
+            },
+            "scm": {
+                "connection": "scm:git:git@github.com:jboss-javassist/javassist.git",
+                "developerConnection": "scm:git:git@github.com:jboss-javassist/javassist.git",
+                "url": "scm:git:git@github.com:jboss-javassist/javassist.git"
+            },
+            "licenses": [
+                "dd74d358d0b6f8b5099019a55929b63f",
+                "Apache-2.0",
+                "8cd94e3ff25fb90fa794464eee297b17"
             ],
             "funding": [
                 
@@ -3811,6 +3894,50 @@
             ]
         },
         {
+            "uniqueId": "org.jetbrains.compose.hot-reload:hot-reload-agent",
+            "artifactVersion": "1.2.0",
+            "name": "hot-reload-agent",
+            "description": "Compose Hot Reload implementation",
+            "website": "https://github.com/JetBrains/compose-hot-reload",
+            "developers": [
+                {
+                    "name": "JetBrains Team",
+                    "organisationUrl": "https://www.jetbrains.com"
+                }
+            ],
+            "scm": {
+                "url": "https://github.com/JetBrains/compose-hot-reload"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.jetbrains.compose.hot-reload:hot-reload-analysis",
+            "artifactVersion": "1.2.0",
+            "name": "hot-reload-analysis",
+            "description": "Compose Hot Reload implementation",
+            "website": "https://github.com/JetBrains/compose-hot-reload",
+            "developers": [
+                {
+                    "name": "JetBrains Team",
+                    "organisationUrl": "https://www.jetbrains.com"
+                }
+            ],
+            "scm": {
+                "url": "https://github.com/JetBrains/compose-hot-reload"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "org.jetbrains.compose.hot-reload:hot-reload-annotations",
             "artifactVersion": "1.2.0",
             "name": "hot-reload-annotations",
@@ -3836,6 +3963,28 @@
             "uniqueId": "org.jetbrains.compose.hot-reload:hot-reload-core",
             "artifactVersion": "1.2.0",
             "name": "hot-reload-core",
+            "description": "Compose Hot Reload implementation",
+            "website": "https://github.com/JetBrains/compose-hot-reload",
+            "developers": [
+                {
+                    "name": "JetBrains Team",
+                    "organisationUrl": "https://www.jetbrains.com"
+                }
+            ],
+            "scm": {
+                "url": "https://github.com/JetBrains/compose-hot-reload"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.jetbrains.compose.hot-reload:hot-reload-devtools",
+            "artifactVersion": "1.2.0",
+            "name": "hot-reload-devtools",
             "description": "Compose Hot Reload implementation",
             "website": "https://github.com/JetBrains/compose-hot-reload",
             "developers": [
@@ -5469,6 +5618,72 @@
             ]
         },
         {
+            "uniqueId": "org.ow2.asm:asm",
+            "artifactVersion": "9.10.1",
+            "name": "asm",
+            "description": "ASM, a very small and fast Java bytecode manipulation framework",
+            "website": "http://asm.ow2.io/",
+            "developers": [
+                {
+                    "name": "Eric Bruneton"
+                },
+                {
+                    "name": "Remi Forax"
+                },
+                {
+                    "name": "Eugene Kuleshov"
+                }
+            ],
+            "organization": {
+                "name": "OW2",
+                "url": "http://www.ow2.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitlab.ow2.org/asm/asm/",
+                "developerConnection": "scm:git:https://gitlab.ow2.org/asm/asm/",
+                "url": "https://gitlab.ow2.org/asm/asm/"
+            },
+            "licenses": [
+                "BSD-3-Clause"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.ow2.asm:asm-tree",
+            "artifactVersion": "9.10.1",
+            "name": "asm-tree",
+            "description": "Tree API of ASM, a very small and fast Java bytecode manipulation framework",
+            "website": "http://asm.ow2.io/",
+            "developers": [
+                {
+                    "name": "Eric Bruneton"
+                },
+                {
+                    "name": "Remi Forax"
+                },
+                {
+                    "name": "Eugene Kuleshov"
+                }
+            ],
+            "organization": {
+                "name": "OW2",
+                "url": "http://www.ow2.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitlab.ow2.org/asm/asm/",
+                "developerConnection": "scm:git:https://gitlab.ow2.org/asm/asm/",
+                "url": "https://gitlab.ow2.org/asm/asm/"
+            },
+            "licenses": [
+                "BSD-3-Clause"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "org.slf4j:slf4j-api",
             "artifactVersion": "2.0.18",
             "name": "SLF4J API Module",
@@ -5524,6 +5739,11 @@
             "url": "https://github.com/wgtunnel/core/blob/master/LICENSES/BSD-3-Clause.txt",
             "hash": "45fca19abbf3a17e83c7613ce327e298"
         },
+        "8cd94e3ff25fb90fa794464eee297b17": {
+            "name": "MPL 1.1",
+            "url": "https://www.mozilla.org/en-US/MPL/1.1/",
+            "hash": "8cd94e3ff25fb90fa794464eee297b17"
+        },
         "Apache-2.0": {
             "name": "Apache License 2.0",
             "url": "https://spdx.org/licenses/Apache-2.0.html",
@@ -5568,6 +5788,11 @@
             "name": "Unicode-3.0",
             "url": "https://raw.githubusercontent.com/unicode-org/icu/maint/maint-77/LICENSE",
             "hash": "a953261c1ab0a39c092979a5ef28d565"
+        },
+        "dd74d358d0b6f8b5099019a55929b63f": {
+            "name": "LGPL 2.1",
+            "url": "https://www.gnu.org/licenses/lgpl-2.1.html",
+            "hash": "dd74d358d0b6f8b5099019a55929b63f"
         }
     }
 }

@@ -201,7 +201,11 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                                 railExpanded =
                                     railState.targetValue == WideNavigationRailValue.Expanded,
                                 icon = {
-                                    CustomTooltip(text = "Daemon health") {
+                                    CustomTooltip(
+                                        text =
+                                            if (uiState.daemonConnected) "Daemon connected"
+                                            else "Connecting to daemon…"
+                                    ) {
                                         PulsingStatusLed(isHealthy = uiState.daemonConnected)
                                     }
                                 },

@@ -38,9 +38,12 @@ class UdsDaemonService(
 ) : DaemonService {
 
     override val alive: Flow<Boolean> = callbackFlow {
+        var failureCount = 0
         while (isActive) {
+            var connected = false
             try {
                 client.webSocket(Routes.DAEMON_STATUS_WS) {
+                    connected = true
                     trySend(true)
                     for (frame in incoming) {
                         // Keep the session open, ends when socket closes
@@ -51,7 +54,8 @@ class UdsDaemonService(
                 if (e is CancellationException) throw e
                 trySend(false)
             }
-            if (isActive) delay(DAEMON_WS_RECONNECT_DELAY_MILLIS)
+            failureCount = if (connected) 0 else failureCount + 1
+            if (isActive) reconnectDelay(failureCount)
         }
         awaitClose {}
     }
@@ -60,10 +64,16 @@ class UdsDaemonService(
         .shareIn(scope, SharingStarted.WhileSubscribed(SHARE_STOP_TIMEOUT_MS), replay = 1)
 
     private val autoTunnelStatus: Flow<AutoTunnelStatusDto> = callbackFlow {
+        var failureCount = 0
         while (isActive) {
+            var connected = false
             try {
-                getAutoTunnelStatus().onSuccess { trySend(it) }
+                getAutoTunnelStatus().onSuccess {
+                    connected = true
+                    trySend(it)
+                }
                 client.webSocket(path = Routes.DAEMON_AUTO_TUNNEL_STATUS_WS) {
+                    connected = true
                     for (frame in incoming) {
                         if (frame is Frame.Text) {
                             trySend(
@@ -78,7 +88,8 @@ class UdsDaemonService(
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
             }
-            if (isActive) delay(DAEMON_WS_RECONNECT_DELAY_MILLIS)
+            failureCount = if (connected) 0 else failureCount + 1
+            if (isActive) reconnectDelay(failureCount)
         }
         awaitClose {}
     }
@@ -87,9 +98,12 @@ class UdsDaemonService(
         .shareIn(scope, SharingStarted.WhileSubscribed(SHARE_STOP_TIMEOUT_MS), replay = 1)
 
     private val logs: Flow<LogMessageDto> = callbackFlow {
+        var failureCount = 0
         while (isActive) {
+            var connected = false
             try {
                 client.webSocket(path = Routes.DAEMON_LOGS_WS) {
+                    connected = true
                     for (frame in incoming) {
                         if (frame is Frame.Text) {
                             trySend(
@@ -104,7 +118,8 @@ class UdsDaemonService(
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
             }
-            if (isActive) delay(DAEMON_WS_RECONNECT_DELAY_MILLIS)
+            failureCount = if (connected) 0 else failureCount + 1
+            if (isActive) reconnectDelay(failureCount)
         }
         awaitClose {}
     }
@@ -167,6 +182,21 @@ class UdsDaemonService(
 
     companion object {
         const val DAEMON_WS_RECONNECT_DELAY_MILLIS = 3_000L
+        private const val INITIAL_RECONNECT_DELAY_MILLIS = 200L
         private const val SHARE_STOP_TIMEOUT_MS = 5_000L
+
+        /**
+         * Bounded exponential backoff for daemon (re)connect attempts. Fresh subscriptions and
+         * connections that just dropped retry almost immediately; only repeated failures back off
+         * toward [DAEMON_WS_RECONNECT_DELAY_MILLIS]. Keeps a cold app open from stalling a full 3s
+         * on a single transient first-attempt failure.
+         */
+        suspend fun reconnectDelay(failureCount: Int) {
+            val delayMillis =
+                (INITIAL_RECONNECT_DELAY_MILLIS shl failureCount.coerceAtMost(4)).coerceAtMost(
+                    DAEMON_WS_RECONNECT_DELAY_MILLIS
+                )
+            delay(delayMillis)
+        }
     }
 }

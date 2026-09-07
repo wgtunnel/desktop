@@ -58,7 +58,7 @@ class TunnelsViewModel(
                                     }
                                 item.copy(status = newStatus)
                             }
-                        state.copy(tunnelItems = updatedItems)
+                        state.copy(tunnelItems = updatedItems, hasBackendStatus = true)
                     }
                 }
             }
@@ -95,6 +95,10 @@ class TunnelsViewModel(
             val message = (it as? ClientException).asUserMessage()
             postSideEffect(AppSideEffect.Toast(message, ToastType.Error))
         }
+    }
+
+    fun onDaemonRequiredToast() = intent {
+        postSideEffect(AppSideEffect.Toast("Requires the daemon to be running", ToastType.Error))
     }
 
     fun onSelectTunnel(tunnel: TunnelConfig) = intent {

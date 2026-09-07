@@ -56,6 +56,7 @@ class SettingsViewModel(
                         }
                     }
             }
+            intent { daemonService.alive.collect { reduce { state.copy(daemonConnected = it) } } }
         }
 
     fun onRestoreTunnelOnBoot(enabled: Boolean) = intent {

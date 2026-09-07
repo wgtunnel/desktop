@@ -66,6 +66,7 @@ fun TunnelList(
     onExitSelectionMode: () -> Unit,
     onDelete: (intent: DeleteIntent) -> Unit,
     onExport: (intent: ExportIntent) -> Unit,
+    onDaemonRequired: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val navController = LocalNavController.current
@@ -199,10 +200,12 @@ fun TunnelList(
                             if (!uiState.isSelectionMode) {
                                 SwitchWithDivider(
                                     checked = item.isRunning,
+                                    enabled = uiState.hasBackendStatus,
                                     onClick = {
                                         if (it) startTunnel(item.config.id)
                                         else stopTunnel(item.config.id)
                                     },
+                                    onDisabledClick = onDaemonRequired,
                                 )
                             }
                         },

@@ -42,6 +42,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.kill_s
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.kill_switch_label
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.local_logging
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.local_logging_desc
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.requires_daemon_running
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.restore_tunnel_on_boot
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.sdk
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select
@@ -61,6 +62,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.OptionPickerMenu
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.PickerOption
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.DisabledReasonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.util.asDescription
@@ -180,11 +182,17 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     title = stringResource(Res.string.kill_switch_label),
                     description = { DescriptionText(stringResource(Res.string.kill_switch_desc)) },
                     trailing = { modifier ->
-                        SwitchWithDivider(
-                            checked = uiState.lockdownEnabled,
-                            onClick = { viewModel.onKillSwitchEnabled(it) },
+                        DisabledReasonTooltip(
+                            enabled = uiState.daemonConnected,
+                            reason = stringResource(Res.string.requires_daemon_running),
                             modifier = modifier,
-                        )
+                        ) {
+                            SwitchWithDivider(
+                                checked = uiState.lockdownEnabled,
+                                enabled = uiState.daemonConnected,
+                                onClick = { viewModel.onKillSwitchEnabled(it) },
+                            )
+                        }
                     },
                     onClick = { navController.push(Route.LockdownSettings) },
                 )
@@ -202,11 +210,18 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     leading = { Icon(Icons.Outlined.Autorenew, contentDescription = null) },
                     title = stringResource(Res.string.restore_tunnel_on_boot),
                     trailing = {
-                        ThemedSwitch(
-                            checked = uiState.settings.restoreTunnelOnBoot,
-                            onClick = { viewModel.onRestoreTunnelOnBoot(it) },
-                        )
+                        DisabledReasonTooltip(
+                            enabled = uiState.daemonConnected,
+                            reason = stringResource(Res.string.requires_daemon_running),
+                        ) {
+                            ThemedSwitch(
+                                checked = uiState.settings.restoreTunnelOnBoot,
+                                enabled = uiState.daemonConnected,
+                                onClick = { viewModel.onRestoreTunnelOnBoot(it) },
+                            )
+                        }
                     },
+                    enabled = uiState.daemonConnected,
                     onClick = {
                         viewModel.onRestoreTunnelOnBoot(!uiState.settings.restoreTunnelOnBoot)
                     },

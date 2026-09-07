@@ -13,10 +13,13 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +31,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Disabled
+
+val LocalRowEnabled = compositionLocalOf { true }
 
 @Composable
 fun SurfaceRow(
@@ -68,43 +73,50 @@ fun SurfaceRow(
                 .animateContentSize(),
         verticalArrangement = Arrangement.Center,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
+        CompositionLocalProvider(
+            LocalContentColor provides if (enabled) LocalContentColor.current else Disabled,
+            LocalRowEnabled provides enabled,
         ) {
-            if (leading != null) {
-                Row(
-                    modifier =
-                        Modifier.onSizeChanged {
-                            leadingPadding = with(density) { it.width.toDp() }
-                        }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                if (leading != null) {
+                    Row(
+                        modifier =
+                            Modifier.onSizeChanged {
+                                leadingPadding = with(density) { it.width.toDp() }
+                            }
+                    ) {
+                        leading()
+                        Spacer(Modifier.width(16.dp))
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f).padding(end = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    leading()
-                    Spacer(Modifier.width(16.dp))
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (enabled) MaterialTheme.colorScheme.onSurface else Disabled,
+                    )
+                    if (description != null) description()
+                }
+
+                if (trailing != null) {
+                    trailing(Modifier)
                 }
             }
 
-            Column(
-                modifier = Modifier.weight(1f).padding(end = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (enabled) MaterialTheme.colorScheme.onSurface else Disabled,
-                )
-                if (description != null) description()
-            }
-
-            if (trailing != null) {
-                trailing(Modifier)
-            }
-        }
-
-        if (expandedContent != null) {
-            Row(modifier = Modifier.fillMaxWidth().padding(start = leadingPadding, top = 4.dp)) {
-                expandedContent()
+            if (expandedContent != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = leadingPadding, top = 4.dp)
+                ) {
+                    expandedContent()
+                }
             }
         }
     }
