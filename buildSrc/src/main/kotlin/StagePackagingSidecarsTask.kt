@@ -30,11 +30,6 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val windowsServiceXml: RegularFileProperty
 
-    @get:InputFile
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val wintunDll: RegularFileProperty
-
     @get:InputDirectory
     @get:Optional
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -56,10 +51,6 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
             out.resolve("service-wrapper.xml")
                 .writeText(replaceTokens(xml.readText(), fsName, display))
         }
-        wintunDll.orNull
-            ?.asFile
-            ?.takeIf { it.isFile }
-            ?.copyTo(out.resolve("wintun.dll"), overwrite = true)
         val winSw = winSwPublishDir.orNull?.asFile ?: return
         sequenceOf("WinSW.exe", "WinSW-x64.exe")
             .map { winSw.resolve(it) }

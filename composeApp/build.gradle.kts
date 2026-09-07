@@ -4,7 +4,6 @@ import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
 import dev.nucleusframework.desktop.application.dsl.ReleaseChannel
 import dev.nucleusframework.desktop.application.dsl.ReleaseType
 import dev.nucleusframework.desktop.application.dsl.TargetFormat
-import jdk.jfr.internal.JVM.include
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -117,6 +116,7 @@ val packagingAppFsName = appFsName
 val packagingAppDisplayName = appDisplayName
 val stagePackagingSidecars =
     tasks.register<StagePackagingSidecarsTask>("stagePackagingSidecars") {
+        description = "State packaging sidecars"
         appFsName.set(packagingAppFsName)
         appDisplayName.set(packagingAppDisplayName)
         windows.set(isWindows)
@@ -124,12 +124,7 @@ val stagePackagingSidecars =
         outputDir.set(layout.buildDirectory.dir("packaging-sidecars"))
         if (isWindows) {
             dependsOn(":daemon:buildWinSW")
-            val arch = System.getProperty("os.arch").orEmpty().lowercase()
-            val wintunArch =
-                if (arch.contains("aarch64") || arch.contains("arm64")) "arm64" else "amd64"
             windowsServiceXml.set(rootProject.file("packaging/windows/service-wrapper.xml"))
-            val wintun = rootProject.file("native/wintun/$wintunArch/wintun.dll")
-            if (wintun.isFile) wintunDll.set(wintun)
             winSwPublishDir.set(
                 project(":daemon")
                     .layout
@@ -221,16 +216,6 @@ nucleus.application {
             }
         )
 
-        if (isWindows) {
-            val arch = System.getProperty("os.arch").orEmpty().lowercase()
-            val wintunArch = if (arch.contains("aarch64") || arch.contains("arm64")) "arm64" else "amd64"
-            appContent.from(
-                fileTree(rootProject.file("native/wintun/$wintunArch")) {
-                    include("wintun.dll")
-                }
-            )
-        }
-
         publish {
             github {
                 enabled = true
@@ -273,6 +258,15 @@ nucleus.application {
                 deleteAppDataOnUninstall = true
                 installerHeader.set(rootProject.file("packaging/windows/header.bmp"))
                 installerSidebar.set(rootProject.file("packaging/windows/sidebar.bmp"))
+                multiLanguageInstaller = true
+                installerLanguages = listOf(
+                    "en_US",
+                    "ru_RU",
+                    "fa_IR",
+                    "de_DE",
+                    "nl_NL",
+                    "fr_FR",
+                )
                 license.set(rootProject.file("LICENSE"))
             }
             signing {
@@ -329,19 +323,6 @@ if (isWindows) {
         into(graalvmLaunchersDir)
     }
     graalvmSidecarTaskNames += "copyGraalvmExtraLaunchersToRoot"
-    val arch = System.getProperty("os.arch").orEmpty().lowercase()
-    val wintunArch =
-        if (arch.contains("aarch64") || arch.contains("arm64")) "arm64" else "amd64"
-    tasks.register<Copy>("copyGraalvmWintun") {
-        group = "nucleus"
-        description = "Copy wintun.dll next to the GraalVM Windows binaries."
-        dependsOn("copyGraalvmBinaryToOutput")
-        doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
-        from(rootProject.file("native/wintun/$wintunArch"))
-        include("wintun.dll")
-        into(graalvmLaunchersDir)
-    }
-    graalvmSidecarTaskNames += "copyGraalvmWintun"
 } else {
     tasks.register<Copy>("copyGraalvmExtraLaunchersToBin") {
         group = "nucleus"

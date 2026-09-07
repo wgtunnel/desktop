@@ -1331,7 +1331,7 @@
         },
         {
             "uniqueId": "com.wgtunnel:backend",
-            "artifactVersion": "1.5.3",
+            "artifactVersion": "1.5.4",
             "name": "WG Tunnel Backend",
             "description": "The core backend library for WG Tunnel apps.",
             "website": "https://github.com/wgtunnel/core",
@@ -1355,7 +1355,7 @@
         },
         {
             "uniqueId": "com.wgtunnel:parser",
-            "artifactVersion": "1.5.3",
+            "artifactVersion": "1.5.4",
             "name": "WG Tunnel Parser",
             "description": "WireGuard / Amnezia config parser for WG Tunnel.",
             "website": "https://github.com/wgtunnel/core",
