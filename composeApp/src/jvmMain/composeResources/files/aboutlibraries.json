@@ -1331,7 +1331,7 @@
         },
         {
             "uniqueId": "com.wgtunnel:backend",
-            "artifactVersion": "1.5.6",
+            "artifactVersion": "1.5.8",
             "name": "WG Tunnel Backend",
             "description": "The core backend library for WG Tunnel apps.",
             "website": "https://github.com/wgtunnel/core",
@@ -1355,7 +1355,7 @@
         },
         {
             "uniqueId": "com.wgtunnel:parser",
-            "artifactVersion": "1.5.6",
+            "artifactVersion": "1.5.8",
             "name": "WG Tunnel Parser",
             "description": "WireGuard / Amnezia config parser for WG Tunnel.",
             "website": "https://github.com/wgtunnel/core",
@@ -5486,6 +5486,32 @@
             "scm": {
                 "connection": "scm:git:https://github.com/qos-ch/slf4j.git/slf4j-parent/slf4j-api",
                 "url": "https://github.com/qos-ch/slf4j/slf4j-parent/slf4j-api"
+            },
+            "licenses": [
+                "MIT"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.slf4j:slf4j-simple",
+            "artifactVersion": "2.0.18",
+            "name": "SLF4J Simple Provider",
+            "description": "SLF4J Simple Provider",
+            "website": "http://www.slf4j.org",
+            "developers": [
+                {
+                    "name": "Ceki Gulcu"
+                }
+            ],
+            "organization": {
+                "name": "QOS.ch",
+                "url": "http://www.qos.ch"
+            },
+            "scm": {
+                "connection": "scm:git:https://github.com/qos-ch/slf4j.git/slf4j-parent/slf4j-simple",
+                "url": "https://github.com/qos-ch/slf4j/slf4j-parent/slf4j-simple"
             },
             "licenses": [
                 "MIT"

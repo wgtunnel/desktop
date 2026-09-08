@@ -26,6 +26,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.kermit)
+    // For Ktor logging
+    implementation(libs.slf4j.simple)
 
     testImplementation(kotlin("test"))
 
