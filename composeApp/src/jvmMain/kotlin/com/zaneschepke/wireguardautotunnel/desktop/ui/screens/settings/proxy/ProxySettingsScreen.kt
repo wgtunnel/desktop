@@ -22,7 +22,16 @@ import androidx.compose.ui.unit.dp
 import com.dokar.sonner.Toast
 import com.zaneschepke.wireguardautotunnel.client.domain.model.ProxySettings
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.credentials_encrypted_at_rest
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.hide_password
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.http_bind_address
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.http_proxy
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.password
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.proxy_settings
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.show_password
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.socks5_bind_address
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.socks5_proxy
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.username
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
@@ -67,7 +76,7 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.Forward5, contentDescription = null) },
-                    title = "SOCKS5 proxy",
+                    title = stringResource(Res.string.socks5_proxy),
                     trailing = {
                         ThemedSwitch(
                             checked = uiState.draft.socks5ProxyEnabled,
@@ -80,7 +89,7 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
                     ConfigurationTextBox(
                         value = uiState.socksBindAddress,
                         onValueChange = viewModel::onSocksBindChanged,
-                        label = "SOCKS5 bind address",
+                        label = stringResource(Res.string.socks5_bind_address),
                         hint = ProxySettings.DEFAULT_SOCKS_BIND_ADDRESS,
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
@@ -90,7 +99,7 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.Http, contentDescription = null) },
-                    title = "HTTP proxy",
+                    title = stringResource(Res.string.http_proxy),
                     trailing = {
                         ThemedSwitch(
                             checked = uiState.draft.httpProxyEnabled,
@@ -103,7 +112,7 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
                     ConfigurationTextBox(
                         value = uiState.httpBindAddress,
                         onValueChange = viewModel::onHttpBindChanged,
-                        label = "HTTP bind address",
+                        label = stringResource(Res.string.http_bind_address),
                         hint = ProxySettings.DEFAULT_HTTP_BIND_ADDRESS,
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
@@ -115,16 +124,16 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 ) {
-                    GroupLabel("Credentials (encrypted at rest)")
+                    GroupLabel(stringResource(Res.string.credentials_encrypted_at_rest))
                     ConfigurationTextBox(
                         value = uiState.username,
                         onValueChange = viewModel::onUsernameChanged,
-                        label = "Username",
+                        label = stringResource(Res.string.username),
                     )
                     ConfigurationTextBox(
                         value = uiState.password,
                         onValueChange = viewModel::onPasswordChanged,
-                        label = "Password",
+                        label = stringResource(Res.string.password),
                         visualTransformation =
                             if (uiState.passwordVisible) VisualTransformation.None
                             else PasswordVisualTransformation(),
@@ -134,7 +143,14 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
                                     viewModel.onPasswordVisibilityChanged(!uiState.passwordVisible)
                                 }
                             ) {
-                                Icon(Icons.Outlined.RemoveRedEye, contentDescription = "Show")
+                                Icon(
+                                    Icons.Outlined.RemoveRedEye,
+                                    contentDescription =
+                                        stringResource(
+                                            if (uiState.passwordVisible) Res.string.hide_password
+                                            else Res.string.show_password
+                                        ),
+                                )
                             }
                         },
                         keyboardOptions = KeyboardOptions.Default,

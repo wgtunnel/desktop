@@ -9,10 +9,13 @@ import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.DnsSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.config_changes_saved
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.GlobalConfigUiState
 import com.zaneschepke.wireguardautotunnel.desktop.util.toConfigErrorMessage
 import kotlinx.coroutines.flow.combine
+import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
@@ -124,7 +127,9 @@ class GlobalConfigViewModel(
                 editorText = editorTextFor(saved, state.dnsEnabled, state.amneziaEnabled),
             )
         }
-        postSideEffect(AppSideEffect.Toast("Configuration changes saved.", ToastType.Success))
+        postSideEffect(
+            AppSideEffect.Toast(getString(Res.string.config_changes_saved), ToastType.Success)
+        )
     }
 
     private fun applyToggle(dnsEnabled: Boolean?, amneziaEnabled: Boolean?) = intent {

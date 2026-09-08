@@ -5,10 +5,14 @@ import com.dokar.sonner.ToastType
 import com.wgtunnel.parser.Config
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.config_changes_saved
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_name_empty
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TunnelUiState
 import com.zaneschepke.wireguardautotunnel.desktop.util.toConfigErrorMessage
 import kotlinx.coroutines.flow.map
+import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
@@ -96,7 +100,9 @@ class TunnelViewModel(
     fun saveChanges() = intent {
         val sanitizedName = state.editedConfig.name.trim()
         if (sanitizedName.isEmpty()) {
-            postSideEffect(AppSideEffect.Toast("Tunnel name cannot be empty", ToastType.Error))
+            postSideEffect(
+                AppSideEffect.Toast(getString(Res.string.tunnel_name_empty), ToastType.Error)
+            )
             return@intent
         }
         val sanitizedQuick =
@@ -120,7 +126,7 @@ class TunnelViewModel(
                     )
                 }
                 postSideEffect(
-                    AppSideEffect.Toast("Configuration changes saved.", ToastType.Success)
+                    AppSideEffect.Toast(getString(Res.string.config_changes_saved), ToastType.Success)
                 )
             }
             .onFailure {

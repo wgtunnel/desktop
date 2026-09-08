@@ -4,6 +4,12 @@ import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.orchestration.LogCoordinator
 import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_cancelled
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_failed
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.logs_exported_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.stored_logs_deleted
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.unknown_error
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.LogMessageDto
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.LoggerUiState
@@ -21,6 +27,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.sample
+import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
@@ -65,7 +72,7 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
                 dialogSettings = FileKitDialogSettings.createDefault(),
             )
         if (handle == null) {
-            postSideEffect(AppSideEffect.Toast("Export cancelled", ToastType.Info))
+            postSideEffect(AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info))
             return@intent
         }
         val temp = java.io.File.createTempFile("wgtunnel-logs", ".zip")
@@ -73,10 +80,18 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
             logCoordinator.exportZip(temp)
             handle.write(temp.readBytes())
             postSideEffect(
-                AppSideEffect.Toast("Logs exported to ${handle.name}", ToastType.Success)
+                AppSideEffect.Toast(
+                    getString(Res.string.logs_exported_template, handle.name),
+                    ToastType.Success,
+                )
             )
         } catch (e: Exception) {
-            postSideEffect(AppSideEffect.Toast("Export failed: ${e.message}", ToastType.Error))
+            postSideEffect(
+                AppSideEffect.Toast(
+                    getString(Res.string.export_failed, e.message ?: getString(Res.string.unknown_error)),
+                    ToastType.Error,
+                )
+            )
         } finally {
             temp.delete()
         }
@@ -86,7 +101,7 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
         synchronized(logBuffer) { logBuffer.clear() }
         reduce { state.copy(messages = emptyList()) }
         logCoordinator.clear()
-        postSideEffect(AppSideEffect.Toast("Stored logs deleted", ToastType.Success))
+        postSideEffect(AppSideEffect.Toast(getString(Res.string.stored_logs_deleted), ToastType.Success))
     }
 
     companion object {

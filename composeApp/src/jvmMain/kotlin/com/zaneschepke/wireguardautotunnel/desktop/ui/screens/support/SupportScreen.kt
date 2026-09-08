@@ -63,9 +63,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.suppor
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.telegram
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.telegram_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.thank_you
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.up_to_date
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_available_version
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.updates_packaged_only
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.version_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website_url
@@ -232,35 +230,32 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                         toaster.show(Toast(message, ToastType.Success))
                     },
                 )
-                val updateTitle =
-                    if (uiState.pendingUpdateVersion != null) {
-                        stringResource(Res.string.install_update)
-                    } else {
-                        stringResource(Res.string.check_for_update)
-                    }
-                val updateDescription =
-                    when {
-                        uiState.updateBusy && uiState.pendingUpdateVersion == null ->
-                            stringResource(Res.string.checking_for_updates)
-                        uiState.pendingUpdateVersion != null ->
-                            stringResource(
-                                Res.string.update_available_version,
-                                uiState.pendingUpdateVersion!!,
-                            )
-                        uiState.alreadyLatest && uiState.updateSupported ->
-                            stringResource(Res.string.up_to_date)
-                        uiState.alreadyLatest && !uiState.updateSupported ->
-                            stringResource(Res.string.updates_packaged_only)
-                        uiState.updateMessage != null -> uiState.updateMessage
-                        else -> null
-                    }
-                SurfaceRow(
-                    leading = { Icon(Icons.Outlined.InstallDesktop, contentDescription = null) },
-                    title = updateTitle,
-                    description = updateDescription?.let { { DescriptionText(it) } },
-                    enabled = !uiState.updateBusy,
-                    onClick = { viewModel.onUpdateAction() },
-                )
+                if (uiState.updateSupported) {
+                    val updateTitle =
+                        if (uiState.pendingUpdateVersion != null) {
+                            stringResource(Res.string.install_update)
+                        } else {
+                            stringResource(Res.string.check_for_update)
+                        }
+                    val updateDescription =
+                        when {
+                            uiState.updateBusy && uiState.pendingUpdateVersion == null ->
+                                stringResource(Res.string.checking_for_updates)
+                            uiState.pendingUpdateVersion != null ->
+                                stringResource(
+                                    Res.string.update_available_version,
+                                    uiState.pendingUpdateVersion!!,
+                                )
+                            else -> null
+                        }
+                    SurfaceRow(
+                        leading = { Icon(Icons.Outlined.InstallDesktop, contentDescription = null) },
+                        title = updateTitle,
+                        description = updateDescription?.let { { DescriptionText(it) } },
+                        enabled = !uiState.updateBusy,
+                        onClick = { viewModel.onUpdateAction() },
+                    )
+                }
             }
         }
     }

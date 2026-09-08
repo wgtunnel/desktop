@@ -6,11 +6,15 @@ import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bssid_pattern_in_use
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.network_pattern_in_use
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelStatusDto
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AutoTunnelUiState
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
+import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
@@ -96,7 +100,7 @@ class AutoTunnelViewModel(
         if (state.autoTunnelSettings.trustedNetworkSsids.contains(trimmed)) {
             postSideEffect(
                 AppSideEffect.Toast(
-                    "This network name or pattern is already in use",
+                    getString(Res.string.network_pattern_in_use),
                     ToastType.Error,
                 )
             )
@@ -122,7 +126,7 @@ class AutoTunnelViewModel(
         if (trimmed.isEmpty()) return@intent
         if (state.autoTunnelSettings.trustedNetworkBssids.contains(trimmed)) {
             postSideEffect(
-                AppSideEffect.Toast("This BSSID or pattern is already in use", ToastType.Error)
+                AppSideEffect.Toast(getString(Res.string.bssid_pattern_in_use), ToastType.Error)
             )
             return@intent
         }
@@ -151,7 +155,7 @@ class AutoTunnelViewModel(
         if (tunnel.tunnelNetworks.contains(trimmed)) {
             postSideEffect(
                 AppSideEffect.Toast(
-                    "This network name or pattern is already in use",
+                    getString(Res.string.network_pattern_in_use),
                     ToastType.Error,
                 )
             )
@@ -169,7 +173,7 @@ class AutoTunnelViewModel(
         if (trimmed.isEmpty()) return@intent
         if (tunnel.tunnelBssids.contains(trimmed)) {
             postSideEffect(
-                AppSideEffect.Toast("This BSSID or pattern is already in use", ToastType.Error)
+                AppSideEffect.Toast(getString(Res.string.bssid_pattern_in_use), ToastType.Error)
             )
             return@intent
         }

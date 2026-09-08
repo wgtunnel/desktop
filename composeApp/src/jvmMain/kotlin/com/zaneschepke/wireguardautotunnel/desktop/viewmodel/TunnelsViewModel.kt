@@ -8,6 +8,14 @@ import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelReposi
 import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.TunnelImportService
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_cancelled
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_failed
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.exported_to_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_tunnels_selected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.requires_daemon_running
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_not_found
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.unknown_error
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.DeleteIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.ExportIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
@@ -21,6 +29,7 @@ import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 import io.github.vinceglb.filekit.dialogs.openFileSaver
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.write
+import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
@@ -81,7 +90,9 @@ class TunnelsViewModel(
         val tunnel =
             tunnelRepository.getById(id)
                 ?: run {
-                    postSideEffect(AppSideEffect.Toast("Tunnel not found", ToastType.Error))
+                    postSideEffect(
+                        AppSideEffect.Toast(getString(Res.string.tunnel_not_found), ToastType.Error)
+                    )
                     return@intent
                 }
         tunnelCoordinator.startTunnel(tunnel).onFailure {
@@ -98,7 +109,9 @@ class TunnelsViewModel(
     }
 
     fun onDaemonRequiredToast() = intent {
-        postSideEffect(AppSideEffect.Toast("Requires the daemon to be running", ToastType.Error))
+        postSideEffect(
+            AppSideEffect.Toast(getString(Res.string.requires_daemon_running), ToastType.Error)
+        )
     }
 
     fun onSelectTunnel(tunnel: TunnelConfig) = intent {
@@ -134,7 +147,10 @@ class TunnelsViewModel(
                 ExportIntent.Selected -> {
                     if (state.selectedTunnels.isEmpty()) {
                         postSideEffect(
-                            AppSideEffect.Toast("No tunnels selected", ToastType.Warning)
+                            AppSideEffect.Toast(
+                                getString(Res.string.no_tunnels_selected),
+                                ToastType.Warning,
+                            )
                         )
                         return@intent
                     }
@@ -160,12 +176,22 @@ class TunnelsViewModel(
         try {
             if (file != null) {
                 file.write(bytes)
-                postSideEffect(AppSideEffect.Toast("Exported to ${file.name}", ToastType.Success))
+                postSideEffect(
+                    AppSideEffect.Toast(
+                        getString(Res.string.exported_to_template, file.name),
+                        ToastType.Success,
+                    )
+                )
             } else {
-                postSideEffect(AppSideEffect.Toast("Export cancelled", ToastType.Info))
+                postSideEffect(AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info))
             }
         } catch (e: Exception) {
-            postSideEffect(AppSideEffect.Toast("Export failed: ${e.message}", ToastType.Error))
+            postSideEffect(
+                AppSideEffect.Toast(
+                    getString(Res.string.export_failed, e.message ?: getString(Res.string.unknown_error)),
+                    ToastType.Error,
+                )
+            )
         }
         reduce { state.copy(selectedTunnels = emptyList(), isSelectionMode = false) }
     }

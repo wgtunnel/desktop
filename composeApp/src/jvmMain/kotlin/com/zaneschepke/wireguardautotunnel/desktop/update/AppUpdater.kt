@@ -16,7 +16,10 @@ class AppUpdater(
         allowPrerelease = AppVariant.current == AppVariant.BETA
     }
 ) {
-    fun isSupported(): Boolean = AppVariant.isPackaged() && updater.isUpdateSupported()
+    // Nucleus's own executable-type detection (installer property or on-disk marker file) is
+    // authoritative for what can be self-updated (excludes dev/debug runs and tarballs); our own
+    // AppVariant.isPackaged() heuristic duplicated and could drift from it, so don't gate on it.
+    fun isSupported(): Boolean = updater.isUpdateSupported()
 
     suspend fun check(): UpdateResult {
         if (!isSupported()) return UpdateResult.NotAvailable

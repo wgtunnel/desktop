@@ -18,6 +18,9 @@ import androidx.compose.ui.unit.dp
 import com.dokar.sonner.Toast
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.StatisticRefresh
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.live_tunnel_statistics
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.refresh_rate_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.statistics
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_monitoring
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
@@ -53,10 +56,10 @@ fun MonitoringScreen(viewModel: MonitoringViewModel = koinViewModel()) {
                 Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()),
         ) {
             Column {
-                GroupLabel("Statistics", modifier = Modifier.padding(horizontal = 16.dp))
+                GroupLabel(stringResource(Res.string.statistics), modifier = Modifier.padding(horizontal = 16.dp))
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.Analytics, contentDescription = null) },
-                    title = "Live tunnel statistics",
+                    title = stringResource(Res.string.live_tunnel_statistics),
                     trailing = {
                         ThemedSwitch(
                             checked = uiState.tunnelStatisticsEnabled,
@@ -69,7 +72,8 @@ fun MonitoringScreen(viewModel: MonitoringViewModel = koinViewModel()) {
                 )
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.Timer, contentDescription = null) },
-                    title = "Refresh rate: ${uiState.statisticRefresh.label}",
+                    title =
+                        stringResource(Res.string.refresh_rate_template, uiState.statisticRefresh.label),
                     onClick = {
                         val next =
                             when (uiState.statisticRefresh) {

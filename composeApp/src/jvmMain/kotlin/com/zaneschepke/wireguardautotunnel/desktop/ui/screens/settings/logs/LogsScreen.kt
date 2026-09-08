@@ -30,6 +30,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_logs
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_logs
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.logs
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_logs_yet
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.logs.components.LogList
@@ -105,7 +106,7 @@ fun LogsScreen(viewModel: LoggerViewModel = koinViewModel()) {
         ) { isEmpty ->
             if (isEmpty) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No logs yet")
+                    Text(stringResource(Res.string.no_logs_yet))
                 }
             } else {
                 LogList(

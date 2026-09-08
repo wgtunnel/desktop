@@ -3,8 +3,11 @@ package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.ProxySettingsRepository
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.proxy_settings_saved
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.ProxyUiState
+import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
@@ -81,6 +84,6 @@ class ProxyViewModel(private val proxySettingsRepository: ProxySettingsRepositor
     fun save() = intent {
         proxySettingsRepository.upsert(state.draft)
         reduce { state.copy(saved = state.draft) }
-        postSideEffect(AppSideEffect.Toast("Proxy settings saved", ToastType.Success))
+        postSideEffect(AppSideEffect.Toast(getString(Res.string.proxy_settings_saved), ToastType.Success))
     }
 }

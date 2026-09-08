@@ -9,6 +9,8 @@ import com.zaneschepke.wireguardautotunnel.client.orchestration.AutoTunnelCoordi
 import com.zaneschepke.wireguardautotunnel.client.orchestration.LogCoordinator
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_available_in_support_template
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
 import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
@@ -16,6 +18,7 @@ import dev.nucleusframework.updater.UpdateResult
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
@@ -69,7 +72,10 @@ class AppViewModel(
                     is UpdateResult.Available ->
                         postSideEffect(
                             AppSideEffect.Toast(
-                                "Update ${result.info.version} is available in Support",
+                                getString(
+                                    Res.string.update_available_in_support_template,
+                                    result.info.version,
+                                ),
                                 ToastType.Info,
                             )
                         )

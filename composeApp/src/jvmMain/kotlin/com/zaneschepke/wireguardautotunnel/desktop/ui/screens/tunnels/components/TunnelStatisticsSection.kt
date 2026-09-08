@@ -10,10 +10,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.mode_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.recovery_attempts_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.status_lowercase_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.waiting_for_statistics
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TunnelStatisticsSection(
@@ -38,18 +44,30 @@ fun TunnelStatisticsSection(
         if (status == null || status.state == TunnelState.DOWN) return@Column
 
         StatText(
-            text = "status: ${status.state.name.lowercase().replace('_', ' ')}",
+            text =
+                stringResource(
+                    Res.string.status_lowercase_template,
+                    status.state.name.lowercase().replace('_', ' '),
+                ),
             style = style,
             color = color,
         )
         StatText(
-            text = "mode: ${status.mode.name.lowercase().replace('_', ' ')}",
+            text =
+                stringResource(
+                    Res.string.mode_template,
+                    status.mode.name.lowercase().replace('_', ' '),
+                ),
             style = style,
             color = color,
         )
         if (status.recoveryAttempts > 0) {
             StatText(
-                text = "recovery attempts: ${status.recoveryAttempts}",
+                text =
+                    stringResource(
+                        Res.string.recovery_attempts_template,
+                        status.recoveryAttempts,
+                    ),
                 style = style,
                 color = color,
             )
@@ -57,7 +75,7 @@ fun TunnelStatisticsSection(
 
         val config = status.activeConfig
         if (config == null) {
-            Text("Waiting for statistics…", style = style, color = color)
+            Text(stringResource(Res.string.waiting_for_statistics), style = style, color = color)
         } else {
             config.peers.forEach { peer -> PeerStatisticsSection(peer = peer, now = now) }
         }

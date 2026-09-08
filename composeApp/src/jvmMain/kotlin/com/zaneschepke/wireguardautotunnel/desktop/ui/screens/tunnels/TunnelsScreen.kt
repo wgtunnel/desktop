@@ -23,9 +23,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import com.dokar.sonner.Toast
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.add_a_tunnel
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_selected
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_selected_tunnels
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel_message
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_selected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_all
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnels
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.yes
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
@@ -142,34 +146,40 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                 title = { Text(stringResource(Res.string.tunnels)) },
                 actions = {
                     if (!uiState.isSelectionMode) {
-                        CustomTooltip(text = "Add a tunnel") {
+                        CustomTooltip(text = stringResource(Res.string.add_a_tunnel)) {
                             IconButton(onClick = { pickerLauncher.launch() }) {
-                                Icon(Icons.Outlined.Add, contentDescription = "Add a tunnel")
+                                Icon(
+                                    Icons.Outlined.Add,
+                                    contentDescription = stringResource(Res.string.add_a_tunnel),
+                                )
                             }
                         }
                         return@TopAppBar
                     }
                     Row {
-                        CustomTooltip(text = "Select all") {
+                        CustomTooltip(text = stringResource(Res.string.select_all)) {
                             IconButton(onClick = viewModel::onSelectAll) {
                                 Icon(
                                     Icons.Outlined.SelectAll,
-                                    contentDescription = "Delete selected",
+                                    contentDescription = stringResource(Res.string.select_all),
                                 )
                             }
                         }
-                        CustomTooltip(text = "Delete selected") {
+                        CustomTooltip(text = stringResource(Res.string.delete_selected)) {
                             IconButton(onClick = { pendingDeleteIntent = DeleteIntent.Selected }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = "Delete selected")
+                                Icon(
+                                    Icons.Outlined.Delete,
+                                    contentDescription = stringResource(Res.string.delete_selected),
+                                )
                             }
                         }
-                        CustomTooltip(text = "Export selected") {
+                        CustomTooltip(text = stringResource(Res.string.export_selected)) {
                             IconButton(
                                 onClick = { viewModel.onExportIntent(ExportIntent.Selected) }
                             ) {
                                 Icon(
                                     Icons.Outlined.Download,
-                                    contentDescription = "Export selected",
+                                    contentDescription = stringResource(Res.string.export_selected),
                                 )
                             }
                         }
