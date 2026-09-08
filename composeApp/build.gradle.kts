@@ -300,6 +300,16 @@ val copyGraalvmSidecarDepends =
         "copyGraalvmBinaryToOutput",
     )
 
+val windowsNativeArch =
+    if (System.getProperty("os.arch").orEmpty() in setOf("aarch64", "arm64")) {
+        "aarch64"
+    } else {
+        "x64"
+    }
+
+val wintunDllFile =
+    rootProject.file("packaging/windows/wintun/win32-$windowsNativeArch/wintun.dll")
+
 val graalvmSidecarTaskNames = mutableListOf("copyGraalvmPackagingSidecars")
 
 tasks.register<Copy>("copyGraalvmPackagingSidecars") {
@@ -314,11 +324,13 @@ tasks.register<Copy>("copyGraalvmPackagingSidecars") {
 if (isWindows) {
     tasks.register<Copy>("copyGraalvmExtraLaunchersToRoot") {
         group = "nucleus"
-        description = "Copy native daemon next to the GraalVM GUI binary (WinSW)."
+        description = "Copy native daemon and wintun.dll next to the GraalVM GUI binary (WinSW)."
         dependsOn(copyGraalvmSidecarDepends)
         doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
-        graalvmNativeCompileDirs.forEach { from(it) }
-        include(*graalvmLauncherNames.toTypedArray())
+        graalvmNativeCompileDirs.forEach { dir ->
+            from(dir) { include(*graalvmLauncherNames.toTypedArray()) }
+        }
+        from(wintunDllFile)
         into(graalvmLaunchersDir)
     }
     graalvmSidecarTaskNames += "copyGraalvmExtraLaunchersToRoot"
