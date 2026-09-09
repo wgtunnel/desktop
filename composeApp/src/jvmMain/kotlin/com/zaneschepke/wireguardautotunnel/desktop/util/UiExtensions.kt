@@ -12,6 +12,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.error_
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.error_conflict
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.error_daemon_comms
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.error_internal_server
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.error_proxy_both_disabled
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.invalid_config_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.unknown_error
 import java.awt.datatransfer.StringSelection
@@ -29,6 +30,8 @@ suspend fun ClientException?.asUserMessage(): String {
         is ClientException.DaemonCommsException -> getString(Res.string.error_daemon_comms)
         is ClientException.InternalServerError -> getString(Res.string.error_internal_server)
         is ClientException.UnauthorizedException -> getString(Res.string.auth_error)
+        is ClientException.ProxyBothDisabledException ->
+            getString(Res.string.error_proxy_both_disabled)
         is ClientException.UnknownError,
         null -> getString(Res.string.unknown_error)
     }

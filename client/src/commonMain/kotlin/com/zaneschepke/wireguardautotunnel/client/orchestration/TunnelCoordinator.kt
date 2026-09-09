@@ -5,6 +5,7 @@ import com.wgtunnel.parser.AmneziaConfigNormalizer
 import com.wgtunnel.parser.Config
 import com.wgtunnel.parser.ConfigReconciler
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
+import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import com.zaneschepke.wireguardautotunnel.client.domain.model.DnsSettings
 import com.zaneschepke.wireguardautotunnel.client.domain.model.GeneralSettings
 import com.zaneschepke.wireguardautotunnel.client.domain.model.LockdownSettings
@@ -83,8 +84,15 @@ class TunnelCoordinator(
     }
 
     suspend fun startTunnel(config: TunnelConfig): Result<Unit> = tunnelMutex.withLock {
-        activeTunnelIds().filter { it != config.id }.forEach { tunnelService.stopTunnel(it) }
         val snapshot = getSnapshot()
+        if (
+            snapshot.general.selectableTunnelMode == TunnelMode.PROXY &&
+                !snapshot.proxy.socks5ProxyEnabled &&
+                !snapshot.proxy.httpProxyEnabled
+        ) {
+            return@withLock Result.failure(ClientException.ProxyBothDisabledException())
+        }
+        activeTunnelIds().filter { it != config.id }.forEach { tunnelService.stopTunnel(it) }
         val request = buildStartRequest(config, snapshot)
         tunnelService.startTunnel(config.id, request)
     }

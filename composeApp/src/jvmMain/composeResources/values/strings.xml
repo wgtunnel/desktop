@@ -75,6 +75,7 @@
     <string name="error_conflict">This action has already been performed.</string>
     <string name="error_daemon_comms">Daemon communication error, please check the daemon status.</string>
     <string name="error_internal_server">An internal error occurred, please try again.</string>
+    <string name="error_proxy_both_disabled">Enable at least one proxy (SOCKS5 or HTTP) before starting a tunnel in proxy mode.</string>
     <string name="check_for_update">Check for update</string>
     <string name="update_check_failed">Update check failed.</string>
     <string name="update_download_failed">Update download failed.</string>

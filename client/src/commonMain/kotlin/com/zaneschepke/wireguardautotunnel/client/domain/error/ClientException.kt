@@ -12,4 +12,7 @@ sealed class ClientException : Exception() {
     class UnauthorizedException(override val message: String) : ClientException()
 
     class DaemonCommsException : ClientException()
+
+    /** Proxy mode was started with both the SOCKS5 and HTTP proxies disabled. */
+    class ProxyBothDisabledException : ClientException()
 }
