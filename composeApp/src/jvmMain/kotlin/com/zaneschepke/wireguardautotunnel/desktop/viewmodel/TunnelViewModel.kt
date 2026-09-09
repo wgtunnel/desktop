@@ -126,7 +126,10 @@ class TunnelViewModel(
                     )
                 }
                 postSideEffect(
-                    AppSideEffect.Toast(getString(Res.string.config_changes_saved), ToastType.Success)
+                    AppSideEffect.Toast(
+                        getString(Res.string.config_changes_saved),
+                        ToastType.Success,
+                    )
                 )
             }
             .onFailure {

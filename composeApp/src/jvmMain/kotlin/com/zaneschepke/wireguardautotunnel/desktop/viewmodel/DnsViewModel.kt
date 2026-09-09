@@ -75,6 +75,8 @@ class DnsViewModel(private val dnsSettingsRepository: DnsSettingsRepository) :
     fun save() = intent {
         dnsSettingsRepository.upsert(state.draft)
         reduce { state.copy(saved = state.draft) }
-        postSideEffect(AppSideEffect.Toast(getString(Res.string.dns_settings_saved), ToastType.Success))
+        postSideEffect(
+            AppSideEffect.Toast(getString(Res.string.dns_settings_saved), ToastType.Success)
+        )
     }
 }

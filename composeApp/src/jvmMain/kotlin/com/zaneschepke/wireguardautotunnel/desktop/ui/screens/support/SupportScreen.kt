@@ -249,7 +249,9 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                             else -> null
                         }
                     SurfaceRow(
-                        leading = { Icon(Icons.Outlined.InstallDesktop, contentDescription = null) },
+                        leading = {
+                            Icon(Icons.Outlined.InstallDesktop, contentDescription = null)
+                        },
                         title = updateTitle,
                         description = updateDescription?.let { { DescriptionText(it) } },
                         enabled = !uiState.updateBusy,

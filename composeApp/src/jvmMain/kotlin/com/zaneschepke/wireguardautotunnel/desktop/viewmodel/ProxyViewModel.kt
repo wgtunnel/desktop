@@ -84,6 +84,8 @@ class ProxyViewModel(private val proxySettingsRepository: ProxySettingsRepositor
     fun save() = intent {
         proxySettingsRepository.upsert(state.draft)
         reduce { state.copy(saved = state.draft) }
-        postSideEffect(AppSideEffect.Toast(getString(Res.string.proxy_settings_saved), ToastType.Success))
+        postSideEffect(
+            AppSideEffect.Toast(getString(Res.string.proxy_settings_saved), ToastType.Success)
+        )
     }
 }

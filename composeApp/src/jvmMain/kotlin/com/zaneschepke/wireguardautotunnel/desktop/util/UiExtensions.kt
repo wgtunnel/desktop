@@ -42,7 +42,9 @@ suspend fun Throwable.toConfigErrorMessage(): String {
         is ConfigParseException ->
             getString(Res.string.config_error_template, errorType.name, field)
         else ->
-            message?.takeIf { it.isNotBlank() }?.let { getString(Res.string.invalid_config_template, it) }
+            message
+                ?.takeIf { it.isNotBlank() }
+                ?.let { getString(Res.string.invalid_config_template, it) }
                 ?: getString(Res.string.config_error)
     }
 }

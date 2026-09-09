@@ -72,7 +72,9 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
                 dialogSettings = FileKitDialogSettings.createDefault(),
             )
         if (handle == null) {
-            postSideEffect(AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info))
+            postSideEffect(
+                AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info)
+            )
             return@intent
         }
         val temp = java.io.File.createTempFile("wgtunnel-logs", ".zip")
@@ -88,7 +90,10 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
         } catch (e: Exception) {
             postSideEffect(
                 AppSideEffect.Toast(
-                    getString(Res.string.export_failed, e.message ?: getString(Res.string.unknown_error)),
+                    getString(
+                        Res.string.export_failed,
+                        e.message ?: getString(Res.string.unknown_error),
+                    ),
                     ToastType.Error,
                 )
             )
@@ -101,7 +106,9 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
         synchronized(logBuffer) { logBuffer.clear() }
         reduce { state.copy(messages = emptyList()) }
         logCoordinator.clear()
-        postSideEffect(AppSideEffect.Toast(getString(Res.string.stored_logs_deleted), ToastType.Success))
+        postSideEffect(
+            AppSideEffect.Toast(getString(Res.string.stored_logs_deleted), ToastType.Success)
+        )
     }
 
     companion object {

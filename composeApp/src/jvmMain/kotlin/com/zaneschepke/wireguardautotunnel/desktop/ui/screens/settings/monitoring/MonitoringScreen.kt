@@ -56,7 +56,10 @@ fun MonitoringScreen(viewModel: MonitoringViewModel = koinViewModel()) {
                 Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()),
         ) {
             Column {
-                GroupLabel(stringResource(Res.string.statistics), modifier = Modifier.padding(horizontal = 16.dp))
+                GroupLabel(
+                    stringResource(Res.string.statistics),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.Analytics, contentDescription = null) },
                     title = stringResource(Res.string.live_tunnel_statistics),
@@ -73,7 +76,10 @@ fun MonitoringScreen(viewModel: MonitoringViewModel = koinViewModel()) {
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.Timer, contentDescription = null) },
                     title =
-                        stringResource(Res.string.refresh_rate_template, uiState.statisticRefresh.label),
+                        stringResource(
+                            Res.string.refresh_rate_template,
+                            uiState.statisticRefresh.label,
+                        ),
                     onClick = {
                         val next =
                             when (uiState.statisticRefresh) {

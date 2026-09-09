@@ -184,12 +184,12 @@ nucleus.application {
         fileAssociation(
             mimeType = "application/zip",
             extension = "zip",
-            description = "ZIP Archive"
+            description = "ZIP Archive",
         )
         fileAssociation(
             mimeType = "text/plain",
             extension = "conf",
-            description = "Configuration File"
+            description = "Configuration File",
         )
 
         compressionLevel = CompressionLevel.Maximum
@@ -210,7 +210,12 @@ nucleus.application {
 
         // Include the compiled GraalVM daemon
         appContent.from(
-            fileTree(project(":daemon").layout.buildDirectory.dir("compose/tmp/main/graalvm/nativeCompile")) {
+            fileTree(
+                project(":daemon")
+                    .layout
+                    .buildDirectory
+                    .dir("compose/tmp/main/graalvm/nativeCompile")
+            ) {
                 include("wgtunnel-daemon", "wgtunnel-daemon.exe")
                 builtBy(":daemon:nativeImageCompile")
             }
@@ -259,13 +264,14 @@ nucleus.application {
                 installerHeader.set(rootProject.file("packaging/windows/header.bmp"))
                 installerSidebar.set(rootProject.file("packaging/windows/sidebar.bmp"))
                 multiLanguageInstaller = true
-                installerLanguages = listOf(
-                    "en_US",
-                    "ru_RU",
-                    "de_DE",
-                    "nl_NL",
-                    "fr_FR",
-                )
+                installerLanguages =
+                    listOf(
+                        "en_US",
+                        "ru_RU",
+                        "de_DE",
+                        "nl_NL",
+                        "fr_FR",
+                    )
                 license.set(rootProject.file("LICENSE"))
             }
             signing {
@@ -287,12 +293,9 @@ nucleus.application {
     }
 }
 
-val graalvmLaunchersDir =
-    layout.buildDirectory.dir("compose/binaries/main/graalvm-app/$appFsName")
+val graalvmLaunchersDir = layout.buildDirectory.dir("compose/binaries/main/graalvm-app/$appFsName")
 val graalvmNativeCompileDirs =
-    listOf(
-        project(":daemon").layout.buildDirectory.dir("compose/tmp/main/graalvm/nativeCompile"),
-    )
+    listOf(project(":daemon").layout.buildDirectory.dir("compose/tmp/main/graalvm/nativeCompile"))
 val graalvmLauncherNames = listOf("wgtunnel-daemon", "wgtunnel-daemon.exe")
 val copyGraalvmSidecarDepends =
     listOf(
@@ -307,8 +310,7 @@ val windowsNativeArch =
         "x64"
     }
 
-val wintunDllFile =
-    rootProject.file("packaging/windows/wintun/win32-$windowsNativeArch/wintun.dll")
+val wintunDllFile = rootProject.file("packaging/windows/wintun/win32-$windowsNativeArch/wintun.dll")
 
 val graalvmSidecarTaskNames = mutableListOf("copyGraalvmPackagingSidecars")
 
@@ -354,9 +356,9 @@ tasks.withType<Copy>().configureEach {
 }
 
 afterEvaluate {
-    tasks.matching { it.name.startsWith("packageGraalvm") }.configureEach {
-        dependsOn(graalvmSidecarTaskNames)
-    }
+    tasks
+        .matching { it.name.startsWith("packageGraalvm") }
+        .configureEach { dependsOn(graalvmSidecarTaskNames) }
 }
 
 tasks.named("copyNonXmlValueResourcesForJvmMain") { dependsOn("exportLibraryDefinitions") }

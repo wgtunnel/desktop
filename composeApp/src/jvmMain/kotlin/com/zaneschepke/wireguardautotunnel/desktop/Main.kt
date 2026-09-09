@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +71,7 @@ import dev.nucleusframework.application.NucleusWindow
 import dev.nucleusframework.application.nucleusApplication
 import dev.nucleusframework.composenativetray.tray.api.Tray
 import dev.nucleusframework.core.runtime.SingleInstanceManager
+import dev.nucleusframework.darkmodedetector.isSystemInDarkMode
 import dev.nucleusframework.energymanager.EnergyManager
 import dev.nucleusframework.window.material.MaterialDecoratedWindow
 import dev.nucleusframework.window.material.MaterialTitleBar
@@ -160,11 +162,13 @@ fun main(args: Array<String>) {
 
         Tray(
             iconContent = {
+                val isDark = isSystemInDarkMode()
                 Box(modifier = Modifier.fillMaxSize()) {
                     Image(
-                        painter = appIcon,
+                        painter = painterResource(Res.drawable.titleicon),
                         contentDescription = appName,
                         modifier = Modifier.fillMaxSize(),
+                        colorFilter = ColorFilter.tint(if (isDark) Color.White else Color.Black),
                     )
 
                     trayBadgeState?.let {
@@ -188,7 +192,7 @@ fun main(args: Array<String>) {
         WGTunnelTheme(theme, useSystemColors) {
             MaterialDecoratedWindow(
                 visible = isMainWindowVisible,
-                onCloseRequest = ::exitApplication,
+                onCloseRequest = { handleWindowIntent(WindowIntent.HIDE) },
                 title = appName + AppVariant.current.displaySuffix,
                 resizable = true,
                 icon = appIcon,
@@ -251,6 +255,22 @@ fun main(args: Array<String>) {
                         useSystemColors = uiState.useSystemColors
                     }
 
+                    val currentTunnelStatus by remember {
+                        derivedStateOf {
+                            uiState.tunnelStatuses.firstOrNull {
+                                it.state == TunnelState.HANDSHAKE_FAILURE
+                            }
+                                ?: uiState.tunnelStatuses.firstOrNull {
+                                    it.state == TunnelState.RESOLVING_DNS ||
+                                        it.state == TunnelState.STOPPING ||
+                                        it.state == TunnelState.STARTING
+                                }
+                                ?: uiState.tunnelStatuses.firstOrNull {
+                                    it.state == TunnelState.HEALTHY
+                                }
+                        }
+                    }
+
                     MaterialTitleBar(modifier = Modifier.newFullscreenControls()) { _ ->
                         Row(
                             modifier = Modifier.align(Alignment.Start).padding(horizontal = 12.dp),
@@ -271,32 +291,18 @@ fun main(args: Array<String>) {
                         }
                     }
 
-                    LaunchedEffect(uiState.tunnelStatuses, uiState.lockdownActive) {
-                        val state =
-                            uiState.tunnelStatuses
-                                .firstOrNull { it.state == TunnelState.HANDSHAKE_FAILURE }
-                                ?.state
-                                ?: uiState.tunnelStatuses
-                                    .firstOrNull {
-                                        it.state == TunnelState.RESOLVING_DNS ||
-                                            it.state == TunnelState.STOPPING ||
-                                            it.state == TunnelState.STARTING
-                                    }
-                                    ?.state
-                                ?: uiState.tunnelStatuses
-                                    .firstOrNull { it.state == TunnelState.HEALTHY }
-                                    ?.state
-                                ?: uiState.tunnelStatuses
-                                    .firstOrNull { it.state == TunnelState.DOWN }
-                                    ?.state
-
+                    LaunchedEffect(currentTunnelStatus, uiState.lockdownActive) {
+                        val status = currentTunnelStatus
                         trayBadgeState =
                             when {
-                                uiState.lockdownActive &&
-                                    (state == null || state == TunnelState.DOWN) ->
+                                uiState.lockdownActive && status == null ->
                                     TrayBadgeState(ErrorRed, "Lockdown active")
-                                state == null || state == TunnelState.DOWN -> null
-                                else -> TrayBadgeState(state.asColor(), state.asTooltipMessage())
+                                status == null -> null
+                                else ->
+                                    TrayBadgeState(
+                                        status.state.asColor(),
+                                        status.state.asTooltipMessage(),
+                                    )
                             }
                     }
 

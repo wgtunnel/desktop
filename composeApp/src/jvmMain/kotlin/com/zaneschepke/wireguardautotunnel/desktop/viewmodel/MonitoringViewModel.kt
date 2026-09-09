@@ -43,6 +43,8 @@ class MonitoringViewModel(private val monitoringSettingsRepository: MonitoringSe
             current.copy(tunnelStatisticsPollInterval = refresh.value)
         )
         reduce { state.copy(statisticRefresh = refresh) }
-        postSideEffect(AppSideEffect.Toast(getString(Res.string.refresh_rate_updated), ToastType.Success))
+        postSideEffect(
+            AppSideEffect.Toast(getString(Res.string.refresh_rate_updated), ToastType.Success)
+        )
     }
 }

@@ -247,8 +247,14 @@
     <string name="themes">Themes</string>
     <string name="use_system_colors">Use system colors</string>
     <string name="waiting_for_statistics">Waiting for statistics…</string>
+    <string name="vpn_mode">VPN mode</string>
+    <string name="proxy_mode">Proxy mode</string>
+    <string name="lockdown_mode">Lockdown mode</string>
+    <string name="unknown_mode">Unknown mode</string>
+    <string name="lockdown_active">Lockdown active</string>
+    <string name="daemon_connected">Daemon connected</string>
+    <string name="connecting_to_daemon">Connecting to daemon…</string>
     <string name="status_lowercase_template">status: %1$s</string>
-    <string name="mode_template">mode: %1$s</string>
     <string name="recovery_attempts_template">recovery attempts: %1$d</string>
     <string name="uptime_lowercase_template">uptime: %1$s</string>
     <string name="unknown">unknown</string>

@@ -1,3 +1,4 @@
+import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
@@ -36,13 +37,22 @@ abstract class BuildKeyringGoLibsTask @Inject constructor(private val execOps: E
             val outDir = go.resolve("out")
             outDir.mkdirs()
             val outDll = outDir.resolve("libkeyring-windows-amd64.dll")
+
+            // Fix for space-containing path in CGO_CFLAGS is unreliable when go build runs
+            // natively on Windows.
+            val jdkIncludeStage = outDir.resolve("jdk-include")
+            jdkIncludeStage.mkdirs()
+            File(jdk, "include/jni.h").copyTo(jdkIncludeStage.resolve("jni.h"), overwrite = true)
+            File(jdk, "include/win32/jni_md.h")
+                .copyTo(jdkIncludeStage.resolve("jni_md.h"), overwrite = true)
+
             execOps.exec {
                 workingDir = go
                 environment("CGO_ENABLED", "1")
                 environment("GOOS", "windows")
                 environment("GOARCH", "amd64")
                 environment("CC", "gcc")
-                environment("CGO_CFLAGS", "-I$jdk/include -I$jdk/include/win32")
+                environment("CGO_CFLAGS", "-I${jdkIncludeStage.absolutePath.replace('\\', '/')}")
                 commandLine(
                     "go",
                     "build",

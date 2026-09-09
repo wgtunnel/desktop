@@ -11,11 +11,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.mode_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.recovery_attempts_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.status_lowercase_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.waiting_for_statistics
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
@@ -41,23 +39,10 @@ fun TunnelStatisticsSection(
         val style = MaterialTheme.typography.bodySmall
         val color = MaterialTheme.colorScheme.outline
 
-        if (status == null || status.state == TunnelState.DOWN) return@Column
+        val statusLabel = status?.state?.asStatusLabel() ?: return@Column
 
         StatText(
-            text =
-                stringResource(
-                    Res.string.status_lowercase_template,
-                    status.state.name.lowercase().replace('_', ' '),
-                ),
-            style = style,
-            color = color,
-        )
-        StatText(
-            text =
-                stringResource(
-                    Res.string.mode_template,
-                    status.mode.name.lowercase().replace('_', ' '),
-                ),
+            text = stringResource(Res.string.status_lowercase_template, statusLabel),
             style = style,
             color = color,
         )

@@ -30,7 +30,11 @@ fun TunnelOverviewSection(activeTunnel: ActiveTunnel, now: Long) {
             }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(text = stringResource(Res.string.status_lowercase_template, status), style = style, color = color)
+        Text(
+            text = stringResource(Res.string.status_lowercase_template, status),
+            style = style,
+            color = color,
+        )
         uptime?.let {
             Text(
                 text = stringResource(Res.string.uptime_lowercase_template, it),

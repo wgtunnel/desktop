@@ -183,12 +183,17 @@ class TunnelsViewModel(
                     )
                 )
             } else {
-                postSideEffect(AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info))
+                postSideEffect(
+                    AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info)
+                )
             }
         } catch (e: Exception) {
             postSideEffect(
                 AppSideEffect.Toast(
-                    getString(Res.string.export_failed, e.message ?: getString(Res.string.unknown_error)),
+                    getString(
+                        Res.string.export_failed,
+                        e.message ?: getString(Res.string.unknown_error),
+                    ),
                     ToastType.Error,
                 )
             )

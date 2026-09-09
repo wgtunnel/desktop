@@ -46,12 +46,16 @@ class SupportViewModel(private val appUpdater: AppUpdater) :
         when (val result = appUpdater.check()) {
             is UpdateResult.Available -> {
                 pendingUpdate = result.info
-                reduce { state.copy(updateBusy = false, pendingUpdateVersion = result.info.version) }
+                reduce {
+                    state.copy(updateBusy = false, pendingUpdateVersion = result.info.version)
+                }
             }
             is UpdateResult.NotAvailable -> {
                 pendingUpdate = null
                 reduce { state.copy(updateBusy = false, pendingUpdateVersion = null) }
-                postSideEffect(AppSideEffect.Toast(getString(Res.string.up_to_date), ToastType.Success))
+                postSideEffect(
+                    AppSideEffect.Toast(getString(Res.string.up_to_date), ToastType.Success)
+                )
             }
             is UpdateResult.Error -> {
                 pendingUpdate = null
