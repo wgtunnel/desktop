@@ -22,14 +22,13 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bypass
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.configuration
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown_settings
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.protect_on_startup
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.requires_daemon_running
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
-import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.DisabledReasonTooltip
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.RequiresDaemonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.SettingsViewModel
 import org.jetbrains.compose.resources.stringResource
@@ -70,10 +69,7 @@ fun LockdownSettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     },
                     enabled = uiState.daemonConnected,
                     trailing = {
-                        DisabledReasonTooltip(
-                            enabled = uiState.daemonConnected,
-                            reason = stringResource(Res.string.requires_daemon_running),
-                        ) {
+                        RequiresDaemonTooltip(daemonConnected = uiState.daemonConnected) {
                             ThemedSwitch(
                                 checked = uiState.lockdown.bypassLan,
                                 enabled = uiState.daemonConnected,
@@ -88,10 +84,7 @@ fun LockdownSettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     title = stringResource(Res.string.protect_on_startup),
                     enabled = uiState.lockdownEnabled && uiState.daemonConnected,
                     trailing = {
-                        DisabledReasonTooltip(
-                            enabled = uiState.daemonConnected,
-                            reason = stringResource(Res.string.requires_daemon_running),
-                        ) {
+                        RequiresDaemonTooltip(daemonConnected = uiState.daemonConnected) {
                             ThemedSwitch(
                                 checked = uiState.lockdown.restoreOnBoot,
                                 enabled = uiState.lockdownEnabled && uiState.daemonConnected,

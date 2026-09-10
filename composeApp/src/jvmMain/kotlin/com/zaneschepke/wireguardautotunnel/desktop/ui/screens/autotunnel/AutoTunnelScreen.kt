@@ -63,6 +63,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SwitchWithDi
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.RequiresDaemonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.TunnelNetwork
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
@@ -128,17 +129,23 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                 leading = { Icon(icon, null) },
                 title = title,
                 trailing = {
-                    Button({ viewModel.toggleAutoTunnel() }) {
-                        Text(
-                            buttonText,
-                            fontWeight = FontWeight.Bold,
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.surface
-                                ),
-                        )
+                    RequiresDaemonTooltip(daemonConnected = uiState.daemonConnected) {
+                        Button(
+                            onClick = { viewModel.toggleAutoTunnel() },
+                            enabled = uiState.daemonConnected,
+                        ) {
+                            Text(
+                                buttonText,
+                                fontWeight = FontWeight.Bold,
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.surface
+                                    ),
+                            )
+                        }
                     }
                 },
+                enabled = uiState.daemonConnected,
                 onClick = { viewModel.toggleAutoTunnel() },
             )
             Column {
@@ -270,14 +277,18 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                     leading = { Icon(Icons.Outlined.RestartAlt, contentDescription = null) },
                     title = stringResource(Res.string.restart_at_boot),
                     trailing = {
-                        ThemedSwitch(
-                            checked = uiState.autoTunnelSettings.startOnBoot,
-                            onClick = { viewModel.setStartOnBoot(it) },
-                        )
+                        RequiresDaemonTooltip(daemonConnected = uiState.daemonConnected) {
+                            ThemedSwitch(
+                                checked = uiState.autoTunnelSettings.startOnBoot,
+                                enabled = uiState.daemonConnected,
+                                onClick = { viewModel.setStartOnBoot(it) },
+                            )
+                        }
                     },
                     description = {
                         DescriptionText(stringResource(Res.string.start_on_boot_desc))
                     },
+                    enabled = uiState.daemonConnected,
                     onClick = { viewModel.setStartOnBoot(!uiState.autoTunnelSettings.startOnBoot) },
                 )
             }

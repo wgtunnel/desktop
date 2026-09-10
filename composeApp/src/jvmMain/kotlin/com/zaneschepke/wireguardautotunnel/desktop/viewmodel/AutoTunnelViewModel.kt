@@ -64,9 +64,11 @@ class AutoTunnelViewModel(
                         }
                     }
             }
+            intent { daemonService.alive.collect { reduce { state.copy(daemonConnected = it) } } }
         }
 
     fun toggleAutoTunnel() = intent {
+        if (!state.daemonConnected) return@intent
         autoTunnelRepository.updateAutoTunnelEnabled(!state.autoTunnelSettings.isAutoTunnelEnabled)
     }
 
@@ -87,6 +89,7 @@ class AutoTunnelViewModel(
     }
 
     fun setStartOnBoot(enabled: Boolean) = intent {
+        if (!state.daemonConnected) return@intent
         autoTunnelRepository.upsert(state.autoTunnelSettings.copy(startOnBoot = enabled))
     }
 

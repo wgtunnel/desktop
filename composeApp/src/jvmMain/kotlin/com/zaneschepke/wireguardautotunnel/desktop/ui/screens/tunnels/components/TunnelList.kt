@@ -40,6 +40,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SwitchWithDivider
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.CustomTooltip
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.RequiresDaemonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.DeleteIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.ExportIntent
@@ -66,7 +67,6 @@ fun TunnelList(
     onExitSelectionMode: () -> Unit,
     onDelete: (intent: DeleteIntent) -> Unit,
     onExport: (intent: ExportIntent) -> Unit,
-    onDaemonRequired: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val navController = LocalNavController.current
@@ -198,15 +198,16 @@ fun TunnelList(
                         description = { TunnelStatisticsSection(status = item.status) },
                         trailing = {
                             if (!uiState.isSelectionMode) {
-                                SwitchWithDivider(
-                                    checked = item.isRunning,
-                                    enabled = uiState.hasBackendStatus,
-                                    onClick = {
-                                        if (it) startTunnel(item.config.id)
-                                        else stopTunnel(item.config.id)
-                                    },
-                                    onDisabledClick = onDaemonRequired,
-                                )
+                                RequiresDaemonTooltip(daemonConnected = uiState.hasBackendStatus) {
+                                    SwitchWithDivider(
+                                        checked = item.isRunning,
+                                        enabled = uiState.hasBackendStatus,
+                                        onClick = {
+                                            if (it) startTunnel(item.config.id)
+                                            else stopTunnel(item.config.id)
+                                        },
+                                    )
+                                }
                             }
                         },
                     )

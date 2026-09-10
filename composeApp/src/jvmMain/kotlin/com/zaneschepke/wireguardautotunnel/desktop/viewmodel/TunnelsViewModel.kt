@@ -13,7 +13,6 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_failed
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.exported_to_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_tunnels_selected
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.requires_daemon_running
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_not_found
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.unknown_error
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.DeleteIntent
@@ -106,12 +105,6 @@ class TunnelsViewModel(
             val message = (it as? ClientException).asUserMessage()
             postSideEffect(AppSideEffect.Toast(message, ToastType.Error))
         }
-    }
-
-    fun onDaemonRequiredToast() = intent {
-        postSideEffect(
-            AppSideEffect.Toast(getString(Res.string.requires_daemon_running), ToastType.Error)
-        )
     }
 
     fun onSelectTunnel(tunnel: TunnelConfig) = intent {

@@ -10,6 +10,9 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.requires_daemon_running
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,4 +48,19 @@ fun DisabledReasonTooltip(
     } else {
         CustomTooltip(modifier = modifier, text = reason, content = content)
     }
+}
+
+// Standard wrapper for any toggle/button that requires the daemon to be running.
+@Composable
+fun RequiresDaemonTooltip(
+    daemonConnected: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    DisabledReasonTooltip(
+        enabled = daemonConnected,
+        reason = stringResource(Res.string.requires_daemon_running),
+        modifier = modifier,
+        content = content,
+    )
 }

@@ -10,4 +10,5 @@ data class AutoTunnelUiState(
     val tunnels: List<TunnelConfig> = emptyList(),
     val network: NetworkStatusDto = NetworkStatusDto(),
     val autoTunnelActive: Boolean = false,
+    val daemonConnected: Boolean = false,
 )
