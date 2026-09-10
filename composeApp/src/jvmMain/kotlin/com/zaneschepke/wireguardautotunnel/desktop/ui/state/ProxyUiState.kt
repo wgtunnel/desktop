@@ -11,6 +11,7 @@ data class ProxyUiState(
     val username: String = "",
     val password: String = "",
     val passwordVisible: Boolean = false,
+    val hasActiveTunnel: Boolean = false,
 ) {
     val isDirty: Boolean
         get() = draft != saved

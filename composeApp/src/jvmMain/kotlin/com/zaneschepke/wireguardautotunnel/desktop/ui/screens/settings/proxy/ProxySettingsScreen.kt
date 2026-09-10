@@ -34,6 +34,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.userna
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.rememberRestartToApplyChanges
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
@@ -59,10 +60,16 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
 
     if (!uiState.isLoaded) return
 
+    val requestApply =
+        rememberRestartToApplyChanges(
+            needsRestart = uiState.hasActiveTunnel,
+            onSave = viewModel::save,
+        )
+
     NestedSettingsScaffold(
         title = stringResource(Res.string.proxy_settings),
         showSave = uiState.isDirty,
-        onSave = viewModel::save,
+        onSave = requestApply,
     ) { padding ->
         ScrollableColumn(
             horizontalAlignment = Alignment.Start,

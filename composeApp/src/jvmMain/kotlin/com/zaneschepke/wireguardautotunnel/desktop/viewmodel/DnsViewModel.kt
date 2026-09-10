@@ -10,6 +10,8 @@ import com.zaneschepke.wireguardautotunnel.client.domain.enums.TransitDnsPolicy
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelDnsMode
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelDnsProtocol
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.DnsSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_empty
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_host
@@ -24,14 +26,22 @@ import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
-class DnsViewModel(private val dnsSettingsRepository: DnsSettingsRepository) :
-    OrbitContainerHost<DnsUiState, DnsUiState, AppSideEffect>, ViewModel() {
+class DnsViewModel(
+    private val dnsSettingsRepository: DnsSettingsRepository,
+    private val backendService: BackendService,
+    private val tunnelCoordinator: TunnelCoordinator,
+) : OrbitContainerHost<DnsUiState, DnsUiState, AppSideEffect>, ViewModel() {
 
     override val container =
         orbitContainer<DnsUiState, AppSideEffect>(DnsUiState()) {
             intent {
                 dnsSettingsRepository.flow.collect { settings ->
                     reduce { state.copy(isLoaded = true, draft = settings, saved = settings) }
+                }
+            }
+            intent {
+                backendService.statusFlow().collect { status ->
+                    reduce { state.copy(hasActiveTunnel = status.activeTunnels.isNotEmpty()) }
                 }
             }
         }
@@ -103,7 +113,7 @@ class DnsViewModel(private val dnsSettingsRepository: DnsSettingsRepository) :
         reduce { state.copy(draft = state.draft.copy(splitSuffixTarget = target)) }
     }
 
-    fun save() = intent {
+    fun save(restart: Boolean = false) = intent {
         val settings = state.draft
 
         when (
@@ -197,6 +207,7 @@ class DnsViewModel(private val dnsSettingsRepository: DnsSettingsRepository) :
 
         dnsSettingsRepository.upsert(updated)
         reduce { state.copy(saved = updated, draft = updated) }
+        if (restart) tunnelCoordinator.restartActiveTunnels()
         postSideEffect(
             AppSideEffect.Toast(getString(Res.string.dns_settings_saved), ToastType.Success)
         )

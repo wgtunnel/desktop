@@ -20,7 +20,7 @@ val viewModelModule = module {
     single { AppUpdater() }
     viewModelOf(::AppViewModel)
     viewModelOf(::TunnelsViewModel)
-    viewModel { (id: Long) -> TunnelViewModel(get(), get(), id) }
+    viewModel { (id: Long) -> TunnelViewModel(get(), get(), get(), id) }
     viewModelOf(::GlobalConfigViewModel)
     viewModelOf(::SettingsViewModel)
     viewModelOf(::DnsViewModel)

@@ -10,6 +10,7 @@ data class DnsUiState(
     val bootstrapEndpointError: DnsValidationError? = null,
     val tunnelEndpointError: DnsValidationError? = null,
     val localSuffixesError: DnsValidationError? = null,
+    val hasActiveTunnel: Boolean = false,
 ) {
     val isDirty: Boolean
         get() = draft != saved

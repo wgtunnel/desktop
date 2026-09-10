@@ -54,6 +54,9 @@
     <string name="stop">Stop</string>
     <string name="auto_tunnel">Auto-tunnel</string>
     <string name="save">Save</string>
+    <string name="save_and_restart">Save and restart</string>
+    <string name="restart_required">Restart required</string>
+    <string name="restart_to_apply_message">The active tunnel must be restarted for these changes to take effect.</string>
     <string name="select">Select</string>
     <string name="join_telegram">Join Telegram community</string>
     <string name="join_matrix">Join Matrix community</string>

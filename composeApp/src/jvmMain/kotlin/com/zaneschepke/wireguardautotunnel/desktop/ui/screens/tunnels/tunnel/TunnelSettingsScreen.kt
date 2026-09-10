@@ -41,6 +41,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.rememberRestartToApplyChanges
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
@@ -67,9 +68,15 @@ fun TunnelSettingsScreen(viewModel: TunnelViewModel) {
     if (!uiState.isLoaded) return
     val tunnel = uiState.currentConfig
 
+    val requestApply =
+        rememberRestartToApplyChanges(
+            needsRestart = uiState.isRunning,
+            onSave = viewModel::saveChanges,
+        )
+
     NestedSettingsScaffold(
         showSave = uiState.isDirty,
-        onSave = viewModel::saveChanges,
+        onSave = requestApply,
         titleContent = {
             BasicTextField(
                 value = uiState.editedConfig.name,

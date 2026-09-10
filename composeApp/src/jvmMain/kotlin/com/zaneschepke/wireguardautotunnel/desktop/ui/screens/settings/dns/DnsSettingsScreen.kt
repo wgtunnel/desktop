@@ -52,6 +52,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.use_tu
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.rememberRestartToApplyChanges
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dropdown.LabeledDropdown
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.OptionPickerMenu
@@ -85,10 +86,16 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
 
     if (!uiState.isLoaded) return
 
+    val requestApply =
+        rememberRestartToApplyChanges(
+            needsRestart = uiState.hasActiveTunnel,
+            onSave = viewModel::save,
+        )
+
     NestedSettingsScaffold(
         title = stringResource(Res.string.dns_settings),
         showSave = uiState.isDirty,
-        onSave = viewModel::save,
+        onSave = requestApply,
     ) { padding ->
         ScrollableColumn(
             horizontalAlignment = Alignment.Start,

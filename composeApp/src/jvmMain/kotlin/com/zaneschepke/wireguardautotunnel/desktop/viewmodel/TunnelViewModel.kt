@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.wgtunnel.parser.Config
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
+import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.config_changes_saved
@@ -19,6 +20,7 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 class TunnelViewModel(
     private val backendService: BackendService,
     private val tunnelRepository: TunnelRepository,
+    private val tunnelCoordinator: TunnelCoordinator,
     val tunnelId: Long,
 ) : OrbitContainerHost<TunnelUiState, TunnelUiState, AppSideEffect>, ViewModel() {
 
@@ -97,7 +99,7 @@ class TunnelViewModel(
         tunnelRepository.save(state.currentConfig.copy(ipv6RestoreEnabled = enabled))
     }
 
-    fun saveChanges() = intent {
+    fun saveChanges(restart: Boolean = false) = intent {
         val sanitizedName = state.editedConfig.name.trim()
         if (sanitizedName.isEmpty()) {
             postSideEffect(
@@ -117,6 +119,7 @@ class TunnelViewModel(
         }
             .onSuccess { parsed ->
                 val toSave = sanitizedConfig.copy(quickConfig = parsed.asQuickString())
+                val wasRunning = state.isRunning
                 tunnelRepository.save(toSave)
                 reduce {
                     state.copy(
@@ -124,6 +127,10 @@ class TunnelViewModel(
                         currentConfig = toSave,
                         editedConfig = toSave,
                     )
+                }
+                if (restart && wasRunning) {
+                    tunnelCoordinator.stopTunnel(tunnelId)
+                    tunnelCoordinator.startTunnel(toSave)
                 }
                 postSideEffect(
                     AppSideEffect.Toast(

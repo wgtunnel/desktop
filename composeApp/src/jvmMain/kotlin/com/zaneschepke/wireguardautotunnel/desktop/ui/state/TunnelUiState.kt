@@ -10,4 +10,7 @@ data class TunnelUiState(
     val activeConfig: ActiveConfig? = null,
     val lastStatsAtMs: Long = 0L,
     val isDirty: Boolean = false,
-)
+) {
+    val isRunning: Boolean
+        get() = activeConfig != null
+}

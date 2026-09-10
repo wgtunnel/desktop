@@ -3,6 +3,8 @@ package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.ProxySettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.proxy_settings_saved
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
@@ -11,8 +13,11 @@ import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
-class ProxyViewModel(private val proxySettingsRepository: ProxySettingsRepository) :
-    OrbitContainerHost<ProxyUiState, ProxyUiState, AppSideEffect>, ViewModel() {
+class ProxyViewModel(
+    private val proxySettingsRepository: ProxySettingsRepository,
+    private val backendService: BackendService,
+    private val tunnelCoordinator: TunnelCoordinator,
+) : OrbitContainerHost<ProxyUiState, ProxyUiState, AppSideEffect>, ViewModel() {
 
     override val container =
         orbitContainer<ProxyUiState, AppSideEffect>(ProxyUiState()) {
@@ -29,6 +34,11 @@ class ProxyViewModel(private val proxySettingsRepository: ProxySettingsRepositor
                             password = settings.proxyPassword.orEmpty(),
                         )
                     }
+                }
+            }
+            intent {
+                backendService.statusFlow().collect { status ->
+                    reduce { state.copy(hasActiveTunnel = status.activeTunnels.isNotEmpty()) }
                 }
             }
         }
@@ -81,9 +91,10 @@ class ProxyViewModel(private val proxySettingsRepository: ProxySettingsRepositor
         reduce { state.copy(passwordVisible = visible) }
     }
 
-    fun save() = intent {
+    fun save(restart: Boolean = false) = intent {
         proxySettingsRepository.upsert(state.draft)
         reduce { state.copy(saved = state.draft) }
+        if (restart) tunnelCoordinator.restartActiveTunnels()
         postSideEffect(
             AppSideEffect.Toast(getString(Res.string.proxy_settings_saved), ToastType.Success)
         )

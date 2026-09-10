@@ -11,6 +11,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.live_c
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_active_tunnel_data
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.view_configuration
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.rememberRestartToApplyChanges
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.components.ConfigEditor
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
@@ -32,12 +33,18 @@ fun ConfigScreen(viewModel: TunnelViewModel, live: Boolean) {
 
     if (!uiState.isLoaded) return
 
+    val requestApply =
+        rememberRestartToApplyChanges(
+            needsRestart = uiState.isRunning,
+            onSave = viewModel::saveChanges,
+        )
+
     NestedSettingsScaffold(
         title =
             if (live) stringResource(Res.string.live_configuration)
             else stringResource(Res.string.view_configuration),
         showSave = !live && uiState.isDirty,
-        onSave = viewModel::saveChanges,
+        onSave = requestApply,
     ) { padding ->
         val raw =
             if (live) {
