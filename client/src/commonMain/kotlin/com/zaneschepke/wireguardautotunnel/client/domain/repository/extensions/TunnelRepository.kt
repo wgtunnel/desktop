@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.client.domain.repository.extensions
 
+import com.wgtunnel.parser.Config
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 
@@ -37,7 +38,13 @@ private fun generateUniquelyNamedConfigs(
         }
 
         usedNames.add(uniqueName)
-        result.add(tun.copy(name = uniqueName))
+        val quickConfig =
+            if (uniqueName != tun.name) {
+                Config.parseQuickString(tun.quickConfig).withName(uniqueName).asQuickString()
+            } else {
+                tun.quickConfig
+            }
+        result.add(tun.copy(name = uniqueName, quickConfig = quickConfig))
     }
     return result
 }

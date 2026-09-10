@@ -28,6 +28,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.dokar.sonner.ToasterState
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.auto_tunnel_active
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.connecting_to_daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_connected
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown_active
@@ -62,6 +63,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.Con
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.TunnelSettingsScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
+import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.HealthyGreen
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelViewModel
 import io.github.sudarshanmhasrup.localina.api.LocalinaApp
@@ -294,6 +296,17 @@ private fun StatusFooter(uiState: AppUiState) {
                     Icons.Filled.Lock,
                     lockdownActiveText,
                     tint = ErrorRed,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+        if (uiState.autoTunnelEnabled) {
+            val autoTunnelActiveText = stringResource(Res.string.auto_tunnel_active)
+            CustomTooltip(text = autoTunnelActiveText) {
+                Icon(
+                    Icons.Filled.Bolt,
+                    autoTunnelActiveText,
+                    tint = HealthyGreen,
                     modifier = Modifier.size(16.dp),
                 )
             }

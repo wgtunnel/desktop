@@ -46,9 +46,10 @@ data class TunnelConfig(
         }
 
         private fun tunnelConfFromConfig(config: Config, name: String? = null): TunnelConfig {
+            val resolvedName = name ?: DEFAULT_TUNNEL_NAME
             return TunnelConfig(
-                name = name ?: DEFAULT_TUNNEL_NAME,
-                quickConfig = config.asQuickString(),
+                name = resolvedName,
+                quickConfig = config.withName(resolvedName).asQuickString(),
             )
         }
 

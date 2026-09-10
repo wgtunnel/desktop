@@ -118,7 +118,10 @@ class TunnelViewModel(
             parsed
         }
             .onSuccess { parsed ->
-                val toSave = sanitizedConfig.copy(quickConfig = parsed.asQuickString())
+                val toSave =
+                    sanitizedConfig.copy(
+                        quickConfig = parsed.withName(sanitizedName).asQuickString()
+                    )
                 val wasRunning = state.isRunning
                 tunnelRepository.save(toSave)
                 reduce {

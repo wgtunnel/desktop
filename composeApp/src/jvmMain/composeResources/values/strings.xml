@@ -70,7 +70,6 @@
     <string name="exported_to_template">Exported to %1$s</string>
     <string name="logs_exported_template">Logs exported to %1$s</string>
     <string name="stored_logs_deleted">Stored logs deleted</string>
-    <string name="version_template">Version: %1$s</string>
     <string name="current_template">Current: %1$s</string>
     <string name="config_error">Invalid config</string>
     <string name="auth_error">Unauthorized</string>
@@ -102,7 +101,7 @@
     <string name="doh">DNS over HTTPS (DoH)</string>
     <string name="config_error_template">Bad config. %1$s at location: %2$s.</string>
     <string name="ddns_auto_update">Dynamic DNS auto-update</string>
-    <string name="ddns_auto_update_description">Auto-updates IP on DDNS changes</string>
+    <string name="ddns_auto_update_description">Automatically updates a peer's endpoint address when its DNS-resolved IP changes</string>
     <string name="lockdown">Lockdown</string>
     <string name="crypto">Cryptocurrency addresses</string>
     <string name="github_sponsors">GitHub Sponsors</string>
@@ -145,7 +144,9 @@
     <string name="resources">Resources</string>
     <string name="website">App website</string>
     <string name="contact">Contact</string>
-    <string name="other">Other</string>
+    <string name="app_version">App version</string>
+    <string name="system_information">System information</string>
+    <string name="system_information_copied">System information copied to clipboard</string>
     <string name="options">Options</string>
     <string name="general">General</string>
     <string name="networks">Networks</string>
@@ -250,6 +251,7 @@
     <string name="themes">Themes</string>
     <string name="use_system_colors">Use system colors</string>
     <string name="lockdown_active">Lockdown active</string>
+    <string name="auto_tunnel_active">Auto-tunnel enabled</string>
     <string name="daemon_connected">Daemon connected</string>
     <string name="connecting_to_daemon">Connecting to daemon…</string>
     <string name="status_lowercase_template">status: %1$s</string>

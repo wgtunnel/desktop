@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.InstallDesktop
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Policy
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Web
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +36,7 @@ import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.about
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.app_version
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.check_for_update
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.checking_for_updates
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.contact
@@ -53,16 +56,16 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.matrix
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.matrix_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.my_email
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.open_issue
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.other
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.privacy_policy
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.privacy_policy_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.resources
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.support
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.system_information
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.system_information_copied
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.telegram
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.telegram_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.thank_you
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_available_version
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.version_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website_url
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
@@ -74,6 +77,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableCo
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.util.DesktopUtils
+import com.zaneschepke.wireguardautotunnel.desktop.util.buildSystemInfoReport
 import com.zaneschepke.wireguardautotunnel.desktop.util.toClipEntry
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.SupportViewModel
 import kotlinx.coroutines.launch
@@ -211,21 +215,28 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
             }
             Column {
                 GroupLabel(
-                    stringResource(Res.string.other),
+                    stringResource(Res.string.about),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.Memory, contentDescription = null) },
-                    title = stringResource(Res.string.about),
-                    description = {
-                        Column {
-                            DescriptionText(stringResource(Res.string.version_template, appVersion))
-                        }
-                    },
+                    title = stringResource(Res.string.app_version),
+                    description = { DescriptionText(appVersion) },
                     onClick = {
                         val message = copiedMessage
                         scope.launch { clipboard.setClipEntry(appVersion.toClipEntry()) }
                         toaster.show(Toast(message, ToastType.Success))
+                    },
+                )
+                val systemInfoReport = remember { buildSystemInfoReport() }
+                val systemInfoCopiedMessage = stringResource(Res.string.system_information_copied)
+                SurfaceRow(
+                    leading = { Icon(Icons.Outlined.Terminal, contentDescription = null) },
+                    title = stringResource(Res.string.system_information),
+                    description = { DescriptionText(systemInfoReport) },
+                    onClick = {
+                        scope.launch { clipboard.setClipEntry(systemInfoReport.toClipEntry()) }
+                        toaster.show(Toast(systemInfoCopiedMessage, ToastType.Success))
                     },
                 )
                 if (uiState.updateSupported) {

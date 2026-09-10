@@ -33,14 +33,15 @@ fun ConfigEditor(
     modifier: Modifier = Modifier,
 ) {
     var textFieldValue by remember { mutableStateOf(TextFieldValue(rawConfig)) }
+    var lastSentConfig by remember { mutableStateOf(rawConfig) }
 
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
 
-    // One time sync
     LaunchedEffect(rawConfig) {
-        if (textFieldValue.text != rawConfig) {
+        if (rawConfig != lastSentConfig) {
             textFieldValue = TextFieldValue(rawConfig)
+            lastSentConfig = rawConfig
         }
     }
 
@@ -49,7 +50,10 @@ fun ConfigEditor(
     LaunchedEffect(Unit) {
         snapshotFlow { textFieldValue.text }
             .debounce(100.milliseconds)
-            .onEach { onConfigChange(it) }
+            .onEach {
+                lastSentConfig = it
+                onConfigChange(it)
+            }
             .launchIn(this)
     }
 

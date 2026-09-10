@@ -11,6 +11,7 @@ data class AppUiState(
     val locale: String = DEFAULT_LOCALE,
     val alreadyDonated: Boolean = false,
     val lockdownActive: Boolean = false,
+    val autoTunnelEnabled: Boolean = false,
     val tunnelStatuses: List<TunnelStatus> = emptyList(),
 ) {
     companion object {

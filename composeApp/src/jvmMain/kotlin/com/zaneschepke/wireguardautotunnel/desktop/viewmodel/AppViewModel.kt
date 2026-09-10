@@ -3,6 +3,7 @@ package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.orchestration.AutoTunnelCoordinator
@@ -24,6 +25,7 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 
 class AppViewModel(
     private val settingsRepository: GeneralSettingRepository,
+    private val autoTunnelRepository: AutoTunnelSettingsRepository,
     private val tunnelRepository: TunnelRepository,
     private val daemonService: DaemonService,
     private val backendService: BackendService,
@@ -55,6 +57,11 @@ class AppViewModel(
                 }
             }
             intent { daemonService.alive.collect { reduce { state.copy(daemonConnected = it) } } }
+            intent {
+                autoTunnelRepository.flow.collect { settings ->
+                    reduce { state.copy(autoTunnelEnabled = settings.isAutoTunnelEnabled) }
+                }
+            }
             intent {
                 backendService
                     .statusFlow()
