@@ -31,10 +31,6 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.connecting_to_daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_connected
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown_active
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.proxy
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.animation.PulsingStatusLed
@@ -62,7 +58,6 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.Don
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.crypto.AddressesScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.license.LicenseScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.TunnelsScreen
-import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asTooltipMessage
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.ConfigScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.TunnelSettingsScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
@@ -72,7 +67,6 @@ import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelViewModel
 import io.github.sudarshanmhasrup.localina.api.LocalinaApp
 import kotlin.collections.listOf
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -107,19 +101,6 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
         }
         return
     }
-
-    val currentTunnelStatus by
-        remember(uiState.tunnelStatuses) {
-            derivedStateOf {
-                uiState.tunnelStatuses.firstOrNull { it.state == TunnelState.HANDSHAKE_FAILURE }
-                    ?: uiState.tunnelStatuses.firstOrNull {
-                        it.state == TunnelState.RESOLVING_DNS ||
-                            it.state == TunnelState.STOPPING ||
-                            it.state == TunnelState.STARTING
-                    }
-                    ?: uiState.tunnelStatuses.firstOrNull { it.state == TunnelState.HEALTHY }
-            }
-        }
 
     LocalinaApp {
         CompositionLocalProvider(
@@ -292,10 +273,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                             )
                         }
                     }
-                    StatusFooter(
-                        uiState = uiState,
-                        currentTunnelStatus = currentTunnelStatus,
-                    )
+                    StatusFooter(uiState = uiState)
                 }
             }
         }
@@ -303,29 +281,12 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
 }
 
 @Composable
-private fun StatusFooter(uiState: AppUiState, currentTunnelStatus: TunnelStatus?) {
+private fun StatusFooter(uiState: AppUiState) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        currentTunnelStatus?.let { status ->
-            CustomTooltip(text = status.mode.asTooltipMessage()) {
-                when (status.mode) {
-                    BackendMode.VPN ->
-                        Icon(Icons.Filled.VpnKey, null, modifier = Modifier.size(16.dp))
-                    BackendMode.PROXY ->
-                        Icon(
-                            painterResource(Res.drawable.proxy),
-                            null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    BackendMode.LOCK_DOWN ->
-                        Icon(Icons.Filled.Lock, null, modifier = Modifier.size(16.dp))
-                    BackendMode.UNKNOWN -> {}
-                }
-            }
-        }
         if (uiState.lockdownActive) {
             val lockdownActiveText = stringResource(Res.string.lockdown_active)
             CustomTooltip(text = lockdownActiveText) {

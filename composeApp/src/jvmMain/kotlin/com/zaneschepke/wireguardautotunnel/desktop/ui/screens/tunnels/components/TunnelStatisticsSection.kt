@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -13,7 +12,6 @@ import androidx.compose.ui.unit.dp
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.recovery_attempts_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.status_lowercase_template
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.waiting_for_statistics
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
@@ -58,11 +56,8 @@ fun TunnelStatisticsSection(
             )
         }
 
-        val config = status.activeConfig
-        if (config == null) {
-            Text(stringResource(Res.string.waiting_for_statistics), style = style, color = color)
-        } else {
-            config.peers.forEach { peer -> PeerStatisticsSection(peer = peer, now = now) }
+        status.activeConfig?.peers?.forEach { peer ->
+            PeerStatisticsSection(peer = peer, now = now)
         }
     }
 }
