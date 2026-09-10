@@ -261,7 +261,11 @@ class AutoTunnelSupervisor(
             running = running,
             enabled = plan.enabled,
             network =
-                NetworkStatusDto(type = network.type, ssid = network.ssid, bssid = network.bssid),
+                NetworkStatusDto(
+                    type = network.type,
+                    ssid = network.ssid,
+                    bssid = network.bssid.uppercase(),
+                ),
         )
     }
 
@@ -282,7 +286,7 @@ private fun NetworkInfoDto.toAutoTunnelNetwork(): AutoTunnelNetwork {
     return AutoTunnelNetwork(
         type = type,
         ssid = ssid,
-        bssid = bssid,
+        bssid = bssid.uppercase(),
         hasUsableNetwork = isUsable && type != AutoTunnelNetworkType.DISCONNECTED,
         captivePortal = false,
     )

@@ -125,7 +125,7 @@ class AutoTunnelViewModel(
     }
 
     fun saveTrustedBssid(bssid: String) = intent {
-        val trimmed = bssid.trim()
+        val trimmed = bssid.trim().uppercase()
         if (trimmed.isEmpty()) return@intent
         if (state.autoTunnelSettings.trustedNetworkBssids.contains(trimmed)) {
             postSideEffect(
@@ -172,7 +172,7 @@ class AutoTunnelViewModel(
     }
 
     fun saveBssidMapping(tunnel: TunnelConfig, bssid: String) = intent {
-        val trimmed = bssid.trim()
+        val trimmed = bssid.trim().uppercase()
         if (trimmed.isEmpty()) return@intent
         if (tunnel.tunnelBssids.contains(trimmed)) {
             postSideEffect(

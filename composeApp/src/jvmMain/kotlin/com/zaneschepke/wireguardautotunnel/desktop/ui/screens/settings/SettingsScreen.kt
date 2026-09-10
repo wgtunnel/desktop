@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ViewQuilt
 import androidx.compose.material.icons.outlined.Autorenew
@@ -60,6 +58,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.OptionPickerMenu
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.PickerOption
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.RequiresDaemonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
@@ -95,11 +94,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
 
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(Res.string.settings)) }) }) {
         padding ->
-        Column(
+        ScrollableColumn(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
-            modifier =
-                Modifier.verticalScroll(rememberScrollState()).fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             Column {
                 GroupLabel(

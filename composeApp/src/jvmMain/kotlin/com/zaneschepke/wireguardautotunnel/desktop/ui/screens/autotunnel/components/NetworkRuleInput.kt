@@ -11,16 +11,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.add
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ClickableIconButton
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.textbox.ConfigurationTextBox
-import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -65,14 +61,6 @@ fun NetworkRuleInput(
             hint = placeholder,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSave(currentText) }),
-            trailing = {
-                androidx.compose.material3.IconButton(onClick = { onSave(currentText) }) {
-                    androidx.compose.material3.Icon(
-                        Icons.Outlined.Add,
-                        contentDescription = stringResource(Res.string.add),
-                    )
-                }
-            },
         )
         supportingContent?.invoke()
     }

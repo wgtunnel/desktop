@@ -215,7 +215,7 @@
     <string name="transit_dns_allow">Allow</string>
     <string name="domain_suffixes">Domain suffixes</string>
     <string name="kill_switch_label">Kill switch</string>
-    <string name="kill_switch_desc">Block all non-tunnel traffic while a tunnel is running</string>
+    <string name="kill_switch_desc">Block all traffic outside the tunnel, whether or not a tunnel is running</string>
     <string name="requires_daemon_running">Requires the daemon to be running</string>
     <string name="refresh_rate_updated">Refresh rate updated</string>
     <string name="proxy_settings_saved">Proxy settings saved</string>
@@ -258,8 +258,14 @@
     <string name="endpoint_lowercase_template">endpoint: %1$s</string>
     <string name="statistics">Statistics</string>
     <string name="live_tunnel_statistics">Live tunnel statistics</string>
-    <string name="refresh_rate_template">Refresh rate: %1$s</string>
+    <string name="refresh_rate">Refresh rate</string>
     <string name="dns_settings_saved">DNS settings saved</string>
+    <string name="dns_error_empty">Endpoint cannot be empty</string>
+    <string name="dns_error_invalid_url">Invalid URL format</string>
+    <string name="dns_error_invalid_scheme">DoH must use HTTPS</string>
+    <string name="dns_error_invalid_host">Host cannot be empty</string>
+    <string name="dns_error_invalid_port">Port must be between 1 and 65535</string>
+    <string name="dns_error_invalid_ip_or_host">Invalid IP address or hostname</string>
     <string name="no_tunnels_click_add">No tunnels added yet! Click the + symbol to add a tunnel.</string>
     <string name="delete_selected_tunnels">Are you sure you want to delete the selected tunnels?</string>
     <string name="export">Export</string>

@@ -4,8 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.Timer
@@ -19,14 +17,16 @@ import com.dokar.sonner.Toast
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.StatisticRefresh
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.live_tunnel_statistics
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.refresh_rate_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.refresh_rate
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.statistics
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_monitoring
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dropdown.LabeledDropdown
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.MonitoringViewModel
 import org.jetbrains.compose.resources.stringResource
@@ -49,11 +49,10 @@ fun MonitoringScreen(viewModel: MonitoringViewModel = koinViewModel()) {
     if (!uiState.isLoaded) return
 
     NestedSettingsScaffold(title = stringResource(Res.string.tunnel_monitoring)) { padding ->
-        Column(
+        ScrollableColumn(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
-            modifier =
-                Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()),
+            modifier = Modifier.padding(padding).fillMaxSize(),
         ) {
             Column {
                 GroupLabel(
@@ -73,22 +72,15 @@ fun MonitoringScreen(viewModel: MonitoringViewModel = koinViewModel()) {
                         viewModel.onLiveTunnelStatisticsChanged(!uiState.tunnelStatisticsEnabled)
                     },
                 )
-                SurfaceRow(
+                LabeledDropdown(
+                    title = stringResource(Res.string.refresh_rate),
                     leading = { Icon(Icons.Outlined.Timer, contentDescription = null) },
-                    title =
-                        stringResource(
-                            Res.string.refresh_rate_template,
-                            uiState.statisticRefresh.label,
-                        ),
-                    onClick = {
-                        val next =
-                            when (uiState.statisticRefresh) {
-                                StatisticRefresh.LIVE -> StatisticRefresh.BALANCED
-                                StatisticRefresh.BALANCED -> StatisticRefresh.BATTERY_SAVER
-                                StatisticRefresh.BATTERY_SAVER -> StatisticRefresh.LIVE
-                            }
-                        viewModel.onStatisticsIntervalChanged(next)
+                    currentValue = uiState.statisticRefresh,
+                    onSelected = { selected ->
+                        selected?.let { viewModel.onStatisticsIntervalChanged(it) }
                     },
+                    options = StatisticRefresh.entries,
+                    optionToString = { (it ?: StatisticRefresh.BALANCED).label },
                 )
             }
         }

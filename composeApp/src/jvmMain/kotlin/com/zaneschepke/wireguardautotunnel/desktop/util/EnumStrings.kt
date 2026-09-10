@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.wgtunnel.backend.model.dns.DnsValidationError
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.BootstrapDnsProtocol
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.SeamlessRecoveryBounceDelay
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.SplitDnsSuffixTarget
@@ -18,6 +19,12 @@ import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources._default
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.default_dns_desc
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_empty
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_host
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_ip_or_host
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_port
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_scheme
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.doh
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dot
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.encrypted_dns
@@ -132,6 +139,18 @@ fun TransitDnsPolicy.asLabel(): String =
         TransitDnsPolicy.Redirect -> stringResource(Res.string.transit_dns_redirect)
         TransitDnsPolicy.Block -> stringResource(Res.string.transit_dns_block)
         TransitDnsPolicy.Allow -> stringResource(Res.string.transit_dns_allow)
+    }
+
+@Composable
+fun DnsValidationError.asLabel(): String =
+    when (this) {
+        DnsValidationError.Empty -> stringResource(Res.string.dns_error_empty)
+        DnsValidationError.InvalidUrl -> stringResource(Res.string.dns_error_invalid_url)
+        DnsValidationError.InvalidScheme -> stringResource(Res.string.dns_error_invalid_scheme)
+        DnsValidationError.InvalidHost -> stringResource(Res.string.dns_error_invalid_host)
+        DnsValidationError.InvalidPort -> stringResource(Res.string.dns_error_invalid_port)
+        DnsValidationError.InvalidIpOrHost ->
+            stringResource(Res.string.dns_error_invalid_ip_or_host)
     }
 
 @Composable

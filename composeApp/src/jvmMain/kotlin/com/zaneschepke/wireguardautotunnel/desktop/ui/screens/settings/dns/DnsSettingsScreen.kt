@@ -4,11 +4,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.AltRoute
 import androidx.compose.material.icons.outlined.Dns
@@ -17,6 +16,7 @@ import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.Router
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +57,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.OptionPickerMenu
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.PickerOption
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.textbox.ConfigurationTextBox
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
@@ -89,14 +90,11 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
         showSave = uiState.isDirty,
         onSave = viewModel::save,
     ) { padding ->
-        Column(
+        ScrollableColumn(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
-            modifier =
-                Modifier.padding(padding)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(bottom = 24.dp),
+            modifier = Modifier.padding(padding).fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp),
         ) {
             Column {
                 GroupLabel(
@@ -123,6 +121,11 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                         label = stringResource(Res.string.dns_endpoint_label),
                         value = uiState.draft.bootstrapDnsEndpoint.orEmpty(),
                         onValueChange = viewModel::setBootstrapDnsEndpoint,
+                        isError = uiState.bootstrapEndpointError != null,
+                        supportingText =
+                            uiState.bootstrapEndpointError?.let { error ->
+                                { Text(error.asLabel()) }
+                            },
                     )
                 }
             }
@@ -238,6 +241,11 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                                 label = stringResource(Res.string.dns_endpoint_label),
                                 value = uiState.draft.tunnelDnsEndpoint.orEmpty(),
                                 onValueChange = viewModel::setTunnelDnsEndpoint,
+                                isError = uiState.tunnelEndpointError != null,
+                                supportingText =
+                                    uiState.tunnelEndpointError?.let { error ->
+                                        { Text(error.asLabel()) }
+                                    },
                             )
                         }
                         AnimatedVisibility(isSplitMode) {
@@ -251,9 +259,19 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                                     label = stringResource(Res.string.domain_suffixes),
                                     value = uiState.draft.localSuffixes.orEmpty(),
                                     onValueChange = viewModel::setLocalSuffixes,
+                                    isError = uiState.localSuffixesError != null,
+                                    supportingText =
+                                        uiState.localSuffixesError?.let { error ->
+                                            { Text(error.asLabel()) }
+                                        },
                                 )
                                 LabeledDropdown(
                                     title = stringResource(Res.string.split_suffix_target),
+                                    description = {
+                                        DescriptionText(
+                                            uiState.draft.splitSuffixTarget.asDescription()
+                                        )
+                                    },
                                     leading = {
                                         Icon(
                                             Icons.AutoMirrored.Outlined.AltRoute,
@@ -269,14 +287,13 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                                         (it ?: SplitDnsSuffixTarget.System).asLabel()
                                     },
                                 )
-                                DescriptionText(
-                                    uiState.draft.splitSuffixTarget.asDescription(),
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                )
                             }
                         }
                         LabeledDropdown(
                             title = stringResource(Res.string.transit_dns_policy),
+                            description = {
+                                DescriptionText(stringResource(Res.string.transit_dns_policy_desc))
+                            },
                             leading = { Icon(Icons.Outlined.Dns, contentDescription = null) },
                             currentValue = uiState.draft.transitDnsPolicy,
                             onSelected = { selected ->
@@ -284,10 +301,6 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                             },
                             options = TransitDnsPolicy.entries,
                             optionToString = { (it ?: TransitDnsPolicy.Redirect).asLabel() },
-                        )
-                        DescriptionText(
-                            stringResource(Res.string.transit_dns_policy_desc),
-                            modifier = Modifier.padding(horizontal = 16.dp),
                         )
                     }
                 }

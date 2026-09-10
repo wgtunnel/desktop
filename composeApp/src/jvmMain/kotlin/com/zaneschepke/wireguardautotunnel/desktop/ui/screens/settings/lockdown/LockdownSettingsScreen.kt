@@ -4,8 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lan
 import androidx.compose.material.icons.outlined.RestartAlt
@@ -27,6 +25,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.RequiresDaemonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
@@ -50,11 +49,10 @@ fun LockdownSettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
     if (!uiState.isLoaded) return
 
     NestedSettingsScaffold(title = stringResource(Res.string.lockdown_settings)) { padding ->
-        Column(
+        ScrollableColumn(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top),
-            modifier =
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             Column {
                 GroupLabel(

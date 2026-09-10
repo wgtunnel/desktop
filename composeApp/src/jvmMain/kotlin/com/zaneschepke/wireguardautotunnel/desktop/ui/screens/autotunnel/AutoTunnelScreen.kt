@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
@@ -55,6 +53,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.stop_o
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.stop_on_no_internet_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_on_ethernet
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_on_wifi
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.unknown
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.wifi
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
@@ -62,6 +61,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SwitchWithDivider
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.RequiresDaemonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
@@ -95,21 +95,24 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
         remember(uiState.tunnels) { uiState.tunnels.any { it.tunnelNetworks.isNotEmpty() } }
 
     val networkType =
-        when (uiState.network.type.lowercase()) {
-            "wifi" -> stringResource(Res.string.wifi)
-            "ethernet" -> stringResource(Res.string.ethernet)
-            "disconnected",
-            "" -> stringResource(Res.string.no_network)
-            else -> uiState.network.type
+        if (!uiState.daemonConnected) {
+            stringResource(Res.string.unknown).replaceFirstChar { it.titlecase() }
+        } else {
+            when (uiState.network.type.lowercase()) {
+                "wifi" -> stringResource(Res.string.wifi)
+                "ethernet" -> stringResource(Res.string.ethernet)
+                "disconnected",
+                "" -> stringResource(Res.string.no_network)
+                else -> uiState.network.type
+            }
         }
 
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(Res.string.auto_tunnel)) }) }) {
         padding ->
-        Column(
+        ScrollableColumn(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
-            modifier =
-                Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             val (title, buttonText, icon) =
                 if (uiState.autoTunnelActive) {
@@ -155,7 +158,9 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                 )
                 SurfaceRow(
                     leading = {
-                        Icon(vectorResource(Res.drawable.globe), contentDescription = null)
+                        RequiresDaemonTooltip(daemonConnected = uiState.daemonConnected) {
+                            Icon(vectorResource(Res.drawable.globe), contentDescription = null)
+                        }
                     },
                     title =
                         buildAnnotatedString {
@@ -164,8 +169,12 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                                 append(networkType)
                             }
                         },
+                    enabled = uiState.daemonConnected,
                     description =
-                        if (uiState.network.type.equals("wifi", ignoreCase = true)) {
+                        if (
+                            uiState.daemonConnected &&
+                                uiState.network.type.equals("wifi", ignoreCase = true)
+                        ) {
                             {
                                 SelectionContainer {
                                     Column {
