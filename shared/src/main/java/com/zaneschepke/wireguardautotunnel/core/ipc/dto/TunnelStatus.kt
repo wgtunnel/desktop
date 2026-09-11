@@ -11,4 +11,6 @@ data class TunnelStatus(
     val mode: BackendMode = BackendMode.UNKNOWN,
     val activeConfig: ActiveConfig? = null,
     val recoveryAttempts: Int = 0,
+    val uptime: Long? = null,
+    val activeProxyConfig: ProxyConfigDto? = null,
 )

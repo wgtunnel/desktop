@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuOpen
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Router
+import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -75,6 +77,8 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.state.DaemonConnectionStat
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.HealthyGreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WarningAmber
+import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
+import com.zaneschepke.wireguardautotunnel.desktop.util.asTitleString
 import com.zaneschepke.wireguardautotunnel.desktop.util.toClipEntry
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelViewModel
@@ -344,6 +348,16 @@ private fun StatusFooter(uiState: AppUiState) {
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val tunnelModeText = uiState.tunnelMode.asTitleString()
+        CustomTooltip(text = tunnelModeText) {
+            Icon(
+                if (uiState.tunnelMode == TunnelMode.VPN) Icons.Outlined.VpnKey
+                else Icons.Outlined.Router,
+                contentDescription = tunnelModeText,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(16.dp),
+            )
+        }
         if (uiState.lockdownActive) {
             val lockdownActiveText = stringResource(Res.string.lockdown_active)
             CustomTooltip(text = lockdownActiveText) {

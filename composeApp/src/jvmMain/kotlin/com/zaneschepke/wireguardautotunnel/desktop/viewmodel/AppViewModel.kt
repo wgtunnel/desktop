@@ -66,6 +66,7 @@ class AppViewModel(
                             locale = settings.locale ?: state.locale,
                             alreadyDonated = settings.alreadyDonated,
                             useSystemColors = settings.useSystemColors,
+                            tunnelMode = settings.tunnelMode,
                         )
                     }
                 }

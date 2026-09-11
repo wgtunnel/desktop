@@ -1,6 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.desktop.ui.state
 
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 
 enum class DaemonConnectionStatus {
@@ -21,6 +22,7 @@ data class AppUiState(
     val lockdownActive: Boolean = false,
     val autoTunnelEnabled: Boolean = false,
     val tunnelStatuses: List<TunnelStatus> = emptyList(),
+    val tunnelMode: TunnelMode = TunnelMode.VPN,
 ) {
     companion object {
         const val DEFAULT_LOCALE = "en-US"

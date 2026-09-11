@@ -64,6 +64,28 @@ fun ProxyConfigDto.toCore(): ProxyConfig =
             },
     )
 
+fun ProxyConfig.toDto(): ProxyConfigDto =
+    ProxyConfigDto(
+        socks5 =
+            socks5?.let {
+                ProxyConfigDto.Socks5(
+                    host = it.host,
+                    port = it.port,
+                    username = it.username,
+                    password = it.password,
+                )
+            },
+        http =
+            http?.let {
+                ProxyConfigDto.Http(
+                    host = it.host,
+                    port = it.port,
+                    username = it.username,
+                    password = it.password,
+                )
+            },
+    )
+
 fun TunnelDnsConfigDto.toCore(): TunnelDnsConfig =
     TunnelDnsConfig(
         defaultTransport = defaultTransport,
@@ -103,13 +125,18 @@ fun StartTunnelRequest.toBackendMode(config: Config): CoreBackendMode {
 
 fun ActiveTunnel.toDto(id: Int): TunnelStatus {
     val name = tunnel?.name ?: "tunnel-$id"
+    // Only Proxy.Standard actually runs a user-facing SOCKS5/HTTP listener - KillSwitchPrimary
+    // (lockdown) has no equivalent to show here.
+    val activeProxyConfig = (mode as? CoreBackendMode.Proxy.Standard)?.proxyConfig?.toDto()
     return TunnelStatus(
         id = id.toLong(),
         name = name,
         state = transportState.toDto(bootstrapState),
         mode = mode.toDto(),
         activeConfig = activeConfig,
+        activeProxyConfig = activeProxyConfig,
         recoveryAttempts = recoveryAttempts,
+        uptime = uptime,
     )
 }
 

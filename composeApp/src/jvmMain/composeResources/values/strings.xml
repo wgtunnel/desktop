@@ -262,6 +262,10 @@
     <string name="status_lowercase_template">status: %1$s</string>
     <string name="recovery_attempts_template">recovery attempts: %1$d</string>
     <string name="uptime_lowercase_template">uptime: %1$s</string>
+    <string name="socks5_proxy_lowercase_template">socks5 proxy: %1$s</string>
+    <string name="socks5_proxy_protected_lowercase_template">socks5 proxy: %1$s (password protected)</string>
+    <string name="http_proxy_lowercase_template">http proxy: %1$s</string>
+    <string name="http_proxy_protected_lowercase_template">http proxy: %1$s (password protected)</string>
     <string name="unknown">unknown</string>
     <string name="peer_template">peer: %1$s</string>
     <string name="last_handshake_template">last handshake: %1$s</string>
