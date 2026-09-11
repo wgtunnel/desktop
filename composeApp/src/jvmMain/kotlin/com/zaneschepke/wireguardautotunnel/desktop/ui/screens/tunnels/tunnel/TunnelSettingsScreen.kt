@@ -43,6 +43,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.rememberRestartToApplyChanges
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.textbox.rememberSyncedTextFieldState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
@@ -62,6 +63,7 @@ fun TunnelSettingsScreen(viewModel: TunnelViewModel) {
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is AppSideEffect.Toast -> toaster.show(Toast(sideEffect.message, sideEffect.type))
+            else -> Unit
         }
     }
 
@@ -78,9 +80,13 @@ fun TunnelSettingsScreen(viewModel: TunnelViewModel) {
         showSave = uiState.isDirty,
         onSave = requestApply,
         titleContent = {
+            val (nameFieldValue, onNameFieldValueChange) =
+                rememberSyncedTextFieldState(uiState.editedConfig.name) {
+                    viewModel.onNameUpdated(it)
+                }
             BasicTextField(
-                value = uiState.editedConfig.name,
-                onValueChange = { viewModel.onNameUpdated(it) },
+                value = nameFieldValue,
+                onValueChange = onNameFieldValueChange,
                 textStyle =
                     MaterialTheme.typography.titleLarge.copy(
                         color = MaterialTheme.colorScheme.onSurface

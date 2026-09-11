@@ -68,6 +68,7 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
             is AppSideEffect.Toast -> {
                 toaster.show(Toast(sideEffect.message, sideEffect.type))
             }
+            else -> Unit
         }
     }
 

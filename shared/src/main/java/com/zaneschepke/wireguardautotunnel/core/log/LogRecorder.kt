@@ -23,6 +23,7 @@ import kotlinx.coroutines.sync.withLock
 class LogRecorder(
     private val logDir: File,
     private val source: String,
+    private val appVersionLabel: String = "unknown",
     private val maxFileSize: Long = MAX_FILE_SIZE,
     private val maxFolderSize: Long = MAX_FOLDER_SIZE,
 ) : LogWriter() {
@@ -114,13 +115,16 @@ class LogRecorder(
         stream.flush()
     }
 
+    private fun ownedLogFiles(): Array<File>? =
+        logDir.listFiles { f -> f.isFile && isOwnedFileName(f.name) }
+
+    private fun isOwnedFileName(name: String): Boolean =
+        name.startsWith(FILE_PREFIX) && name.endsWith("_$source.txt")
+
     private fun ensureFile() {
         if (currentFile != null && outputStream != null) return
         logDir.mkdirs()
-        val latest =
-            logDir
-                .listFiles { f -> f.isFile && f.name.startsWith(FILE_PREFIX) }
-                ?.maxByOrNull { it.lastModified() }
+        val latest = ownedLogFiles()?.maxByOrNull { it.lastModified() }
         if (latest != null && latest.length() < maxFileSize) {
             currentFile = latest
             outputStream = FileOutputStream(latest, true)
@@ -134,17 +138,31 @@ class LogRecorder(
         val file = File(logDir, "${FILE_PREFIX}${stamp}_${source}.txt")
         currentFile = file
         outputStream = FileOutputStream(file)
-        val header =
-            "=== WG Tunnel $source logs ===\nStarted: ${LocalDateTime.now()}\n=========================\n\n"
-        outputStream?.write(header.toByteArray())
+        outputStream?.write(buildHeader().toByteArray())
         outputStream?.flush()
     }
 
+    private fun buildHeader(): String = buildString {
+        appendLine("=== WG Tunnel $source logs ===")
+        appendLine("Version: $appVersionLabel")
+        appendLine(
+            "OS: ${System.getProperty("os.name")} ${System.getProperty("os.version")} " +
+                "(${System.getProperty("os.arch")})"
+        )
+        appendLine("Started: ${LocalDateTime.now()}")
+        appendLine("=========================")
+        appendLine()
+    }
+
     private fun rotateIfNeeded() {
-        var folderSize = folderSize()
+        var folderSize = ownedFolderSize()
         while (folderSize >= maxFolderSize) {
-            logDir.listFiles { f -> f.isFile }?.minByOrNull { it.lastModified() }?.delete()
-            folderSize = folderSize()
+            val victim =
+                ownedLogFiles()
+                    ?.filter { it != currentFile }
+                    ?.minByOrNull { it.lastModified() } ?: break
+            if (!victim.delete()) break
+            folderSize = ownedFolderSize()
         }
         if ((currentFile?.length() ?: 0L) >= maxFileSize) {
             closeFile()
@@ -152,8 +170,7 @@ class LogRecorder(
         }
     }
 
-    private fun folderSize(): Long =
-        logDir.listFiles()?.sumOf { if (it.isDirectory) 0L else it.length() } ?: 0L
+    private fun ownedFolderSize(): Long = ownedLogFiles()?.sumOf { it.length() } ?: 0L
 
     private fun closeFile() {
         try {

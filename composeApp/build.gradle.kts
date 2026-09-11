@@ -29,6 +29,12 @@ val appVersion = (findProperty("app.version") as String?) ?: catalogVersion
 val appFsName = if (isBetaPackaging) "wgtunnel-beta" else "wgtunnel"
 val appDisplayName = if (isBetaPackaging) "WG Tunnel Beta" else "WG Tunnel"
 
+val isPacmanPackaging =
+    gradle.startParameter.taskNames.any { taskName ->
+        val name = taskName.substringAfterLast(":")
+        name.startsWith("package", ignoreCase = true) && name.endsWith("Pacman")
+    }
+
 version = appVersion
 
 kotlin {
@@ -121,6 +127,8 @@ val stagePackagingSidecars =
         appDisplayName.set(packagingAppDisplayName)
         windows.set(isWindows)
         linuxService.set(rootProject.file("packaging/linux/wgtunnel-daemon.service"))
+        linuxInstallScript.set(rootProject.file("packaging/linux/tar-install.sh"))
+        linuxUninstallScript.set(rootProject.file("packaging/linux/tar-uninstall.sh"))
         outputDir.set(layout.buildDirectory.dir("packaging-sidecars"))
         if (isWindows) {
             dependsOn(":daemon:buildWinSW")
@@ -239,7 +247,12 @@ nucleus.application {
             rpmRequires = listOf("systemd")
             pacmanDepends = listOf("systemd")
             iconFile.set(rootProject.file("packaging/linux/icon.png"))
-            afterInstall.set(rootProject.file("packaging/linux/after-install.sh"))
+            afterInstall.set(
+                rootProject.file(
+                    if (isPacmanPackaging) "packaging/linux/after-install-pacman.sh"
+                    else "packaging/linux/after-install.sh"
+                )
+            )
             afterRemove.set(rootProject.file("packaging/linux/after-remove.sh"))
             beforeInstall.set(rootProject.file("packaging/linux/before-install.sh"))
             beforeRemove.set(rootProject.file("packaging/linux/before-remove.sh"))

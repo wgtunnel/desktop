@@ -36,7 +36,6 @@ rpm2cpio %{SOURCE0} | cpio -idmv -D %{buildroot}
 
 install -d %{buildroot}%{_bindir}
 ln -sf /opt/wgtunnel/bin/wgtunnel %{buildroot}%{_bindir}/wgtunnel
-ln -sf /opt/wgtunnel/bin/wgtctl   %{buildroot}%{_bindir}/wgtctl
 
 if [ -f %{buildroot}/opt/wgtunnel/wgtunnel-daemon.service ]; then
   install -D -m 644 %{buildroot}/opt/wgtunnel/wgtunnel-daemon.service \
@@ -45,7 +44,7 @@ else
   install -D -m 644 %{buildroot}/opt/wgtunnel/lib/wgtunnel-daemon.service \
     %{buildroot}%{_unitdir}/wgtunnel-daemon.service
 fi
-sed -i 's|^ExecStart=.*|ExecStart=/opt/wgtunnel/bin/daemon|' \
+sed -i 's|^ExecStart=.*|ExecStart=/opt/wgtunnel/bin/wgtunnel-daemon|' \
   %{buildroot}%{_unitdir}/wgtunnel-daemon.service
 sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/opt/wgtunnel|' \
   %{buildroot}%{_unitdir}/wgtunnel-daemon.service
@@ -62,7 +61,6 @@ sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/opt/wgtunnel|' \
 %files
 /opt/wgtunnel
 %{_bindir}/wgtunnel
-%{_bindir}/wgtctl
 %{_unitdir}/wgtunnel-daemon.service
 
 %changelog

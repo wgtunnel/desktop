@@ -135,7 +135,7 @@
     <string name="ecash" translatable="false">eCash (XEC)</string>
     <string name="donation_thanks_intro">Thank you for considering donating to this project!</string>
     <string name="donation_dev_message">As the sole developer, I work tirelessly to make WG Tunnel the best free and open-source WireGuard client for Android, but this is only possible with your support.</string>
-    <string name="donation_closing">It\'s my dream to work for you on this project full-time.</string>
+    <string name="donation_closing">It's my dream to work for you on this project full-time.</string>
     <string name="donation_signoff">Gratefully,</string>
     <string name="dev_name" translatable="false">Zane</string>
     <string name="back">Back</string>
@@ -202,7 +202,7 @@
     <string name="default_dns_desc">Standard plain DNS through the tunnel using the tunnel DNS servers</string>
     <string name="encrypted_dns_desc">Encrypted DNS through the tunnel using a custom server</string>
     <string name="split_dns_desc">Split resolution by domain suffix between system DNS and tunnel DNS</string>
-    <string name="system_dns_only_desc">All DNS queries are send to the system\'s DNS servers and bypass the tunnel</string>
+    <string name="system_dns_only_desc">All DNS queries are send to the system's DNS servers and bypass the tunnel</string>
     <string name="protocol">Protocol</string>
     <string name="tunnel_dns_mode">Tunnel DNS mode</string>
     <string name="tunnel_dns">Tunnel DNS</string>
@@ -213,7 +213,7 @@
     <string name="split_suffix_target_desc_system">Domain suffixes routed to system DNS. All other queries use tunnel DNS.</string>
     <string name="split_suffix_target_desc_tunnel">Domain suffixes routed to tunnel DNS. All other queries use system DNS.</string>
     <string name="transit_dns_policy">Transit DNS requests</string>
-    <string name="transit_dns_policy_desc">How to handle plain DNS request sent to a server different than the tunnel\'s DNS servers</string>
+    <string name="transit_dns_policy_desc">How to handle plain DNS request sent to a server different than the tunnel's DNS servers</string>
     <string name="transit_dns_redirect">Redirect</string>
     <string name="transit_dns_block">Block</string>
     <string name="transit_dns_allow">Allow</string>
@@ -228,6 +228,11 @@
     <string name="tunnel_not_found">Tunnel not found</string>
     <string name="no_tunnels_selected">No tunnels selected</string>
     <string name="update_available_in_support_template">Update %1$s is available in Support</string>
+    <string name="syncing_with_daemon">Syncing with daemon…</string>
+    <string name="daemon_not_running">The WG Tunnel daemon is not running.</string>
+    <string name="daemon_start_command_label">Copy Start Command</string>
+    <string name="daemon_outdated_template">The running daemon (v%1$s) is older than this app (v%2$s). Restart it to finish updating.</string>
+    <string name="daemon_restart_command_label">Copy Restart Command</string>
     <string name="protect_on_startup">Protect on system startup</string>
     <string name="restore_tunnel_on_boot">Restore tunnel on system startup</string>
     <string name="copied_to_clipboard">Copied to clipboard: %1$s</string>
@@ -236,7 +241,7 @@
     <string name="install_update">Install update</string>
     <string name="checking_for_updates">Checking for updates…</string>
     <string name="update_available_version">Update %1$s is available. Click to install.</string>
-    <string name="up_to_date">You\'re up to date</string>
+    <string name="up_to_date">You're up to date</string>
     <string name="socks5_proxy">SOCKS5 proxy</string>
     <string name="socks5_bind_address">SOCKS5 bind address</string>
     <string name="http_proxy">HTTP proxy</string>

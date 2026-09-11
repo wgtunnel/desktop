@@ -18,13 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
-import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
-import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.HealthyGreen
 
 @Composable
-fun PulsingStatusLed(isHealthy: Boolean, modifier: Modifier = Modifier) {
-    val color = if (isHealthy) HealthyGreen else ErrorRed
-
+fun PulsingStatusLed(color: Color, modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "PulseTransition")
 
     val scale by

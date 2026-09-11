@@ -10,7 +10,7 @@ StartLimitIntervalSec=20
 [Service]
 Restart=always
 RestartSec=1s
-ExecStart=@/opt/__APP_FSNAME__/bin/daemon wgtunnel-daemon
+ExecStart=/opt/__APP_FSNAME__/bin/wgtunnel-daemon
 Type=exec
 StandardOutput=journal
 StandardError=journal

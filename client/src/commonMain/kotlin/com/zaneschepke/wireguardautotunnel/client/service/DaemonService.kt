@@ -27,4 +27,7 @@ interface DaemonService {
     fun logsFlow(): Flow<LogMessageDto>
 
     val alive: Flow<Boolean>
+
+    // Version reported by the currently connected daemon, null while disconnected.
+    val remoteVersion: Flow<String?>
 }

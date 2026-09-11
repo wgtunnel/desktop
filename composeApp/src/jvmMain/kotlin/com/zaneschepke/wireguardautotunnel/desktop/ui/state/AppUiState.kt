@@ -3,11 +3,19 @@ package com.zaneschepke.wireguardautotunnel.desktop.ui.state
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 
+enum class DaemonConnectionStatus {
+    DISCONNECTED,
+    // Daemon socket is reachable, but we haven't received a real tunnel/kill-switch snapshot
+    // from it yet
+    SYNCING,
+    CONNECTED,
+}
+
 data class AppUiState(
     val isLoaded: Boolean = false,
     val theme: Theme = Theme.DARK,
     val useSystemColors: Boolean = false,
-    val daemonConnected: Boolean = false,
+    val daemonStatus: DaemonConnectionStatus = DaemonConnectionStatus.DISCONNECTED,
     val locale: String = DEFAULT_LOCALE,
     val alreadyDonated: Boolean = false,
     val lockdownActive: Boolean = false,

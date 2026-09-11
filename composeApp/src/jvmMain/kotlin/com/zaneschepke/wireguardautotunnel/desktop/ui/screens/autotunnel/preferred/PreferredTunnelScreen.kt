@@ -49,6 +49,7 @@ fun PreferredTunnelScreen(
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is AppSideEffect.Toast -> toaster.show(Toast(sideEffect.message, sideEffect.type))
+            else -> Unit
         }
     }
 

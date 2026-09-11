@@ -62,6 +62,7 @@ fun WifiSettingsScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is AppSideEffect.Toast -> toaster.show(Toast(sideEffect.message, sideEffect.type))
+            else -> Unit
         }
     }
 

@@ -18,15 +18,10 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,33 +45,12 @@ fun ConfigurationTextBox(
     containerColor: Color = MaterialTheme.colorScheme.background,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-
-    // Mirrors ConfigEditor's fix for the same underlying issue: the plain-String
-    // BasicTextField overload's internal cursor-preservation heuristic isn't reliable
-    // enough under rapid typing, since each keystroke round-trips through the caller's
-    // state before coming back as this composable's `value` param. Managing a local
-    // TextFieldValue directly - and only resyncing from `value` when it's genuinely an
-    // external change, not our own edit echoing back - keeps typing glitch-free.
-    var textFieldValue by remember { mutableStateOf(TextFieldValue(value)) }
-    var lastSentValue by remember { mutableStateOf(value) }
-
-    LaunchedEffect(value) {
-        if (value != lastSentValue) {
-            textFieldValue = TextFieldValue(value)
-            lastSentValue = value
-        }
-    }
+    val (textFieldValue, onTextFieldValueChange) = rememberSyncedTextFieldState(value, onValueChange)
 
     Box(modifier = modifier.padding(top = 6.dp)) {
         BasicTextField(
             value = textFieldValue,
-            onValueChange = { newValue ->
-                textFieldValue = newValue
-                if (newValue.text != lastSentValue) {
-                    lastSentValue = newValue.text
-                    onValueChange(newValue.text)
-                }
-            },
+            onValueChange = onTextFieldValueChange,
             textStyle =
                 MaterialTheme.typography.bodySmall.copy(
                     color = MaterialTheme.colorScheme.onSurface

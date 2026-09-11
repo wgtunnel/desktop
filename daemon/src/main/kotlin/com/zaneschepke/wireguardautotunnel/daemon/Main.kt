@@ -34,7 +34,7 @@ fun main() {
     val networkMonitor = DesktopNetworkMonitor(scope)
     val backend = TunnelBackend(scope, DaemonApplicationProvider(), networkMonitor)
     val cacheRepository = SettingsDaemonCacheRepository(json)
-    val daemonLogService = DaemonLogService(cacheRepository)
+    val daemonLogService = DaemonLogService(cacheRepository, scope)
     val autoTunnelSupervisor =
         AutoTunnelSupervisor(
             backend = backend,

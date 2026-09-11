@@ -1,6 +1,4 @@
 #!/bin/bash
-# Concatenated after Nucleus's desktop-integration template.
-# electron-builder substitutes ${sanitizedProductName} and ${executable}.
 
 set +e
 
@@ -20,10 +18,18 @@ fi
 
 if command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload >/dev/null 2>&1 || true
-  systemctl enable "$UNIT_NAME" >/dev/null 2>&1 || true
-  # `restart` both starts a stopped unit and correctly bounces an already-running one, so it's
-  # correct for fresh installs and upgrades alike.
-  systemctl restart "$UNIT_NAME" >/dev/null 2>&1 || true
+  if systemctl is-active --quiet "$UNIT_NAME" 2>/dev/null; then
+    # Already running so we keep it in sync with a restart without breaking Arch convention
+    systemctl restart "$UNIT_NAME" >/dev/null 2>&1 || true
+  else
+    cat <<EOF
+
+=== WG Tunnel Installed ===
+
+    sudo systemctl enable --now $UNIT_NAME
+
+EOF
+  fi
 fi
 
 exit 0

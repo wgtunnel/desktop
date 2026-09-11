@@ -26,6 +26,14 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
     abstract val linuxService: RegularFileProperty
 
     @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val linuxInstallScript: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val linuxUninstallScript: RegularFileProperty
+
+    @get:InputFile
     @get:Optional
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val windowsServiceXml: RegularFileProperty
@@ -46,6 +54,12 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
         val display = appDisplayName.get()
         out.resolve("wgtunnel-daemon.service")
             .writeText(replaceTokens(linuxService.get().asFile.readText(), fsName, display))
+        out.resolve("install.sh").writeExecutable(
+            replaceTokens(linuxInstallScript.get().asFile.readText(), fsName, display)
+        )
+        out.resolve("uninstall.sh").writeExecutable(
+            replaceTokens(linuxUninstallScript.get().asFile.readText(), fsName, display)
+        )
         if (!windows.get()) return
         windowsServiceXml.orNull?.asFile?.let { xml ->
             out.resolve("service-wrapper.xml")
@@ -60,4 +74,9 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
 
     private fun replaceTokens(text: String, fsName: String, display: String): String =
         text.replace("__APP_FSNAME__", fsName).replace("__APP_DISPLAY__", display)
+
+    private fun java.io.File.writeExecutable(text: String) {
+        writeText(text)
+        setExecutable(true, false)
+    }
 }

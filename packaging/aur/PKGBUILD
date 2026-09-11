@@ -23,12 +23,11 @@ package() {
 
   install -d "$pkgdir/usr/bin"
   ln -sf /opt/wgtunnel/bin/wgtunnel "$pkgdir/usr/bin/wgtunnel"
-  ln -sf /opt/wgtunnel/bin/wgtctl "$pkgdir/usr/bin/wgtctl"
 
   local unit="$pkgdir/opt/wgtunnel/wgtunnel-daemon.service"
   [[ -f "$unit" ]] || unit="$pkgdir/opt/wgtunnel/lib/wgtunnel-daemon.service"
   install -Dm644 "$unit" "$pkgdir/usr/lib/systemd/system/wgtunnel-daemon.service"
-  sed -i 's|^ExecStart=.*|ExecStart=/opt/wgtunnel/bin/daemon|' \
+  sed -i 's|^ExecStart=.*|ExecStart=/opt/wgtunnel/bin/wgtunnel-daemon|' \
     "$pkgdir/usr/lib/systemd/system/wgtunnel-daemon.service"
   sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/opt/wgtunnel|' \
     "$pkgdir/usr/lib/systemd/system/wgtunnel-daemon.service"

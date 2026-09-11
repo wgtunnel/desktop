@@ -38,7 +38,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 
-val serviceModule = module {
+fun serviceModule(appVersionLabel: String) = module {
     single {
         Json {
             ignoreUnknownKeys = true
@@ -131,6 +131,7 @@ val serviceModule = module {
             monitoringRepository = get(),
             daemonService = get(),
             scope = get(),
+            appVersionLabel = appVersionLabel,
         )
     }
     single<TunnelService> { UdsTunnelService(get()) }

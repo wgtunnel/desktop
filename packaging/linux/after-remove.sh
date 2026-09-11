@@ -1,6 +1,4 @@
 #!/bin/bash
-# Concatenated after Nucleus's polkit cleanup (when silent update is enabled).
-# electron-builder substitutes ${sanitizedProductName} and ${executable}.
 
 set +e
 
@@ -17,6 +15,18 @@ if type update-alternatives >/dev/null 2>&1; then
   update-alternatives --remove '${executable}' '/opt/${sanitizedProductName}/${executable}' >/dev/null 2>&1 || true
 else
   rm -f '/usr/bin/${executable}'
+fi
+
+# apt purge
+if [ "${1:-}" = "purge" ]; then
+  APP_FSNAME='${sanitizedProductName}'
+  rm -rf "/var/lib/$APP_FSNAME" "/var/log/$APP_FSNAME" "/etc/$APP_FSNAME"
+
+  # Best-effort app data purge
+  for home in /home/*; do
+    [ -d "$home" ] || continue
+    rm -rf "$home/.local/share/$APP_FSNAME" "$home/.$APP_FSNAME"
+  done
 fi
 
 exit 0

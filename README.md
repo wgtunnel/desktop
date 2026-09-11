@@ -67,17 +67,58 @@ From the GitHub release:
 sudo pacman -U wgtunnel*.pacman
 ```
 
-Or from the AUR (`packaging/aur`, published as `wgtunnel-bin`):
+Per Arch packaging guidelines, this does not enable or start the daemon for you. The app will tell
+you (with the exact command to copy) if it can't reach the daemon, or if a stale daemon is still
+running an older version after an upgrade.
+
+Or from the AUR (`packaging/aur`, published as `wgtunnel-bin`), which handles both of those cases
+automatically:
 
 ```bash
 yay -S wgtunnel-bin
 ```
 
-Snap, Flatpak, and AppImage are not shipped. They cannot install a privileged systemd daemon (`CAP_NET_ADMIN`, lockdown, `/etc/resolv.conf`).
+### Other distros (`.tar.gz`)
+
+Use this only if none of the formats above fit your distro. The tarball bundles its own
+`install.sh` / `uninstall.sh` (the same install location and systemd setup the `.deb`/`.rpm`/
+`.pacman` packages use under the hood - see `packaging/linux/tar-install.sh` in the source repo if
+you want to see exactly what they do before running as root):
+
+```bash
+tar -xzf wgtunnel*-linux-x64.tar.gz
+cd wgtunnel*-linux-x64/
+sudo ./install.sh
+```
+
+To update, just run `sudo ./install.sh` again from a newer tarball - it re-copies over the
+existing install and restarts the daemon. To remove it entirely: `sudo /opt/wgtunnel/uninstall.sh`.
+
+In-app updates aren't available for this install method.
+
+### Removing saved data
+
+Uninstalling normally leaves your saved tunnels, settings, and logs in place, the same way
+`apt remove`/`dnf remove`/`pacman -R` leave other apps' data - so a reinstall picks up where you
+left off. To wipe that too:
+
+- **Debian/Ubuntu**: `sudo apt purge wgtunnel`
+- **Fedora/RHEL, Arch (GitHub release or AUR)**: no built-in purge - remove it by hand after
+  uninstalling:
+  ```bash
+  sudo rm -rf /var/lib/wgtunnel /etc/wgtunnel /var/log/wgtunnel
+  rm -rf ~/.local/share/wgtunnel ~/.wgtunnel
+  ```
+- **Tarball**: `sudo /opt/wgtunnel/uninstall.sh --purge`
+
+None of these clear the saved secret in your OS keyring (service `wg_tunnel`) - remove that
+yourself with your keyring manager (Seahorse, KWalletManager, etc.) if you want it gone too.
+
+> **Note**: Snap, Flatpak, and AppImage are not shipped. They cannot install a privileged systemd daemon (`CAP_NET_ADMIN`, lockdown, `/etc/resolv.conf`).
 
 # Building from source
 
-Toolchains are pinned in `.mise.toml` (Temurin 25, Node 22, Go 1.25, .NET 8). Gradle uses the same JDK 25 via `gradle/gradle-daemon-jvm.properties` and Foojay, so a missing JDK is downloaded even without mise.
+Toolchains are pinned in `.mise.toml`
 
 ```bash
 # once per machine

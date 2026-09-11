@@ -15,13 +15,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.CheckCircleOutline
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,13 +33,16 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,8 +50,10 @@ import androidx.compose.ui.window.rememberWindowState
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.platformLogWriter
+import com.dokar.sonner.Toast
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.Toaster
+import com.dokar.sonner.ToasterDefaults
 import com.dokar.sonner.rememberToasterState
 import com.wgtunnel.backend.BackendLog
 import com.wgtunnel.backend.LogLevel
@@ -57,14 +66,21 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.appico
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.titleicon
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
+import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.di.viewModelModule
 import com.zaneschepke.wireguardautotunnel.desktop.ui.WindowIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asColor
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asTooltipMessage
+import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TrayBadgeState
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.CommandToastMessage
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.CopyCommandAction
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
+import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.HealthyGreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WGTunnelTheme
+import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WarningAmber
+import com.zaneschepke.wireguardautotunnel.desktop.util.toClipEntry
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
 import dev.nucleusframework.application.NucleusBackend
 import dev.nucleusframework.application.NucleusWindow
@@ -77,12 +93,15 @@ import dev.nucleusframework.window.material.MaterialDecoratedWindow
 import dev.nucleusframework.window.material.MaterialTitleBar
 import dev.nucleusframework.window.newFullscreenControls
 import java.nio.file.Paths
+import kotlin.time.Duration
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.KoinApplication
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 fun main(args: Array<String>) {
     Logger.setLogWriters(CommonWriter())
@@ -242,13 +261,50 @@ fun main(args: Array<String>) {
                     configuration =
                         koinConfiguration(
                             declaration = {
-                                modules(databaseModule, serviceModule, viewModelModule)
+                                val appVersionLabel =
+                                    "${BuildConfig.APP_VERSION} (${AppVariant.current.id})"
+                                modules(
+                                    databaseModule,
+                                    serviceModule(appVersionLabel),
+                                    viewModelModule,
+                                )
                             }
                         )
                 ) {
                     val toaster = rememberToasterState()
                     val viewModel: AppViewModel = koinViewModel()
                     val uiState by viewModel.collectAsState()
+                    val toastScope = rememberCoroutineScope()
+                    val clipboard = LocalClipboard.current
+
+                    viewModel.collectSideEffect { sideEffect ->
+                        when (sideEffect) {
+                            is AppSideEffect.Toast ->
+                                toaster.show(Toast(sideEffect.message, sideEffect.type))
+                            is AppSideEffect.ActionableToast ->
+                                toaster.show(
+                                    Toast(
+                                        message =
+                                            CommandToastMessage(
+                                                description = sideEffect.message,
+                                                command = sideEffect.copyText,
+                                            ),
+                                        id = sideEffect.id,
+                                        action =
+                                            CopyCommandAction(sideEffect.copyLabel) {
+                                                toastScope.launch {
+                                                    clipboard.setClipEntry(
+                                                        sideEffect.copyText.toClipEntry()
+                                                    )
+                                                }
+                                            },
+                                        type = sideEffect.type,
+                                        duration = Duration.INFINITE,
+                                    )
+                                )
+                            is AppSideEffect.DismissToast -> toaster.dismiss(sideEffect.id)
+                        }
+                    }
 
                     LaunchedEffect(uiState.theme, uiState.useSystemColors) {
                         theme = uiState.theme
@@ -315,37 +371,103 @@ fun main(args: Array<String>) {
                             App(uiState, viewModel, toaster)
                             Toaster(
                                 state = toaster,
-                                elevation = 0.dp,
+                                richColors = true,
+                                elevation = 1.dp,
+                                shadowAmbientColor =
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                                shadowSpotColor =
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                                 border = { BorderStroke(0.dp, Color.Transparent) },
                                 background = {
-                                    SolidColor(MaterialTheme.colorScheme.inverseOnSurface)
+                                    SolidColor(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp))
                                 },
-                                iconSlot = {
+                                iconSlot = { toast ->
+                                    val (icon, color) =
+                                        when (toast.type) {
+                                            ToastType.Success ->
+                                                Icons.Outlined.CheckCircleOutline to HealthyGreen
+                                            ToastType.Error ->
+                                                Icons.Outlined.ErrorOutline to ErrorRed
+                                            ToastType.Warning ->
+                                                Icons.Outlined.WarningAmber to WarningAmber
+                                            ToastType.Info,
+                                            ToastType.Normal ->
+                                                Icons.Outlined.Info to
+                                                    MaterialTheme.colorScheme.onSurface
+                                        }
                                     Icon(
-                                        when (it.type) {
-                                            ToastType.Normal,
-                                            ToastType.Info -> Icons.Default.Info
-
-                                            ToastType.Success -> Icons.Default.Check
-                                            ToastType.Warning -> Icons.Default.Warning
-                                            ToastType.Error -> Icons.Default.Error
-                                        },
-                                        null,
-                                        modifier = Modifier.size(24.dp),
-                                        tint = MaterialTheme.colorScheme.inverseSurface,
+                                        icon,
+                                        contentDescription = null,
+                                        tint = color,
+                                        modifier = Modifier.padding(end = 12.dp),
                                     )
                                 },
-                                messageSlot = {
-                                    val message = it.message as? String ?: return@Toaster
-                                    Text(
-                                        message,
-                                        color = MaterialTheme.colorScheme.inverseSurface,
-                                        fontSize = 16.sp,
-                                        modifier = Modifier.padding(start = 12.dp),
-                                    )
+                                messageSlot = { toast ->
+                                    when (val message = toast.message) {
+                                        is CommandToastMessage ->
+                                            Column(
+                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Text(
+                                                    message.description,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                                Text(
+                                                    message.command,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    fontFamily = FontFamily.Monospace,
+                                                    fontSize = 12.sp,
+                                                    modifier =
+                                                        Modifier.background(
+                                                                MaterialTheme.colorScheme
+                                                                    .surfaceColorAtElevation(6.dp),
+                                                                RoundedCornerShape(6.dp),
+                                                            )
+                                                            .padding(
+                                                                horizontal = 8.dp,
+                                                                vertical = 4.dp,
+                                                            )
+                                                )
+                                            }
+                                        else -> ToasterDefaults.messageSlot(toast)
+                                    }
                                 },
-                                contentColor = { MaterialTheme.colorScheme.inverseSurface },
-                                shape = { RoundedCornerShape(8.dp) },
+                                actionSlot = { toast ->
+                                    // The library's own absolute-positioned closeButton slot
+                                    // overlaps this row on desktop and never receives clicks, so
+                                    // the dismiss X lives here instead, as a normal Row sibling.
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        when (val action = toast.action) {
+                                            is CopyCommandAction ->
+                                                IconButton(
+                                                    onClick = {
+                                                        action.onClick(toast)
+                                                        toaster.dismiss(toast.id)
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        Icons.Outlined.ContentCopy,
+                                                        contentDescription =
+                                                            action.contentDescription,
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                    )
+                                                }
+                                            else -> ToasterDefaults.actionSlot(toast)
+                                        }
+                                        IconButton(onClick = { toaster.dismiss(toast.id) }) {
+                                            Icon(
+                                                Icons.Filled.Close,
+                                                contentDescription = "Dismiss",
+                                                tint = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                        }
+                                    }
+                                },
+                                contentColor = { MaterialTheme.colorScheme.onSurface },
+                                shape = { RoundedCornerShape(16.dp) },
                                 containerPadding = PaddingValues(48.dp),
                             )
                         }

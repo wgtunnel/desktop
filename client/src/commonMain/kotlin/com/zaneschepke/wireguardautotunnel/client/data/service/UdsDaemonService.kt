@@ -7,6 +7,7 @@ import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelConfigDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelStatusDto
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.DaemonInfoDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.LogMessageDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.FlagRequest
 import io.ktor.client.*
@@ -21,13 +22,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration.Companion.milliseconds
 
 class UdsDaemonService(
     private val client: HttpClient,
@@ -36,6 +40,9 @@ class UdsDaemonService(
     private val json: Json,
     scope: CoroutineScope,
 ) : DaemonService {
+
+    private val _remoteVersion = MutableStateFlow<String?>(null)
+    override val remoteVersion: Flow<String?> = _remoteVersion.asStateFlow()
 
     override val alive: Flow<Boolean> = callbackFlow {
         var failureCount = 0
@@ -46,7 +53,10 @@ class UdsDaemonService(
                     connected = true
                     trySend(true)
                     for (frame in incoming) {
-                        // Keep the session open, ends when socket closes
+                        if (frame is Frame.Text) {
+                            runCatching { json.decodeFromString<DaemonInfoDto>(frame.readText()) }
+                                .onSuccess { _remoteVersion.value = it.version }
+                        }
                     }
                     trySend(false)
                 }
@@ -54,6 +64,7 @@ class UdsDaemonService(
                 if (e is CancellationException) throw e
                 trySend(false)
             }
+            _remoteVersion.value = null
             failureCount = if (connected) 0 else failureCount + 1
             if (isActive) reconnectDelay(failureCount)
         }
@@ -196,7 +207,7 @@ class UdsDaemonService(
                 (INITIAL_RECONNECT_DELAY_MILLIS shl failureCount.coerceAtMost(4)).coerceAtMost(
                     DAEMON_WS_RECONNECT_DELAY_MILLIS
                 )
-            delay(delayMillis)
+            delay(delayMillis.milliseconds)
         }
     }
 }

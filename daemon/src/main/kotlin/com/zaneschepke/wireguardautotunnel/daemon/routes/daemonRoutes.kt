@@ -3,7 +3,9 @@ package com.zaneschepke.wireguardautotunnel.daemon.routes
 import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelConfigDto
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.DaemonInfoDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.FlagRequest
+import com.zaneschepke.wireguardautotunnel.daemon.BuildConfig
 import com.zaneschepke.wireguardautotunnel.daemon.autotunnel.AutoTunnelSupervisor
 import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
 import com.zaneschepke.wireguardautotunnel.daemon.log.DaemonLogService
@@ -25,6 +27,9 @@ fun Route.daemonRoutes(
 ) {
     get(Routes.DAEMON_STATUS) { call.response.status(HttpStatusCode.OK) }
     webSocket(Routes.DAEMON_STATUS_WS) {
+        // Lets the client detect a stale daemon still running after a binary swap it didn't
+        // restart for
+        sendSerialized(DaemonInfoDto(version = BuildConfig.APP_VERSION))
         try {
             awaitCancellation()
         } finally {}

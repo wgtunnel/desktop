@@ -31,6 +31,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.auto_tunnel_active
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.connecting_to_daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_connected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.syncing_with_daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown_active
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
@@ -62,8 +63,10 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.TunnelsScr
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.ConfigScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.TunnelSettingsScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
+import com.zaneschepke.wireguardautotunnel.desktop.ui.state.DaemonConnectionStatus
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.HealthyGreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WarningAmber
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelViewModel
 import io.github.sudarshanmhasrup.localina.api.LocalinaApp
@@ -314,11 +317,21 @@ private fun StatusFooter(uiState: AppUiState) {
         CustomTooltip(
             text =
                 stringResource(
-                    if (uiState.daemonConnected) Res.string.daemon_connected
-                    else Res.string.connecting_to_daemon
+                    when (uiState.daemonStatus) {
+                        DaemonConnectionStatus.CONNECTED -> Res.string.daemon_connected
+                        DaemonConnectionStatus.SYNCING -> Res.string.syncing_with_daemon
+                        DaemonConnectionStatus.DISCONNECTED -> Res.string.connecting_to_daemon
+                    }
                 )
         ) {
-            PulsingStatusLed(isHealthy = uiState.daemonConnected)
+            PulsingStatusLed(
+                color =
+                    when (uiState.daemonStatus) {
+                        DaemonConnectionStatus.CONNECTED -> HealthyGreen
+                        DaemonConnectionStatus.SYNCING -> WarningAmber
+                        DaemonConnectionStatus.DISCONNECTED -> ErrorRed
+                    }
+            )
         }
     }
 }

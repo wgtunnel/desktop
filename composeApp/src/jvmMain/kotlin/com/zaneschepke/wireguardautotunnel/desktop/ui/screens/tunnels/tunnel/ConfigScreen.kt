@@ -28,6 +28,7 @@ fun ConfigScreen(viewModel: TunnelViewModel, live: Boolean) {
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is AppSideEffect.Toast -> toaster.show(Toast(sideEffect.message, sideEffect.type))
+            else -> Unit
         }
     }
 

@@ -4,7 +4,12 @@ plugins {
     kotlin("jvm")
     alias(libs.plugins.serialization)
     alias(libs.plugins.nucleus)
+    alias(libs.plugins.buildconfig)
 }
+
+version = (findProperty("app.version") as String?) ?: libs.versions.app.get()
+
+buildConfig { buildConfigField("APP_VERSION", provider { "${project.version}" }) }
 
 val daemonJvmArgs =
     listOf(

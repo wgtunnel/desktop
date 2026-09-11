@@ -55,6 +55,7 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is AppSideEffect.Toast -> toaster.show(Toast(sideEffect.message, sideEffect.type))
+            else -> Unit
         }
     }
 
