@@ -58,4 +58,8 @@ class RoomSettingsRepository(private val settingsDao: GeneralSettingsDao) :
     override suspend fun updateGlobalAmneziaEnabled(enabled: Boolean) {
         settingsDao.updateGlobalAmneziaEnabled(enabled)
     }
+
+    override suspend fun updateLastNotifiedUpdateVersion(version: String?) {
+        settingsDao.updateLastNotifiedUpdateVersion(version)
+    }
 }

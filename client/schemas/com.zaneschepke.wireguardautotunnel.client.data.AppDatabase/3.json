@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "8fbd101e96f12a6ba6d01133e86eb72f",
+    "identityHash": "636bb3004ffd377360abb583dc38660a",
     "entities": [
       {
         "tableName": "tunnel_config",
@@ -142,7 +142,7 @@
       },
       {
         "tableName": "general_settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `theme` TEXT NOT NULL DEFAULT 'DARK', `locale` TEXT, `already_donated` INTEGER NOT NULL DEFAULT 0, `restore_tunnel_on_boot` INTEGER NOT NULL DEFAULT 0, `use_system_colors` INTEGER NOT NULL DEFAULT 0, `tunnel_mode` INTEGER NOT NULL DEFAULT 0, `seamless_recovery` INTEGER NOT NULL DEFAULT 1, `seamless_recovery_bounce_delay_sec` INTEGER NOT NULL DEFAULT 30, `global_amnezia_enabled` INTEGER NOT NULL DEFAULT 0)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `theme` TEXT NOT NULL DEFAULT 'DARK', `locale` TEXT, `already_donated` INTEGER NOT NULL DEFAULT 0, `restore_tunnel_on_boot` INTEGER NOT NULL DEFAULT 0, `use_system_colors` INTEGER NOT NULL DEFAULT 0, `tunnel_mode` INTEGER NOT NULL DEFAULT 0, `seamless_recovery` INTEGER NOT NULL DEFAULT 1, `seamless_recovery_bounce_delay_sec` INTEGER NOT NULL DEFAULT 30, `global_amnezia_enabled` INTEGER NOT NULL DEFAULT 0, `last_notified_update_version` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -210,6 +210,11 @@
             "affinity": "INTEGER",
             "notNull": true,
             "defaultValue": "0"
+          },
+          {
+            "fieldPath": "lastNotifiedUpdateVersion",
+            "columnName": "last_notified_update_version",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -469,7 +474,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8fbd101e96f12a6ba6d01133e86eb72f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '636bb3004ffd377360abb583dc38660a')"
     ]
   }
 }

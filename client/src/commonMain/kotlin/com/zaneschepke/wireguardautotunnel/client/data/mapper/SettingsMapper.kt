@@ -17,6 +17,7 @@ fun Entity.toDomain(): Domain =
         seamlessRecoveryEnabled = seamlessRecoveryEnabled,
         seamlessRecoveryBounceDelaySec = seamlessRecoveryBounceDelaySec,
         isGlobalAmneziaEnabled = isGlobalAmneziaEnabled,
+        lastNotifiedUpdateVersion = lastNotifiedUpdateVersion,
     )
 
 fun Domain.toEntity(): Entity =
@@ -31,4 +32,5 @@ fun Domain.toEntity(): Entity =
         seamlessRecoveryEnabled = seamlessRecoveryEnabled,
         seamlessRecoveryBounceDelaySec = seamlessRecoveryBounceDelaySec,
         isGlobalAmneziaEnabled = isGlobalAmneziaEnabled,
+        lastNotifiedUpdateVersion = lastNotifiedUpdateVersion,
     )

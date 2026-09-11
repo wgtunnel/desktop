@@ -21,4 +21,5 @@ data class GeneralSettings(
     val seamlessRecoveryBounceDelaySec: Int = 30,
     @ColumnInfo(name = "global_amnezia_enabled", defaultValue = "0")
     val isGlobalAmneziaEnabled: Boolean = false,
+    @ColumnInfo(name = "last_notified_update_version") val lastNotifiedUpdateVersion: String? = null,
 )

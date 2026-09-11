@@ -1,7 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.dokar.sonner.ToastType
+import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
@@ -45,6 +45,8 @@ class AppViewModel(
     @Suppress("unused") private val autoTunnelCoordinator: AutoTunnelCoordinator,
     @Suppress("unused") private val logCoordinator: LogCoordinator,
 ) : OrbitContainerHost<AppUiState, AppUiState, AppSideEffect>, ViewModel() {
+
+    private val log = Logger.withTag("AppViewModel")
 
     override val container =
         orbitContainer<AppUiState, AppSideEffect>(
@@ -142,17 +144,29 @@ class AppViewModel(
             intent {
                 if (!appUpdater.isSupported()) return@intent
                 when (val result = appUpdater.check()) {
-                    is UpdateResult.Available ->
-                        postSideEffect(
-                            AppSideEffect.Toast(
-                                getString(
-                                    Res.string.update_available_in_support_template,
-                                    result.info.version,
-                                ),
-                                ToastType.Info,
+                    is UpdateResult.Available -> {
+                        val alreadyNotified =
+                            settingsRepository.get().lastNotifiedUpdateVersion ==
+                                result.info.version
+                        if (!alreadyNotified) {
+                            // Recorded before showing, not after any install so a fresh, newer
+                            // release always overwrites this and notifies again regardless of
+                            // whether the user ever acted on the last one.
+                            settingsRepository.updateLastNotifiedUpdateVersion(result.info.version)
+                            postSideEffect(
+                                AppSideEffect.UpdateAvailableToast(
+                                    id = UPDATE_AVAILABLE_TOAST_ID,
+                                    message =
+                                        getString(
+                                            Res.string.update_available_in_support_template,
+                                            result.info.version,
+                                        ),
+                                )
                             )
-                        )
-                    else -> Unit
+                        }
+                    }
+                    is UpdateResult.Error -> log.w(result.exception) { "Update check failed" }
+                    UpdateResult.NotAvailable -> Unit
                 }
             }
         }
@@ -178,6 +192,7 @@ class AppViewModel(
     companion object {
         private const val DAEMON_NOT_RUNNING_TOAST_ID = "daemon_not_running"
         private const val DAEMON_OUTDATED_TOAST_ID = "daemon_outdated"
+        private const val UPDATE_AVAILABLE_TOAST_ID = "update_available"
         private val DISCONNECT_GRACE_PERIOD = 5.seconds
 
         private val isWindows =

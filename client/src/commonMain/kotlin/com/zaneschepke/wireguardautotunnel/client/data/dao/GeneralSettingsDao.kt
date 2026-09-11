@@ -40,4 +40,7 @@ interface GeneralSettingsDao {
 
     @Query("UPDATE general_settings SET global_amnezia_enabled = :enabled WHERE id = 1")
     suspend fun updateGlobalAmneziaEnabled(enabled: Boolean)
+
+    @Query("UPDATE general_settings SET last_notified_update_version = :version WHERE id = 1")
+    suspend fun updateLastNotifiedUpdateVersion(version: String?)
 }

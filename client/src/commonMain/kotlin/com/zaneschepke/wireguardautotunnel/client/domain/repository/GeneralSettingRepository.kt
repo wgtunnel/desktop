@@ -29,4 +29,6 @@ interface GeneralSettingRepository {
     suspend fun updateSeamlessRecoveryBounceDelay(seconds: Int)
 
     suspend fun updateGlobalAmneziaEnabled(enabled: Boolean)
+
+    suspend fun updateLastNotifiedUpdateVersion(version: String?)
 }

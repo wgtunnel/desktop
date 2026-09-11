@@ -16,6 +16,7 @@ data class GeneralSettings(
     val seamlessRecoveryEnabled: Boolean = true,
     val seamlessRecoveryBounceDelaySec: Int = 30,
     val isGlobalAmneziaEnabled: Boolean = false,
+    val lastNotifiedUpdateVersion: String? = null,
 ) {
     val selectableTunnelMode: TunnelMode
         get() =
