@@ -58,7 +58,7 @@ object PermissionsHelper {
                     path,
                     PosixFilePermissions.fromString(OWNER_FULL_CONTROL_SYMBOLIC),
                 )
-                log.i { "Successfully set daemon data directory permission" }
+                log.d { "Successfully set daemon data directory permission" }
             } catch (e: Exception) {
                 log.e { "POSIX native permissions failed: ${e.message} → falling back to chmod" }
                 try {
@@ -68,7 +68,7 @@ object PermissionsHelper {
                             .waitFor()
 
                     if (exitCode == 0) {
-                        log.i { "Successfully set directory permissions using chmod" }
+                        log.d { "Successfully set directory permissions using chmod" }
                     } else {
                         log.e { "chmod failed with exit code $exitCode" }
                     }
@@ -99,7 +99,7 @@ object PermissionsHelper {
 
                 val exitCode = process.waitFor()
                 if (exitCode == 0) {
-                    log.i { "Successfully secured Windows directory: $pathString" }
+                    log.d { "Successfully secured Windows directory: $pathString" }
                     logWindowsACLs(pathString)
                 } else {
                     val error = process.errorStream.bufferedReader().use { it.readText() }
@@ -111,20 +111,22 @@ object PermissionsHelper {
                         path,
                         PosixFilePermissions.fromString(OWNER_ONLY_PRIVATE_DIR),
                     )
-                    log.i { "Successfully set POSIX permissions for directory: $pathString" }
+                    log.d { "Successfully set POSIX permissions for directory: $pathString" }
                 } catch (e: Exception) {
                     log.e {
                         "POSIX native permissions failed: ${e.message} → falling back to chmod"
                     }
                     val exitCode = ProcessBuilder("chmod", "700", pathString).start().waitFor()
                     if (exitCode == 0) {
-                        log.i { "Successfully set directory permissions using chmod: $pathString" }
+                        log.d {
+                            "Successfully set directory permissions using chmod: $pathString"
+                        }
                     } else {
                         log.e { "chmod failed with exit code $exitCode for: $pathString" }
                     }
                 }
                 val finalPerms = Files.getPosixFilePermissions(path)
-                log.i { "Final directory permissions: $finalPerms for $pathString" }
+                log.d { "Final directory permissions: $finalPerms for $pathString" }
             }
         } catch (e: Exception) {
             log.e(e) { "Error securing directory: $pathString" }
@@ -168,7 +170,7 @@ object PermissionsHelper {
                 }
 
                 val socketPerms = Files.getPosixFilePermissions(Paths.get(socketPath))
-                log.i { "Final socket permissions: $socketPerms" }
+                log.d { "Final socket permissions: $socketPerms" }
             }
                 .onFailure {
                     log.e {
@@ -199,7 +201,7 @@ object PermissionsHelper {
                 path,
                 PosixFilePermissions.fromString(WORLD_READWRITE_SYMBOLIC),
             )
-            log.i { "Successfully set socket permissions to 0666" }
+            log.d { "Successfully set socket permissions to 0666" }
         } catch (e: Exception) {
             log.e { "POSIX native permissions failed: ${e.message} → falling back to chmod" }
 
@@ -208,7 +210,7 @@ object PermissionsHelper {
                     ProcessBuilder("chmod", WORLD_WRITABLE_OCTAL, socketPath).start().waitFor()
 
                 if (exitCode == 0) {
-                    log.i { "Successfully set socket permissions using chmod" }
+                    log.d { "Successfully set socket permissions using chmod" }
                 } else {
                     log.e { "chmod failed with exit code $exitCode" }
                     throw IllegalStateException("chmod exited with non-zero status")
@@ -352,7 +354,7 @@ object PermissionsHelper {
             val isValid = hasFullControl && !hasDangerousWrite
 
             if (isValid) {
-                log.i { "IPC key ownership verified successfully: $path" }
+                log.d { "IPC key ownership verified successfully: $path" }
             }
 
             isValid
@@ -366,7 +368,7 @@ object PermissionsHelper {
         runCatching {
             val output =
                 ProcessBuilder(ICACLS, path).start().inputStream.bufferedReader().readText()
-            log.i { "Final ACLs for $path: $output" }
+            log.d { "Final ACLs for $path: $output" }
         }
     }
 }

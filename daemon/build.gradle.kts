@@ -51,8 +51,10 @@ nucleus.application {
         buildArgs.addAll(GraalvmNativeArgs.daemon(System.getProperty("os.name").orEmpty()))
     }
     nativeDistributions {
+        appName = "WG Tunnel Daemon"
         packageName = "wgtunnel-daemon"
         packageVersion = libs.versions.app.get()
+        windows { iconFile.set(rootProject.file("packaging/windows/icon.ico")) }
     }
 }
 

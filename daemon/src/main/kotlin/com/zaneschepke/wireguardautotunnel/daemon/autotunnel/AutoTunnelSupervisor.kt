@@ -95,12 +95,13 @@ class AutoTunnelSupervisor(
     }
 
     fun stop() {
+        val wasRunning = runningFlow.value
         runningFlow.value = false
         loopJob?.cancel()
         loopJob = null
         cancelNoInternetStop()
         hasUserOverride = false
-        log.i { "Auto-tunnel stopped" }
+        if (wasRunning) log.i { "Auto-tunnel stopped" }
     }
 
     @OptIn(FlowPreview::class)

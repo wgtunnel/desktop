@@ -89,16 +89,11 @@ class DaemonLogService(
         val windows =
             System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
         if (windows) {
-            // WinSW writes .out / .err / .wrapper
-            val winSwSuffixes =
-                listOf(".out", ".out.log", ".err", ".err.log", ".wrapper", ".wrapper.log")
-            logDir
-                .listFiles { f ->
-                    f.isFile &&
-                        !f.name.startsWith("log_") &&
-                        winSwSuffixes.any { f.name.endsWith(it) }
-                }
-                ?.let { extras.addAll(it) }
+            // Always <configBaseName>.{out,err,wrapper}.log - see WINSW_CONFIG_BASE_NAME.
+            listOf("out", "err", "wrapper")
+                .map { File(logDir, "$WINSW_CONFIG_BASE_NAME.$it.log") }
+                .filter { it.isFile }
+                .let { extras.addAll(it) }
         } else {
             snapshotJournal()?.let { extras += it }
         }
@@ -138,6 +133,9 @@ class DaemonLogService(
 
     companion object {
         const val SOURCE = "daemon"
+        // The literal filename StagePackagingSidecarsTask stages the WinSW config as - WinSW
+        // derives its own log file base name from the config file's name.
+        const val WINSW_CONFIG_BASE_NAME = "service-wrapper"
         private val journalJson = Json { ignoreUnknownKeys = true }
         private val OWN_LOG_PREFIX = Regex("^(Verbose|Debug|Info|Warn|Error|Assert): \\(")
     }

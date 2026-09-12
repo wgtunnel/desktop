@@ -53,9 +53,7 @@ class TunnelDaemon(
     private val shutdownLatch = CountDownLatch(1)
 
     internal fun run() {
-        daemonLog.i {
-            "Daemon starting on ${osName()} — enabling kill-switch first for leak protection"
-        }
+        daemonLog.i { "Daemon starting on ${osName()}" }
 
         runBlocking {
             val restoreKillSwitch = cacheRepository.getKillSwitchRestore()
@@ -71,7 +69,7 @@ class TunnelDaemon(
                     daemonLog.w { "Kill switch restore requested but no config cached — skipping" }
                 }
             } else {
-                daemonLog.i { "Kill switch restore disabled in settings — skipping" }
+                daemonLog.d { "Kill switch restore disabled in settings — skipping" }
             }
         }
         startUdsServer()

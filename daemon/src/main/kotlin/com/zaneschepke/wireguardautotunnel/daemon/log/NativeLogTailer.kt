@@ -62,33 +62,41 @@ class NativeLogTailer(private val logDir: File) {
     }
 
     private suspend fun tailWindows() {
-        val file = findWinSwLogFile() ?: return
-        var position = file.length()
+        // WinSW may not have created the .err file yet the moment we look so we loop
+        // until we find it
+        var file: File? = null
+        var position = 0L
         while (currentCoroutineContext().isActive) {
-            val length = file.length()
-            if (length < position) position = 0 // rotated
-            if (length > position) {
-                withContext(Dispatchers.IO) {
-                    RandomAccessFile(file, "r").use { raf ->
-                        raf.seek(position)
-                        generateSequence { raf.readLine() }.forEach(::forwardIfNative)
-                        position = raf.filePointer
+            if (file?.exists() != true) {
+                file = findWinSwLogFile()
+                if (file == null) {
+                    delay(POLL_INTERVAL_MS.milliseconds)
+                    continue
+                }
+                position = file.length()
+            }
+            val target = file
+            try {
+                val length = target.length()
+                if (length < position) position = 0 // rotated
+                if (length > position) {
+                    withContext(Dispatchers.IO) {
+                        RandomAccessFile(target, "r").use { raf ->
+                            raf.seek(position)
+                            generateSequence { raf.readLine() }.forEach(::forwardIfNative)
+                            position = raf.filePointer
+                        }
                     }
                 }
+            } catch (e: java.io.IOException) {
+                log.d(e) { "Windows native log read failed, will retry" }
             }
             delay(POLL_INTERVAL_MS.milliseconds)
         }
     }
 
-    // Native log lines land on stderr, which WinSW writes to its own .err file
     private fun findWinSwLogFile(): File? =
-        logDir
-            .listFiles { f ->
-                f.isFile &&
-                    !f.name.startsWith("log_") &&
-                    (f.name.endsWith(".err") || f.name.endsWith(".err.log"))
-            }
-            ?.maxByOrNull { it.lastModified() }
+        File(logDir, "${DaemonLogService.WINSW_CONFIG_BASE_NAME}.err.log").takeIf { it.isFile }
 
     private fun forwardIfNative(line: String) {
         val (level, rest) =
