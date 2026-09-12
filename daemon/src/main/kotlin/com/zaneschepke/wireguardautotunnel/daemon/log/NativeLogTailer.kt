@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.milliseconds
 
 class NativeLogTailer(private val logDir: File) {
     private val log = Logger.withTag("NativeLogTailer")
@@ -66,22 +68,25 @@ class NativeLogTailer(private val logDir: File) {
             val length = file.length()
             if (length < position) position = 0 // rotated
             if (length > position) {
-                RandomAccessFile(file, "r").use { raf ->
-                    raf.seek(position)
-                    generateSequence { raf.readLine() }.forEach(::forwardIfNative)
-                    position = raf.filePointer
+                withContext(Dispatchers.IO) {
+                    RandomAccessFile(file, "r").use { raf ->
+                        raf.seek(position)
+                        generateSequence { raf.readLine() }.forEach(::forwardIfNative)
+                        position = raf.filePointer
+                    }
                 }
             }
-            delay(POLL_INTERVAL_MS)
+            delay(POLL_INTERVAL_MS.milliseconds)
         }
     }
 
+    // Native log lines land on stderr, which WinSW writes to its own .err file
     private fun findWinSwLogFile(): File? =
         logDir
             .listFiles { f ->
                 f.isFile &&
                     !f.name.startsWith("log_") &&
-                    (f.name.endsWith(".out.log") || f.name.endsWith(".wrapper.log"))
+                    (f.name.endsWith(".err") || f.name.endsWith(".err.log"))
             }
             ?.maxByOrNull { it.lastModified() }
 

@@ -12,8 +12,10 @@ import java.io.File
 import java.nio.file.Files
 import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -61,7 +63,9 @@ class DaemonLogService(
         // (separately) on every daemon reconnect, so this routinely fires twice in a row.
         if (started) return
         started = true
-        Files.createDirectories(logDir.toPath())
+        withContext(Dispatchers.IO) {
+            Files.createDirectories(logDir.toPath())
+        }
         PermissionsHelper.secureDaemonDataDirectory(logDir.toPath())
         recorder.start()
         nativeTailer.start(scope)
@@ -85,14 +89,14 @@ class DaemonLogService(
         val windows =
             System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
         if (windows) {
+            // WinSW writes .out / .err / .wrapper
+            val winSwSuffixes =
+                listOf(".out", ".out.log", ".err", ".err.log", ".wrapper", ".wrapper.log")
             logDir
                 .listFiles { f ->
                     f.isFile &&
                         !f.name.startsWith("log_") &&
-                        (f.name.endsWith(".log") ||
-                            f.name.endsWith(".out.log") ||
-                            f.name.endsWith(".err.log") ||
-                            f.name.endsWith(".wrapper.log"))
+                        winSwSuffixes.any { f.name.endsWith(it) }
                 }
                 ?.let { extras.addAll(it) }
         } else {
