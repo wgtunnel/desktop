@@ -1,0 +1,75 @@
+name: publish-copr
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Git tag being released (e.g. 2.0.2)"
+        type: string
+        required: true
+      version:
+        description: "Version to publish (e.g. 2.0.2)"
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag'
+        required: false
+        default: '2.0.2'
+
+jobs:
+  publish:
+    name: publish-copr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "workflow_call" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${{ github.event.inputs.tag_name }}"
+          fi
+          VERSION="${VERSION#v}"
+          echo "Publishing version: $VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Bump spec version and changelog
+        run: |
+          set -euo pipefail
+          # Rewrites the placeholder %changelog entry in place
+          CHANGELOG_DATE=$(date -u '+%a %b %d %Y')
+          sed -i \
+            -e "s/^\* PLACEHOLDER_DATE Zane Schepke <support@wgtunnel.com> - PLACEHOLDER_VERSION-1$/* ${CHANGELOG_DATE} Zane Schepke <support@wgtunnel.com> - ${VERSION}-1/" \
+            -e "s/^- Update to PLACEHOLDER_VERSION$/- Update to ${VERSION}/" \
+            -e "s/^Version:.*/Version:        ${VERSION}/" \
+            packaging/fedora/wgtunnel.spec
+
+      - name: Install copr-cli
+        run: |
+          python3 -m pip install --user copr-cli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Configure Copr credentials
+        env:
+          COPR_LOGIN: ${{ secrets.COPR_LOGIN }}
+          COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
+          COPR_TOKEN: ${{ secrets.COPR_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.config
+          cat > ~/.config/copr <<EOF
+          [copr-cli]
+          login = $COPR_LOGIN
+          username = $COPR_USERNAME
+          token = $COPR_TOKEN
+          copr_url = https://copr.fedorainfracloud.org
+          EOF
+          chmod 600 ~/.config/copr
+
+      - name: Build on Copr
+        run: |
+          copr-cli build zaneschepke/wgtunnel packaging/fedora/wgtunnel.spec
