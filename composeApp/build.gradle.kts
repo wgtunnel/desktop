@@ -29,12 +29,6 @@ val appVersion = (findProperty("app.version") as String?) ?: catalogVersion
 val appFsName = if (isBetaPackaging) "wgtunnel-beta" else "wgtunnel"
 val appDisplayName = if (isBetaPackaging) "WG Tunnel Beta" else "WG Tunnel"
 
-val isPacmanPackaging =
-    gradle.startParameter.taskNames.any { taskName ->
-        val name = taskName.substringAfterLast(":")
-        name.startsWith("package", ignoreCase = true) && name.endsWith("Pacman")
-    }
-
 version = appVersion
 
 kotlin {
@@ -247,12 +241,11 @@ nucleus.application {
             rpmRequires = listOf("systemd")
             pacmanDepends = listOf("systemd")
             iconFile.set(rootProject.file("packaging/linux/icon.png"))
-            afterInstall.set(
-                rootProject.file(
-                    if (isPacmanPackaging) "packaging/linux/after-install-pacman.sh"
-                    else "packaging/linux/after-install.sh"
-                )
-            )
+            // One script for every Linux format: Nucleus only supports a single shared
+            // afterInstall per project, and CI packages deb/rpm/pacman/tar together in one
+            // Gradle invocation, so a build-time per-format choice isn't reliable here - see
+            // after-install.sh for how it tells Arch apart from Debian/Fedora at runtime.
+            afterInstall.set(rootProject.file("packaging/linux/after-install.sh"))
             afterRemove.set(rootProject.file("packaging/linux/after-remove.sh"))
             beforeInstall.set(rootProject.file("packaging/linux/before-install.sh"))
             beforeRemove.set(rootProject.file("packaging/linux/before-remove.sh"))

@@ -62,6 +62,7 @@ class UdsDaemonService(
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
+                if (failureCount == 0) Logger.w(e) { "Daemon status stream failed, retrying" }
                 trySend(false)
             }
             _remoteVersion.value = null
@@ -98,6 +99,9 @@ class UdsDaemonService(
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
+                if (failureCount == 0) {
+                    Logger.w(e) { "Auto-tunnel status stream failed, retrying" }
+                }
             }
             failureCount = if (connected) 0 else failureCount + 1
             if (isActive) reconnectDelay(failureCount)
@@ -128,6 +132,7 @@ class UdsDaemonService(
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
+                if (failureCount == 0) Logger.w(e) { "Daemon log stream failed, retrying" }
             }
             failureCount = if (connected) 0 else failureCount + 1
             if (isActive) reconnectDelay(failureCount)

@@ -20,10 +20,26 @@ fi
 
 if command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload >/dev/null 2>&1 || true
-  systemctl enable "$UNIT_NAME" >/dev/null 2>&1 || true
-  # `restart` both starts a stopped unit and correctly bounces an already-running one, so it's
-  # correct for fresh installs and upgrades alike.
-  systemctl restart "$UNIT_NAME" >/dev/null 2>&1 || true
+  if command -v pacman >/dev/null 2>&1; then
+    # Per Arch packaging guidelines, don't auto-enable/start services on install.
+    if systemctl is-active --quiet "$UNIT_NAME" 2>/dev/null; then
+      # Already running, so keep it in sync with a restart without breaking Arch convention.
+      systemctl restart "$UNIT_NAME" >/dev/null 2>&1 || true
+    else
+      cat <<EOF
+
+=== WG Tunnel Installed ===
+
+    sudo systemctl enable --now $UNIT_NAME
+
+EOF
+    fi
+  else
+    systemctl enable "$UNIT_NAME" >/dev/null 2>&1 || true
+    # `restart` both starts a stopped unit and correctly bounces an already-running one, so it's
+    # correct for fresh installs and upgrades alike.
+    systemctl restart "$UNIT_NAME" >/dev/null 2>&1 || true
+  fi
 fi
 
 exit 0

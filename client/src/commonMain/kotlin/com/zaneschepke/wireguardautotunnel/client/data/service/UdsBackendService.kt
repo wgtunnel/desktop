@@ -85,6 +85,7 @@ class UdsBackendService(
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
+                if (failureCount == 0) Logger.w(e) { "Backend status stream failed, retrying" }
             }
             failureCount = if (connected) 0 else failureCount + 1
             if (isActive) UdsDaemonService.reconnectDelay(failureCount)
