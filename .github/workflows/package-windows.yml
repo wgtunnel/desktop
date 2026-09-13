@@ -109,3 +109,5 @@ jobs:
             desktop/composeApp/build/compose/binaries/**/*.exe
             desktop/composeApp/build/compose/binaries/**/*.yml
             desktop/composeApp/build/compose/binaries/**/*.blockmap
+            !desktop/composeApp/build/compose/binaries/**/wgtunnel-daemon.exe
+            !desktop/composeApp/build/compose/binaries/**/service-wrapper.exe
