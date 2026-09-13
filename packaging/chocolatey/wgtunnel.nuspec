@@ -7,12 +7,12 @@
     <title>WG Tunnel</title>
     <authors>Zane Schepke</authors>
     <owners>Zane Schepke</owners>
-    <description>WireGuard and AmneziaWG client with a kill switch. **Windows 11 only.**
+    <description>WireGuard and AmneziaWG client with a kill switch. **Requires Windows 10 version 1803 (build 17134) or later** for Unix domain socket support.
 
     Sponsor / Donate: https://wgtunnel.com/donate</description>
     <projectUrl>https://wgtunnel.com</projectUrl>
     <packageSourceUrl>https://github.com/wgtunnel/desktop</packageSourceUrl>
-    <tags>wgtunnel wireguard vpn msix windows11 amneziawg killswitch</tags>
+    <tags>wgtunnel wireguard vpn nsis amneziawg killswitch</tags>
     <licenseUrl>https://github.com/wgtunnel/desktop/blob/master/LICENSE</licenseUrl>
     <copyright>Copyright Zane Schepke</copyright>
     <releaseNotes>https://github.com/wgtunnel/desktop/releases/tag/$version$</releaseNotes>

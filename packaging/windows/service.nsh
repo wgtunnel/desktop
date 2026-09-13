@@ -15,6 +15,17 @@
 !macroend
 
 !macro customInit
+  ; WG Tunnel's IPC relies on Windows AF_UNIX (Unix domain sockets), added in Windows 10
+  ; version 1803 / build 17134. Fail fast with a clear message instead of installing
+  ; onto an OS where the daemon socket will simply never connect.
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" "CurrentBuildNumber"
+  ${If} $0 != ""
+  ${AndIf} $0 < 17134
+    MessageBox MB_ICONSTOP "WG Tunnel requires Windows 10 version 1803 (build 17134) or later. Detected build: $0."
+    SetErrorLevel 1638 ; ERROR_PRODUCT_VERSION
+    Quit
+  ${EndIf}
+
   ; Real elevation check. UserInfo::GetAccountType only reports Administrators-
   ; group *membership*, not whether this process token is actually elevated --
   ; it silently passes on the common single-admin-account/default-UAC setup

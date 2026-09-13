@@ -82,6 +82,14 @@ jobs:
       version: ${{ needs.meta.outputs.version }}
       package_version: ${{ needs.meta.outputs.package_version }}
 
+  apt:
+    needs: [meta, linux]
+    uses: ./.github/workflows/publish-apt.yml
+    secrets: inherit
+    with:
+      channel: ${{ needs.meta.outputs.channel }}
+      version: ${{ needs.meta.outputs.version }}
+
   publish:
     needs: [meta, linux, windows]
     uses: ./.github/workflows/publish-github.yml

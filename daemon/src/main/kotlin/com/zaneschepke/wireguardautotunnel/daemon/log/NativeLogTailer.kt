@@ -101,8 +101,8 @@ class NativeLogTailer(private val logDir: File) {
     private fun forwardIfNative(line: String) {
         val (level, rest) =
             when {
-                line.startsWith("[DEBUG] ") -> "D" to line.removePrefix("[DEBUG] ")
-                line.startsWith("[ERROR] ") -> "E" to line.removePrefix("[ERROR] ")
+                line.contains("[DEBUG] ") -> "D" to line.substringAfter("[DEBUG] ")
+                line.contains("[ERROR] ") -> "E" to line.substringAfter("[ERROR] ")
                 else -> return
             }
         val separator = rest.indexOf(": ")
