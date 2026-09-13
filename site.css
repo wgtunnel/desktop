@@ -1,0 +1,251 @@
+:root {
+  --bg: #21272a;
+  --bg-elevated: #2a3136;
+  --text: #ffffff;
+  --text-muted: #b8c0c4;
+  --primary: #76bebd;
+  --primary-dim: rgba(118, 190, 189, 0.12);
+  --border: rgba(255, 255, 255, 0.08);
+  --radius: 12px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans",
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.55;
+  min-height: 100%;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.wrap {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+header img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+header .eyebrow {
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+
+h1 {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
+}
+
+.lede {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  margin: 0;
+  max-width: 42rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 2.25rem 0 1rem;
+  font-weight: 650;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--text-muted);
+}
+
+.steps li {
+  margin: 0.45rem 0;
+}
+
+.steps li::marker {
+  color: var(--primary);
+}
+
+.note {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  margin-top: 1rem;
+}
+
+.repo-block {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 0.5rem 0;
+}
+
+.repo-code {
+  flex: 1;
+  min-width: 0;
+  padding: 0.65rem 0.8rem;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.repo-code code {
+  font: inherit;
+  color: inherit;
+}
+
+.copy-button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin: 0.35rem;
+  align-self: flex-start;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.copy-button:hover {
+  background: var(--primary-dim);
+  border-color: rgba(118, 190, 189, 0.3);
+  color: var(--primary);
+}
+
+.copy-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.copy-button.copied {
+  color: var(--primary);
+  border-color: rgba(118, 190, 189, 0.3);
+  background: var(--primary-dim);
+}
+
+.copy-icon {
+  flex-shrink: 0;
+}
+
+.copy-message {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(-3px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  pointer-events: none;
+}
+
+.copy-message.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.copy-message svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.alert-success {
+  margin-top: 1.5rem;
+  background: var(--primary-dim);
+  border: 1px solid rgba(118, 190, 189, 0.3);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  color: var(--text);
+}
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+@media (max-width: 480px) {
+  .copy-label {
+    display: none;
+  }
+
+  .copy-button {
+    padding: 0.5rem;
+  }
+
+  .repo-code {
+    padding: 0.6rem 0.7rem;
+  }
+
+  header {
+    gap: 0.75rem;
+  }
+
+  header img {
+    width: 40px;
+    height: 40px;
+  }
+}

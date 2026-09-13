@@ -1,0 +1,3 @@
+Component: main
+Architecture: amd64
+Description: WG Tunnel for Debian/Ubuntu (wgtunnel and wgtunnel-beta packages)

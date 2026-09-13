@@ -1,0 +1,5 @@
+Codename: stable
+Components: main
+Architectures: amd64
+SignWith: 21A75575BFAF91C304A72DA582217F0566F9B4A5
+Description: WG Tunnel for Debian/Ubuntu (wgtunnel and wgtunnel-beta packages)

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WG Tunnel APT Repository</title>
+    <meta
+      name="description"
+      content="Official APT repository for WG Tunnel. Get stable and beta Linux desktop builds directly from the developer."
+    />
+    <meta property="og:title" content="WG Tunnel APT Repository" />
+    <meta
+      property="og:description"
+      content="Add this repository to apt to install and update WG Tunnel on Debian/Ubuntu."
+    />
+    <meta property="og:site_name" content="WG Tunnel" />
+    <link rel="icon" href="icon.png" type="image/png" />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header>
+        <img src="icon.png" alt="" onerror="this.remove()" />
+        <div>
+          <p class="eyebrow">WG Tunnel</p>
+          <h1>APT repository</h1>
+          <p class="lede">
+            Official WG Tunnel builds for Debian/Ubuntu. Add this repo once
+            to get both <code>wgtunnel</code> (stable) and
+            <code>wgtunnel-beta</code> packages you can install
+            independently, side by side, straight from the developer via
+            <code>apt</code>.
+          </p>
+        </div>
+      </header>
+
+      <section>
+        <h2>Add this repository</h2>
+        <ol class="steps">
+          <li>Import the signing key.</li>
+          <li>Add the repository (one source works for both packages).</li>
+          <li>Install whichever you want with <code>apt</code>.</li>
+        </ol>
+
+        <p class="note">1. Import the signing key:</p>
+        <div class="repo-block">
+          <div class="repo-code"><code>curl -fsSL https://apt.wgtunnel.com/wgtunnel-archive-keyring.asc | \
+  sudo gpg --dearmor -o /usr/share/keyrings/wgtunnel-archive-keyring.gpg</code></div>
+          <button class="copy-button" type="button" aria-label="Copy command" title="Copy to clipboard">
+            <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="copy-label">Copy</span>
+          </button>
+        </div>
+
+        <p class="note">2. Add the repository:</p>
+        <div class="repo-block">
+          <div class="repo-code"><code>echo "deb [signed-by=/usr/share/keyrings/wgtunnel-archive-keyring.gpg] https://apt.wgtunnel.com stable main" | \
+  sudo tee /etc/apt/sources.list.d/wgtunnel.list</code></div>
+          <button class="copy-button" type="button" aria-label="Copy command" title="Copy to clipboard">
+            <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="copy-label">Copy</span>
+          </button>
+        </div>
+
+        <p class="note">3. Install - stable, beta, or both:</p>
+        <div class="repo-block">
+          <div class="repo-code"><code>sudo apt update
+sudo apt install wgtunnel        # stable
+sudo apt install wgtunnel-beta   # beta - installs alongside stable</code></div>
+          <button class="copy-button" type="button" aria-label="Copy command" title="Copy to clipboard">
+            <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="copy-label">Copy</span>
+          </button>
+        </div>
+
+        <div class="copy-message" role="status" aria-live="polite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>
+          <span>Copied to clipboard</span>
+        </div>
+
+        <div class="alert-success">
+          <strong>🎉 Future releases of either package now show up as regular <code>apt upgrade</code> updates.</strong>
+        </div>
+      </section>
+
+      <script>
+        document.querySelectorAll(".copy-button").forEach((button) => {
+          button.addEventListener("click", async () => {
+            const code = button.parentElement.querySelector(".repo-code code");
+            const message = document.querySelector(".copy-message");
+            const text = code.textContent.trim();
+
+            const onCopied = () => {
+              button.classList.add("copied");
+              button.querySelector(".copy-label").textContent = "Copied";
+              message.classList.add("visible");
+
+              setTimeout(() => {
+                button.classList.remove("copied");
+                button.querySelector(".copy-label").textContent = "Copy";
+                message.classList.remove("visible");
+              }, 2000);
+            };
+
+            try {
+              await navigator.clipboard.writeText(text);
+              onCopied();
+            } catch {
+              const textarea = document.createElement("textarea");
+              textarea.value = text;
+              textarea.style.position = "fixed";
+              textarea.style.opacity = "0";
+              document.body.appendChild(textarea);
+              textarea.select();
+
+              try {
+                document.execCommand("copy");
+                onCopied();
+              } finally {
+                textarea.remove();
+              }
+            }
+          });
+        });
+      </script>
+
+      <footer>
+        <a href="https://wgtunnel.com">App website</a>
+        <a href="https://github.com/wgtunnel/desktop">GitHub repository</a>
+      </footer>
+    </main>
+  </body>
+</html>

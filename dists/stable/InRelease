@@ -1,0 +1,34 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Codename: stable
+Date: Sun, 13 Sep 2026 08:19:31 UTC
+Architectures: amd64
+Components: main
+Description: WG Tunnel for Debian/Ubuntu (wgtunnel and wgtunnel-beta packages)
+MD5Sum:
+ f170e68035e6c7feb4c478455800c490 611 main/binary-amd64/Packages
+ 3e8580ae75d51c708bd0a36a7fdbc520 436 main/binary-amd64/Packages.gz
+ 954648fd10d41eb17ed81a6bc258b721 115 main/binary-amd64/Release
+SHA1:
+ 9cf74bec6160a3d01c5075c906c3073dfd64f7cf 611 main/binary-amd64/Packages
+ 409d328e6272b3ab21ce9b15878df417a012dd0a 436 main/binary-amd64/Packages.gz
+ a56a3584af10543e5e8747a28cc6a3a51779d7dc 115 main/binary-amd64/Release
+SHA256:
+ e7dadfa614e702bb72d98f8518be43174569f7da1f42831a64b23a5acf548801 611 main/binary-amd64/Packages
+ 8bd5064e94e8243fc4bf35e4f2e5396326a5c50038f8b37d3daf8614a8d79c49 436 main/binary-amd64/Packages.gz
+ 57d0ccb9f53ee3679001f420b078d6eea8a15914f54b43593698bcc2629b653e 115 main/binary-amd64/Release
+-----BEGIN PGP SIGNATURE-----
+
+iQGzBAEBCgAdFiEEIadVdb+vkcMEpy2lgiF/BWb5tKUFAmqmXJUACgkQgiF/BWb5
+tKWtHQwA70UEilSpIZud4ZzemwcgwH2A3mkqMrnZ+4OEj0R0YIA3QmLwcdTkobIb
+j1yEHvLbX22WBVlMhJOoJ8Rj11NSWNpmOkC7wFZx4ExJFxRNuLSoIr0DOFKXKSyZ
+UAUjsQfzRmkfALCdRcP+3VnQyVaPL0QE5tH5rl8tU/c4aJh1UhjrM3Sx930gS325
+yOf9NzBxTdRu7+3jKMifP4Yd3UTocJgGLvETfqlbG7bbZooChNCOaXamx5eJGm73
+OdSn4PEKMfM+IXanfoLF9WFtw01HtUVtZ7PVISVh3x4ipkNUyiRWrqZMbBJKoiwL
+VNHdHUqcFzA25/hgc8RAhrM3yl8p8GoNlHm9k99VJJOgRKpNml1j1P7OFn1VCkGE
+iIahHRUCrvO21ew539dsSucHjJb9lZ2q+TAYW9s0Md723ctnJ+h62QCFTWce88m2
+5a6DWA080INLasZwuhPPvN8w+QzInjdbEr5tgwo/VTTK7HSogPYc46jb/azjHwPO
+/PNX1LFO
+=JfV9
+-----END PGP SIGNATURE-----
