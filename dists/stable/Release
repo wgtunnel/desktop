@@ -1,17 +1,17 @@
 Codename: stable
-Date: Sun, 13 Sep 2026 08:19:31 UTC
+Date: Sun, 13 Sep 2026 12:13:30 UTC
 Architectures: amd64
 Components: main
 Description: WG Tunnel for Debian/Ubuntu (wgtunnel and wgtunnel-beta packages)
 MD5Sum:
- f170e68035e6c7feb4c478455800c490 611 main/binary-amd64/Packages
- 3e8580ae75d51c708bd0a36a7fdbc520 436 main/binary-amd64/Packages.gz
+ e69c8d3569ae03dcdead40299bdf1f01 611 main/binary-amd64/Packages
+ 19d380a0bf237d21b7b3f5b03095437a 436 main/binary-amd64/Packages.gz
  954648fd10d41eb17ed81a6bc258b721 115 main/binary-amd64/Release
 SHA1:
- 9cf74bec6160a3d01c5075c906c3073dfd64f7cf 611 main/binary-amd64/Packages
- 409d328e6272b3ab21ce9b15878df417a012dd0a 436 main/binary-amd64/Packages.gz
+ 6554212168bf6eca5d13de420ad186173dea1756 611 main/binary-amd64/Packages
+ 061ee43cbf5dbcc4ee5da21525ed1ad3bf8cb7e7 436 main/binary-amd64/Packages.gz
  a56a3584af10543e5e8747a28cc6a3a51779d7dc 115 main/binary-amd64/Release
 SHA256:
- e7dadfa614e702bb72d98f8518be43174569f7da1f42831a64b23a5acf548801 611 main/binary-amd64/Packages
- 8bd5064e94e8243fc4bf35e4f2e5396326a5c50038f8b37d3daf8614a8d79c49 436 main/binary-amd64/Packages.gz
+ 203d4d88f9f81764151526332f474366f05adbded44e185daab4a26f8805af2f 611 main/binary-amd64/Packages
+ 2ad4ef944348773497de58bdf7b979e23fab28d800d6d77fb59b061d73a30d6d 436 main/binary-amd64/Packages.gz
  57d0ccb9f53ee3679001f420b078d6eea8a15914f54b43593698bcc2629b653e 115 main/binary-amd64/Release
