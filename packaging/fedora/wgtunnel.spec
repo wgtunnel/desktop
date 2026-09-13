@@ -2,15 +2,15 @@
 %global __brp_check_rpaths %{nil}
 
 Name:           wgtunnel
-Version:        1.0.2
+Version:        2.0.0
 Release:        1%{?dist}
 Summary:        WireGuard and AmneziaWG VPN client with auto-tunneling, lockdown and proxying
 License:        MIT
 URL:            https://wgtunnel.com
 ExclusiveArch:  x86_64
 
-# Nucleus artifact: ${name}-${version}-${os}-${arch}.rpm
-Source0:        https://github.com/wgtunnel/desktop/releases/download/%{version}/wgtunnel-%{version}-linux-x64.rpm
+# Nucleus artifact: ${name}-${version}-linux-x86_64.rpm
+Source0:        https://github.com/wgtunnel/desktop/releases/download/%{version}/wgtunnel-%{version}-linux-x86_64.rpm
 
 BuildRequires:  cpio
 BuildRequires:  rpm
@@ -34,8 +34,10 @@ This COPR package redistributes the Nucleus-built GitHub release RPM.
 mkdir -p %{buildroot}
 rpm2cpio %{SOURCE0} | cpio -idmv -D %{buildroot}
 
+rm -rf %{buildroot}/usr/lib/.build-id
+
 install -d %{buildroot}%{_bindir}
-ln -sf /opt/wgtunnel/bin/wgtunnel %{buildroot}%{_bindir}/wgtunnel
+ln -sf /opt/wgtunnel/wgtunnel %{buildroot}%{_bindir}/wgtunnel
 
 if [ -f %{buildroot}/opt/wgtunnel/wgtunnel-daemon.service ]; then
   install -D -m 644 %{buildroot}/opt/wgtunnel/wgtunnel-daemon.service \
@@ -62,7 +64,9 @@ sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/opt/wgtunnel|' \
 /opt/wgtunnel
 %{_bindir}/wgtunnel
 %{_unitdir}/wgtunnel-daemon.service
+%{_datadir}/applications/wgtunnel.desktop
+%{_datadir}/icons/hicolor/*/apps/wgtunnel.png
 
 %changelog
-* Wed Sep 02 2026 Zane Schepke <support@wgtunnel.com> - 1.0.2-1
+* Sun Sep 13 2026 Zane Schepke <support@wgtunnel.com> - 2.0.0-1
 - Redistribute Nucleus GitHub RPM

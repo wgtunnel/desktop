@@ -18,6 +18,6 @@
     <releaseNotes>https://github.com/wgtunnel/desktop/releases/tag/$version$</releaseNotes>
     <bugTrackerUrl>https://github.com/wgtunnel/desktop/issues</bugTrackerUrl>
     <docsUrl>https://wgtunnel.com/docs/getting-started</docsUrl>
-    <iconUrl>https://wgtunnel.com/img/logo.png</iconUrl>
+    <iconUrl>https://www.wgtunnel.com/img/logo.png</iconUrl>
   </metadata>
 </package>
