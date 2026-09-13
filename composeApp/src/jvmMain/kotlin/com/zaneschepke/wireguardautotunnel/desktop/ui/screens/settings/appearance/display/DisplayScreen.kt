@@ -62,9 +62,12 @@ fun DisplayScreen(appViewModel: AppViewModel) {
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             Column {
-                GroupLabel("Colors", modifier = Modifier.padding(horizontal = 16.dp))
+                GroupLabel(
+                    stringResource(Res.string.colors),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
                 SurfaceRow(
-                    "Use system colors",
+                    stringResource(Res.string.use_system_colors),
                     onClick = { appViewModel.setUseSystemColors(!uiState.useSystemColors) },
                     trailing = {
                         ThemedSwitch(
@@ -75,7 +78,10 @@ fun DisplayScreen(appViewModel: AppViewModel) {
                 )
             }
             Column {
-                GroupLabel("Themes", modifier = Modifier.padding(horizontal = 16.dp))
+                GroupLabel(
+                    stringResource(Res.string.themes),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
                 enumValues<Theme>().forEach {
                     val title =
                         when (it) {

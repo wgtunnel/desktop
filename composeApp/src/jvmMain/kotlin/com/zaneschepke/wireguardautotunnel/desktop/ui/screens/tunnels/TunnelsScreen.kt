@@ -23,7 +23,15 @@ import androidx.compose.ui.input.pointer.pointerInput
 import com.dokar.sonner.Toast
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.add_a_tunnel
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_selected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_selected_tunnels
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel_message
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_selected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_all
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnels
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.yes
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.InfoDialog
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.CustomTooltip
@@ -60,6 +68,7 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
             is AppSideEffect.Toast -> {
                 toaster.show(Toast(sideEffect.message, sideEffect.type))
             }
+            else -> Unit
         }
     }
 
@@ -70,15 +79,15 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                 pendingDeleteIntent = null
             },
             onDismiss = { pendingDeleteIntent = null },
-            title = "Delete tunnel",
-            confirmText = "Yes",
+            title = stringResource(Res.string.delete_tunnel),
+            confirmText = stringResource(Res.string.yes),
             body = {
                 when (intent) {
                     DeleteIntent.Selected -> {
-                        Text("Are you sure you want to delete the selected tunnels?")
+                        Text(stringResource(Res.string.delete_selected_tunnels))
                     }
                     is DeleteIntent.Tunnel -> {
-                        Text("Are you sure you want to delete ${intent.tunnel.name}?")
+                        Text(stringResource(Res.string.delete_tunnel_message))
                     }
                 }
             },
@@ -97,9 +106,9 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                     when (ext) {
                         FileUtils.CONF_FILE_EXTENSION -> {
                             runCatching {
-                                    val text = file.readString()
-                                    viewModel.onConfImport(text, file.nameWithoutExtension)
-                                }
+                                val text = file.readString()
+                                viewModel.onConfImport(text, file.nameWithoutExtension)
+                            }
                                 .onFailure {
                                     toaster.show(
                                         Toast(ToastType.Error, "Failed to read .conf file")
@@ -108,10 +117,10 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                         }
                         FileUtils.ZIP_FILE_EXTENSION -> {
                             runCatching {
-                                    val bytes = file.readBytes()
-                                    val configMap = FileUtils.readConfigsFromZip(bytes)
-                                    viewModel.onMultiConfImport(configMap)
-                                }
+                                val bytes = file.readBytes()
+                                val configMap = FileUtils.readConfigsFromZip(bytes)
+                                viewModel.onMultiConfImport(configMap)
+                            }
                                 .onFailure {
                                     toaster.show(
                                         Toast(ToastType.Error, "Failed to read .zip archive")
@@ -138,34 +147,40 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                 title = { Text(stringResource(Res.string.tunnels)) },
                 actions = {
                     if (!uiState.isSelectionMode) {
-                        CustomTooltip(text = "Add a tunnel") {
+                        CustomTooltip(text = stringResource(Res.string.add_a_tunnel)) {
                             IconButton(onClick = { pickerLauncher.launch() }) {
-                                Icon(Icons.Outlined.Add, contentDescription = "Add a tunnel")
+                                Icon(
+                                    Icons.Outlined.Add,
+                                    contentDescription = stringResource(Res.string.add_a_tunnel),
+                                )
                             }
                         }
                         return@TopAppBar
                     }
                     Row {
-                        CustomTooltip(text = "Select all") {
+                        CustomTooltip(text = stringResource(Res.string.select_all)) {
                             IconButton(onClick = viewModel::onSelectAll) {
                                 Icon(
                                     Icons.Outlined.SelectAll,
-                                    contentDescription = "Delete selected",
+                                    contentDescription = stringResource(Res.string.select_all),
                                 )
                             }
                         }
-                        CustomTooltip(text = "Delete selected") {
+                        CustomTooltip(text = stringResource(Res.string.delete_selected)) {
                             IconButton(onClick = { pendingDeleteIntent = DeleteIntent.Selected }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = "Delete selected")
+                                Icon(
+                                    Icons.Outlined.Delete,
+                                    contentDescription = stringResource(Res.string.delete_selected),
+                                )
                             }
                         }
-                        CustomTooltip(text = "Export selected") {
+                        CustomTooltip(text = stringResource(Res.string.export_selected)) {
                             IconButton(
                                 onClick = { viewModel.onExportIntent(ExportIntent.Selected) }
                             ) {
                                 Icon(
                                     Icons.Outlined.Download,
-                                    contentDescription = "Export selected",
+                                    contentDescription = stringResource(Res.string.export_selected),
                                 )
                             }
                         }

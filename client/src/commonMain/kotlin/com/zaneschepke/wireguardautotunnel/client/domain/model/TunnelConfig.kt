@@ -1,7 +1,9 @@
 package com.zaneschepke.wireguardautotunnel.client.domain.model
 
-import com.zaneschepke.wireguardautotunnel.parser.Config
-import kotlin.collections.get
+import com.wgtunnel.parser.Config
+import com.wgtunnel.parser.InterfaceSection
+import com.wgtunnel.parser.PeerSection
+import com.wgtunnel.parser.crypto.Key
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,17 +11,27 @@ data class TunnelConfig(
     val id: Long = 0,
     val name: String,
     val quickConfig: String,
-    val active: Boolean = false,
+    val isPrimaryTunnel: Boolean = false,
     val position: Int = 0,
+    val preferIpv6: Boolean = false,
+    val ipv6RestoreEnabled: Boolean = false,
+    val isDdnsTunnel: Boolean = false,
+    val tunnelNetworks: List<String> = emptyList(),
+    val isEthernetTunnel: Boolean = false,
+    val tunnelBssids: List<String> = emptyList(),
 ) {
 
     fun asConfig(): Config {
         return Config.parseQuickString(quickConfig)
     }
 
+    val isGlobalConfig: Boolean
+        get() = name == GLOBAL_CONFIG_NAME
+
     companion object {
 
         const val DEFAULT_TUNNEL_NAME = "tunnel"
+        const val GLOBAL_CONFIG_NAME = "4675ab06-903a-438b-8485-6ea4187a9512"
 
         val Empty = TunnelConfig(name = DEFAULT_TUNNEL_NAME, quickConfig = "")
 
@@ -29,52 +41,35 @@ data class TunnelConfig(
 
         fun fromQuickString(quick: String, name: String? = null): TunnelConfig {
             val config = configFromQuick(quick)
+            config.validate()
             return tunnelConfFromConfig(config, name)
         }
 
         private fun tunnelConfFromConfig(config: Config, name: String? = null): TunnelConfig {
+            val resolvedName = name ?: DEFAULT_TUNNEL_NAME
             return TunnelConfig(
-                name = name ?: DEFAULT_TUNNEL_NAME,
-                quickConfig = config.asQuickString(),
+                name = resolvedName,
+                quickConfig = config.withName(resolvedName).asQuickString(),
             )
         }
 
-        private const val IPV6_ALL_NETWORKS = "::/0"
-        private const val IPV4_ALL_NETWORKS = "0.0.0.0/0"
-        val ALL_IPS = listOf(IPV4_ALL_NETWORKS, IPV6_ALL_NETWORKS)
-        val IPV4_PUBLIC_NETWORKS =
-            setOf(
-                "0.0.0.0/5",
-                "8.0.0.0/7",
-                "11.0.0.0/8",
-                "12.0.0.0/6",
-                "16.0.0.0/4",
-                "32.0.0.0/3",
-                "64.0.0.0/2",
-                "128.0.0.0/3",
-                "160.0.0.0/5",
-                "168.0.0.0/6",
-                "172.0.0.0/12",
-                "172.32.0.0/11",
-                "172.64.0.0/10",
-                "172.128.0.0/9",
-                "173.0.0.0/8",
-                "174.0.0.0/7",
-                "176.0.0.0/4",
-                "192.0.0.0/9",
-                "192.128.0.0/11",
-                "192.160.0.0/13",
-                "192.169.0.0/16",
-                "192.170.0.0/15",
-                "192.172.0.0/14",
-                "192.176.0.0/12",
-                "192.192.0.0/10",
-                "193.0.0.0/8",
-                "194.0.0.0/7",
-                "196.0.0.0/6",
-                "200.0.0.0/5",
-                "208.0.0.0/4",
-            )
-        val LAN_BYPASS_ALLOWED_IPS = setOf(IPV6_ALL_NETWORKS) + IPV4_PUBLIC_NETWORKS
+        fun generateDefaultGlobalConfig(): TunnelConfig {
+            val privateKey = Key.generatePrivateKey().toBase64()
+            val publicKey = Config.generatePublicKeyFromPrivateKey(privateKey)
+            val config =
+                Config(
+                    `interface` =
+                        InterfaceSection(address = "10.0.0.2/32", privateKey = privateKey),
+                    peers =
+                        listOf(
+                            PeerSection(
+                                publicKey = publicKey,
+                                endpoint = "server.example.com:51820",
+                                allowedIPs = "0.0.0.0/0",
+                            )
+                        ),
+                )
+            return TunnelConfig(name = GLOBAL_CONFIG_NAME, quickConfig = config.asQuickString())
+        }
     }
 }

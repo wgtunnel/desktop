@@ -24,3 +24,5 @@ local-site
 # Arch packaging
 .SRCINFO
 pkg/
+
+composeApp/src/jvmMain/composeResources/files/aboutlibraries.json

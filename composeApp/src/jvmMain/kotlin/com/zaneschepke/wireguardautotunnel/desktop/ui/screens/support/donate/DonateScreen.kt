@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Launch
@@ -42,6 +40,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.components.DonationHeroSection
@@ -74,10 +73,10 @@ fun DonateScreen(appViewModel: AppViewModel) {
             )
         }
     ) {
-        Column(
+        ScrollableColumn(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(it),
+            modifier = Modifier.fillMaxSize().padding(it),
         ) {
             DonationHeroSection()
             Column {

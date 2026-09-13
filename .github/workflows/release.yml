@@ -1,129 +1,102 @@
-name: release-apps
+name: release
 
 permissions:
   contents: write
   id-token: write
-  pages: write
   packages: write
 
 on:
   push:
     tags:
-      - '[0-9]*.[0-9]*.[0-9]*'
+      - "v*.*.*"
+      - "[0-9]*.[0-9]*.[0-9]*"
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Tag name for release"
+        description: "Tag name (0.0.0 or 0.0.0-beta.1)"
         required: false
-        default: 1.1.1
+        default: v1.0.2
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  publish:
-    name: release-apps
+  meta:
+    name: resolve-version
     runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
-    environment: production
-
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      package_version: ${{ steps.meta.outputs.package_version }}
+      channel: ${{ steps.meta.outputs.channel }}
+      release_type: ${{ steps.meta.outputs.release_type }}
+      variant: ${{ steps.meta.outputs.variant }}
     steps:
-      - name: Bootstrap Arch Linux
-        run: |
-          pacman -Syu --noconfirm
-          
-          pacman -S --noconfirm git nodejs base-devel \
-            mingw-w64-gcc mingw-w64-crt mingw-w64-binutils mingw-w64-winpthreads \
-            zip unzip tar \
-            azure-cli python \
-            wget ca-certificates
-
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: gradle
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.103'
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25.5'
-
-      - name: Azure Login (Client Secret)
-        uses: azure/login@v2
-        with:
-          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
-
-      - name: Set latest tag
-        uses: rickstaa/action-create-tag@v1
-        id: tag_creation
-        with:
-          tag: "latest"
-          message: "Automated tag for HEAD commit"
-          force_push_tag: true
-          github_token: ${{ github.token }}
-          tag_exists_error: false
-
-      - name: Get latest release
-        id: latest_release
-        uses: kaliber5/action-get-release@v1
-        with:
-          token: ${{ github.token }}
-          latest: true
-
-      - name: Generate Changelog
-        id: changelog
-        uses: requarks/changelog-action@v1
-        with:
-          token: ${{ github.token }}
-          toTag: ${{ steps.latest_release.outputs.tag_name }}
-          fromTag: "latest"
-          writeToFile: false
-
-      - name: Build All Inputs
-        run: |
-          git config --global --add safe.directory /__w/desktop/desktop
-          
-          export LDFLAGS="-static -static-libgcc -static-libstdc++"
-          chmod +x gradlew
-          
-          ./gradlew :daemon:installDist \
-                    :composeApp:createDistributable \
-                    :cli:installDist \
-                    :composeApp:writeConveyorConfig
-
-      - name: Run Conveyor
-        uses: hydraulic-software/conveyor/actions/build@v21.0
-        with:
-          command: make copied-site
-          extra_flags: -f conveyor-release.conf --passphrase=env:PASSPHRASE
-          signing_key: ${{ secrets.CONVEYOR_SIGNING_KEY }}
-          agree_to_license: 1
+      - id: meta
         env:
-          CONVEYOR_SIGNING_KEY: ${{ secrets.CONVEYOR_SIGNING_KEY }}
-          CONVEYOR_PAT: ${{ secrets.CONVEYOR_PAT }}
-          PASSPHRASE: ${{ secrets.CONVEYOR_PASSPHRASE }}
-          CONVEYOR_AGREE_TO_LICENSE: "1"
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="${INPUT_TAG}"
+          else
+            TAG="$REF_NAME"
+          fi
+          VERSION="${TAG#v}"
+          PACKAGE_VERSION="${VERSION%%-*}"
+          CHANNEL=latest
+          RELEASE_TYPE=release
+          VARIANT=release
+          if [[ "$VERSION" == *"-beta"* ]]; then
+            CHANNEL=beta
+            RELEASE_TYPE=prerelease
+            VARIANT=beta
+          fi
+          {
+            echo "tag=$TAG"
+            echo "version=$VERSION"
+            echo "package_version=$PACKAGE_VERSION"
+            echo "channel=$CHANNEL"
+            echo "release_type=$RELEASE_TYPE"
+            echo "variant=$VARIANT"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Add Release Changelog
-        uses: softprops/action-gh-release@v2
-        with:
-          body: |
-            ### Changelog
-            ${{ steps.changelog.outputs.changes }}
-          tag_name: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.tag_name }}
-          name: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.tag_name }}
-          draft: false
-          prerelease: false
-          make_latest: true
-          append_body: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+  linux:
+    needs: meta
+    uses: ./.github/workflows/package-linux.yml
+    secrets: inherit
+    with:
+      variant: ${{ needs.meta.outputs.variant }}
+      version: ${{ needs.meta.outputs.version }}
+      package_version: ${{ needs.meta.outputs.package_version }}
+
+  windows:
+    needs: meta
+    uses: ./.github/workflows/package-windows.yml
+    secrets: inherit
+    with:
+      variant: ${{ needs.meta.outputs.variant }}
+      version: ${{ needs.meta.outputs.version }}
+      package_version: ${{ needs.meta.outputs.package_version }}
+
+  apt:
+    needs: [meta, linux]
+    uses: ./.github/workflows/publish-apt.yml
+    secrets: inherit
+    with:
+      channel: ${{ needs.meta.outputs.channel }}
+      version: ${{ needs.meta.outputs.version }}
+
+  publish:
+    needs: [meta, linux, windows]
+    uses: ./.github/workflows/publish-github.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.meta.outputs.tag }}
+      version: ${{ needs.meta.outputs.version }}
+      channel: ${{ needs.meta.outputs.channel }}
+      release_type: ${{ needs.meta.outputs.release_type }}
+      replace_existing: false

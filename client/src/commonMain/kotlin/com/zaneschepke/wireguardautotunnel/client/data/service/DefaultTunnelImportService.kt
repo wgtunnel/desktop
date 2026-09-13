@@ -17,15 +17,9 @@ class DefaultTunnelImportService(private val tunnelRepository: TunnelRepository)
         }
 
     override suspend fun import(configs: QuickConfigMap): Result<Unit> = runCatching {
-        val tunnelConfigs =
-            configs.mapNotNull { (config, name) ->
-                try {
-                    val tunnel = TunnelConfig.fromQuickString(config, name)
-                    tunnel
-                } catch (_: Exception) {
-                    null
-                }
-            }
+        val tunnelConfigs = configs.map { (config, name) ->
+            TunnelConfig.fromQuickString(config, name)
+        }
         if (tunnelConfigs.isNotEmpty()) {
             val existingNames = tunnelRepository.getAll().map { it.name }
             tunnelRepository.saveTunnelsUniquely(tunnelConfigs, existingNames)

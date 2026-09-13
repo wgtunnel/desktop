@@ -5,16 +5,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Launch
 import androidx.compose.material.icons.outlined.Balance
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.InstallDesktop
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Policy
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Web
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,6 +23,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,7 +36,11 @@ import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.about
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.app_version
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.check_for_update
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.checking_for_updates
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.contact
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.copied_to_clipboard
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.docs_description
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.docs_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.donate
@@ -42,6 +48,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.email_
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.email_subject
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.github
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.github_url
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.install_update
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.join_matrix
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.join_telegram
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.licenses
@@ -49,47 +56,68 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.matrix
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.matrix_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.my_email
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.open_issue
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.other
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.privacy_policy
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.privacy_policy_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.resources
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.support
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.system_information
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.system_information_copied
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.telegram
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.telegram_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.thank_you
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.version_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_available_version
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website_url
+import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.util.DesktopUtils
+import com.zaneschepke.wireguardautotunnel.desktop.util.buildSystemInfoReport
 import com.zaneschepke.wireguardautotunnel.desktop.util.toClipEntry
+import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.SupportViewModel
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
+import org.koin.compose.viewmodel.koinViewModel
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SupportScreen() {
+fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
     val navController = LocalNavController.current
     val uriHandler = LocalUriHandler.current
     val clipboard = LocalClipboard.current
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
+    val uiState by viewModel.collectAsState()
 
-    val appVersion = BuildConfig.APP_VERSION
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            is com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect.Toast ->
+                toaster.show(Toast(sideEffect.message, sideEffect.type))
+            else -> Unit
+        }
+    }
+
+    val appVersion =
+        when (AppVariant.current) {
+            AppVariant.DEBUG -> "${BuildConfig.APP_VERSION}-debug"
+            else -> BuildConfig.APP_VERSION
+        }
     val emailAddress = stringResource(Res.string.my_email)
     val emailSubject = stringResource(Res.string.email_subject)
+    val copiedMessage = stringResource(Res.string.copied_to_clipboard, appVersion)
 
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(Res.string.support)) }) }) { padding
         ->
-        Column(
-            modifier =
-                Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
+        ScrollableColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
         ) {
@@ -111,7 +139,7 @@ fun SupportScreen() {
                 val docsUrl = stringResource(Res.string.docs_url)
                 SurfaceRow(
                     stringResource(Res.string.docs_description),
-                    onClick = { (docsUrl) },
+                    onClick = { uriHandler.openUri(docsUrl) },
                     leading = { Icon(Icons.Outlined.Book, contentDescription = null) },
                     trailing = { Icon(Icons.AutoMirrored.Outlined.Launch, null) },
                 )
@@ -188,22 +216,58 @@ fun SupportScreen() {
             }
             Column {
                 GroupLabel(
-                    stringResource(Res.string.other),
+                    stringResource(Res.string.about),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.Memory, contentDescription = null) },
-                    title = stringResource(Res.string.about),
-                    description = {
-                        Column {
-                            DescriptionText(stringResource(Res.string.version_template, appVersion))
-                        }
-                    },
+                    title = stringResource(Res.string.app_version),
+                    description = { DescriptionText(appVersion) },
                     onClick = {
+                        val message = copiedMessage
                         scope.launch { clipboard.setClipEntry(appVersion.toClipEntry()) }
-                        toaster.show(Toast("Copied to clipboard: $appVersion", ToastType.Success))
+                        toaster.show(Toast(message, ToastType.Success))
                     },
                 )
+                val systemInfoReport = remember { buildSystemInfoReport() }
+                val systemInfoCopiedMessage = stringResource(Res.string.system_information_copied)
+                SurfaceRow(
+                    leading = { Icon(Icons.Outlined.Terminal, contentDescription = null) },
+                    title = stringResource(Res.string.system_information),
+                    description = { DescriptionText(systemInfoReport) },
+                    onClick = {
+                        scope.launch { clipboard.setClipEntry(systemInfoReport.toClipEntry()) }
+                        toaster.show(Toast(systemInfoCopiedMessage, ToastType.Success))
+                    },
+                )
+                if (uiState.updateSupported) {
+                    val updateTitle =
+                        if (uiState.pendingUpdateVersion != null) {
+                            stringResource(Res.string.install_update)
+                        } else {
+                            stringResource(Res.string.check_for_update)
+                        }
+                    val updateDescription =
+                        when {
+                            uiState.updateBusy && uiState.pendingUpdateVersion == null ->
+                                stringResource(Res.string.checking_for_updates)
+                            uiState.pendingUpdateVersion != null ->
+                                stringResource(
+                                    Res.string.update_available_version,
+                                    uiState.pendingUpdateVersion!!,
+                                )
+                            else -> null
+                        }
+                    SurfaceRow(
+                        leading = {
+                            Icon(Icons.Outlined.InstallDesktop, contentDescription = null)
+                        },
+                        title = updateTitle,
+                        description = updateDescription?.let { { DescriptionText(it) } },
+                        enabled = !uiState.updateBusy,
+                        onClick = { viewModel.onUpdateAction() },
+                    )
+                }
             }
         }
     }

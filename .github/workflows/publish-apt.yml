@@ -1,0 +1,94 @@
+name: publish-apt
+
+on:
+  workflow_call:
+    inputs:
+      channel:
+        description: "Nucleus update channel (latest or beta). This is informational only, used in the commit message. wgtunnel/wgtunnel-beta are separate packages in the same stable apt distribution"
+        type: string
+        required: true
+      version:
+        description: "Version being published (0.0.0 or 0.0.0-beta.1)"
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apt-repo-gh-pages
+  cancel-in-progress: false
+
+jobs:
+  publish-apt:
+    name: publish-apt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: desktop
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets-Linux-amd64
+          path: artifacts
+
+      - name: Checkout gh-pages (apt.wgtunnel.com root)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Install reprepro
+        run: sudo apt-get update && sudo apt-get install -y reprepro
+
+      - name: Import GPG signing key
+        id: gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_SECRET_KEY }}
+          passphrase: ${{ secrets.GPG_PASS }}
+
+      - name: Configure apt repo (first run only)
+        run: |
+          set -euo pipefail
+          mkdir -p gh-pages/conf
+          cat > gh-pages/conf/distributions <<EOF
+          Codename: stable
+          Components: main
+          Architectures: amd64
+          SignWith: ${{ steps.gpg.outputs.fingerprint }}
+          Description: WG Tunnel for Debian/Ubuntu (wgtunnel and wgtunnel-beta packages)
+          EOF
+
+      - name: Add .deb to repo
+        run: |
+          set -euo pipefail
+          DEB_FILE=$(find artifacts -name '*.deb' | head -n1)
+          if [ -z "$DEB_FILE" ]; then
+            echo "No .deb artifact found" >&2
+            exit 1
+          fi
+          reprepro -b gh-pages includedeb stable "$DEB_FILE"
+
+      - name: Publish signing key
+        run: gpg --armor --export "${{ steps.gpg.outputs.fingerprint }}" > gh-pages/wgtunnel-archive-keyring.asc
+
+      - name: Update landing page
+        run: |
+          cp desktop/packaging/apt/index.html gh-pages/index.html
+          cp desktop/packaging/apt/site.css gh-pages/site.css
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add conf dists pool wgtunnel-archive-keyring.asc index.html site.css
+          if git diff --cached --quiet; then
+            echo "No apt repo changes to publish"
+            exit 0
+          fi
+          git commit -m "apt: publish ${{ inputs.version }} (${{ inputs.channel }})"
+          git push origin gh-pages

@@ -9,8 +9,14 @@ fun Entity.toDomain(): Domain =
         id = id,
         name = name,
         quickConfig = quickConfig.value,
-        active = active,
+        isPrimaryTunnel = isPrimaryTunnel,
         position = position,
+        preferIpv6 = preferIpv6,
+        ipv6RestoreEnabled = ipv6RestoreEnabled,
+        isDdnsTunnel = isDdnsTunnel,
+        tunnelNetworks = tunnelNetworks,
+        isEthernetTunnel = isEthernetTunnel,
+        tunnelBssids = tunnelBssids,
     )
 
 fun Domain.toEntity(): Entity =
@@ -18,6 +24,12 @@ fun Domain.toEntity(): Entity =
         id = id,
         name = name,
         quickConfig = EncryptedField(quickConfig),
-        active = active,
+        isPrimaryTunnel = isPrimaryTunnel,
         position = position,
+        preferIpv6 = preferIpv6,
+        ipv6RestoreEnabled = ipv6RestoreEnabled,
+        isDdnsTunnel = isDdnsTunnel,
+        tunnelNetworks = tunnelNetworks,
+        isEthernetTunnel = isEthernetTunnel,
+        tunnelBssids = tunnelBssids,
     )

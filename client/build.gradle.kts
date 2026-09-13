@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.room)
+    alias(libs.plugins.androidx.room3)
     alias(libs.plugins.serialization)
 }
 
@@ -11,14 +11,13 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":parser"))
                 implementation(project(":keyring"))
                 api(project(":shared"))
-                implementation(libs.androidx.room.runtime)
+                implementation(libs.wgtunnel.backend)
+                implementation(libs.androidx.room3.runtime)
                 implementation(libs.androidx.sqlite.bundled)
 
                 implementation(libs.kermit)
-                implementation(libs.logback.classic)
 
                 implementation(libs.kotlinx.serialization)
 
@@ -26,6 +25,7 @@ kotlin {
                 implementation(libs.koin.core)
 
                 implementation(libs.bundles.ktor.client.jvm)
+                implementation(libs.nucleus.native.http.ktor)
 
                 // Util
                 implementation(libs.apache.commons.lang3)
@@ -34,6 +34,6 @@ kotlin {
     }
 }
 
-dependencies { "kspJvm"(libs.androidx.room.compiler) }
+dependencies { "kspJvm"(libs.androidx.room3.compiler) }
 
-room { schemaDirectory("$projectDir/schemas") }
+room3 { schemaDirectory("$projectDir/schemas") }

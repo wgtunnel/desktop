@@ -14,50 +14,54 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollbarThickness
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.appScrollbarStyle
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
+private val ContentPadding = 16.dp
+
 @OptIn(ExperimentalFoundationApi::class, FlowPreview::class)
 @Composable
-fun ConfigEditor(rawConfig: String, isEditable: Boolean, onConfigChange: (String) -> Unit) {
+fun ConfigEditor(
+    rawConfig: String,
+    isEditable: Boolean,
+    onConfigChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var textFieldValue by remember { mutableStateOf(TextFieldValue(rawConfig)) }
+    var lastSentConfig by remember { mutableStateOf(rawConfig) }
 
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
 
-    // One time sync
     LaunchedEffect(rawConfig) {
-        if (textFieldValue.text != rawConfig) {
+        if (rawConfig != lastSentConfig) {
             textFieldValue = TextFieldValue(rawConfig)
+            lastSentConfig = rawConfig
         }
     }
 
-    // Debounce changes
-    LaunchedEffect(textFieldValue) {
+    // Debounce changes; keyed on Unit so this observes for the composition's lifetime instead of
+    // restarting the flow collection on every keystroke.
+    LaunchedEffect(Unit) {
         snapshotFlow { textFieldValue.text }
-            .debounce(100)
-            .onEach { onConfigChange(it) }
+            .debounce(100.milliseconds)
+            .onEach {
+                lastSentConfig = it
+                onConfigChange(it)
+            }
             .launchIn(this)
     }
 
-    val scrollbarStyle =
-        defaultScrollbarStyle()
-            .copy(
-                thickness = 10.dp,
-                unhoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f),
-                hoverColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
-            )
+    val scrollbarStyle = appScrollbarStyle()
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
-                .background(
-                    if (isEditable) MaterialTheme.colorScheme.surfaceContainerLowest
-                    else MaterialTheme.colorScheme.surface
-                )
-                .clipToBounds()
+            modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).clipToBounds()
     ) {
         BasicTextField(
             value = textFieldValue,
@@ -70,11 +74,12 @@ fun ConfigEditor(rawConfig: String, isEditable: Boolean, onConfigChange: (String
                 Modifier.fillMaxSize()
                     .verticalScroll(verticalScrollState)
                     .horizontalScroll(horizontalScrollState)
-                    .padding(16.dp)
-                    .padding(end = 26.dp),
+                    .padding(ContentPadding)
+                    .padding(end = ScrollbarThickness, bottom = ScrollbarThickness),
             textStyle =
                 TextStyle(
                     fontSize = 14.sp,
+                    lineHeight = 20.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontFamily = FontFamily.Monospace,
                 ),
@@ -85,13 +90,19 @@ fun ConfigEditor(rawConfig: String, isEditable: Boolean, onConfigChange: (String
 
         VerticalScrollbar(
             adapter = rememberScrollbarAdapter(verticalScrollState),
-            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+            modifier =
+                Modifier.align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .padding(bottom = ScrollbarThickness),
             style = scrollbarStyle,
         )
 
         HorizontalScrollbar(
             adapter = rememberScrollbarAdapter(horizontalScrollState),
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(end = 26.dp),
+            modifier =
+                Modifier.align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(end = ScrollbarThickness),
             style = scrollbarStyle,
         )
     }

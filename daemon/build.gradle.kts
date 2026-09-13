@@ -1,39 +1,81 @@
+import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
+
 plugins {
     kotlin("jvm")
-    application
     alias(libs.plugins.serialization)
+    alias(libs.plugins.nucleus)
+    alias(libs.plugins.buildconfig)
 }
 
-dependencies {
-    implementation(project(":tunnel"))
-    implementation(project(":parser"))
-    implementation(project(":shared"))
+version = (findProperty("app.version") as String?) ?: libs.versions.app.get()
 
-    // DI
-    implementation(libs.koin.core)
+buildConfig { buildConfigField("APP_VERSION", provider { "${project.version}" }) }
+
+val daemonJvmArgs =
+    listOf(
+        "-XX:+UseSerialGC",
+        "-Xms16m",
+        "-Xmx96m",
+        "-XX:ReservedCodeCacheSize=48m",
+        "-Xss512k",
+        "-Dkotlinx.coroutines.io.parallelism=16",
+        "--enable-native-access=ALL-UNNAMED"
+    )
+
+dependencies {
+    implementation(project(":shared"))
+    implementation(libs.wgtunnel.backend)
 
     implementation(libs.bundles.ktor.server.jvm)
 
     implementation(libs.kotlinx.coroutines.core)
 
-    // Logging
     implementation(libs.kermit)
-    implementation(libs.logback.classic)
+    // For Ktor logging
+    implementation(libs.slf4j.simple)
 
     testImplementation(kotlin("test"))
 
-    // caching
-    implementation(libs.multiplatform.settings)
-
     implementation(libs.kotlinx.serialization)
-
-    // Util
-    implementation(libs.apache.commons.lang3)
 }
 
-application { mainClass.set("com.zaneschepke.wireguardautotunnel.daemon.MainKt") }
+nucleus.application {
+    mainClass = "com.zaneschepke.wireguardautotunnel.daemon.MainKt"
+    jvmArgs(*daemonJvmArgs.toTypedArray())
+    graalvm {
+        isEnabled = true
+        imageName = "wgtunnel-daemon"
+        optimization = NativeImageOptimization.SIZE
+        headless = true
+        maxHeapSize = "32m"
+        buildArgs.addAll(GraalvmNativeArgs.daemon(System.getProperty("os.name").orEmpty()))
+    }
+    nativeDistributions {
+        appName = "WG Tunnel Daemon"
+        packageName = "wgtunnel-daemon"
+        packageVersion = libs.versions.app.get()
+        windows { iconFile.set(rootProject.file("packaging/windows/icon.ico")) }
+    }
+}
 
 tasks.test { useJUnitPlatform() }
+
+val printDevRunInfo =
+    tasks.register("printDevRunInfo") {
+        group = "application"
+        description = "Prints the dev daemon run info."
+        dependsOn(tasks.named("classes"))
+
+        val runtimeClasspath = sourceSets.main.get().runtimeClasspath
+        val javaHome = System.getProperty("java.home")
+        val jvmArgsLine = daemonJvmArgs.joinToString(" ")
+
+        doLast {
+            println("$javaHome/bin/java")
+            println(jvmArgsLine)
+            println(runtimeClasspath.asPath)
+        }
+    }
 
 val cleanDotNet =
     tasks.register<Exec>("cleanDotNet") {
@@ -47,12 +89,8 @@ tasks.named<Delete>("clean") {
 
     delete(file("output"))
     // Clean up WinSW specific artifacts
-    delete(file("winsw/src/WinSW/bin"))
-    delete(file("winsw/src/WinSW/obj"))
     delete(file("winsw/artifacts"))
 }
-
-tasks.named("installDist") { dependsOn("buildWinSW") }
 
 tasks.register<Exec>("buildWinSW") {
     val winSwDir = "winsw/src/WinSW"
@@ -71,7 +109,7 @@ tasks.register<Exec>("buildWinSW") {
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
     outputs
-        .dir(file("$winSwDir/bin/Release/net7.0-windows/win-x64/publish"))
+        .dir(file("winsw/artifacts/bin/WinSW/x64/Release/net7.0-windows/win-x64/publish"))
         .withPropertyName("winSwPublishDir")
 
     commandLine(

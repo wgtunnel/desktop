@@ -2,8 +2,18 @@ $ErrorActionPreference = 'Stop'
 
 Write-Host "Uninstalling wgtunnel..." -ForegroundColor Cyan
 
-Get-AppxPackage -Name "Wgtunnel" -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+$uninstaller = Join-Path $env:ProgramFiles 'wgtunnel\Uninstall wgtunnel.exe'
+if (-not (Test-Path $uninstaller)) {
+  $uninstaller = Join-Path ${env:ProgramFiles(x86)} 'wgtunnel\Uninstall wgtunnel.exe'
+}
 
-Get-AppxPackage -Name "*Wgtunnel*" -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-
-Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -like "*wgtunnel*" -or $_.DisplayName -like "*WG Tunnel*" } | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+if (Test-Path $uninstaller) {
+  Start-Process -FilePath $uninstaller -ArgumentList '/S' -Wait
+} else {
+  Write-Host "NSIS uninstaller not found; trying registry uninstall keys"
+  Get-UninstallRegistryKey -SoftwareName 'WG Tunnel*' | ForEach-Object {
+    if ($_.UninstallString) {
+      Start-Process -FilePath $_.UninstallString.Trim('"') -ArgumentList '/S' -Wait
+    }
+  }
+}

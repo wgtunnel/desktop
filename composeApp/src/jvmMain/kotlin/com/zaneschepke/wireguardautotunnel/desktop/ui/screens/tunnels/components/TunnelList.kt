@@ -27,14 +27,26 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_selected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.details
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.exit_selection_mode
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_selected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_tunnels_click_add
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_tunnels
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SwitchWithDivider
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.CustomTooltip
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.RequiresDaemonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.DeleteIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.ExportIntent
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TunnelsUiState
+import dev.nucleusframework.application.contextmenu.NucleusContextMenuItem
+import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -71,6 +83,14 @@ fun TunnelList(
         }
     }
 
+    val detailsLabel = stringResource(Res.string.details)
+    val deleteLabel = stringResource(Res.string.delete)
+    val exportLabel = stringResource(Res.string.export)
+    val selectLabel = stringResource(Res.string.select_tunnels)
+    val deleteSelectedLabel = stringResource(Res.string.delete_selected)
+    val exportSelectedLabel = stringResource(Res.string.export_selected)
+    val exitSelectionLabel = stringResource(Res.string.exit_selection_mode)
+
     LazyColumn(
         state = lazyListState,
         modifier =
@@ -90,7 +110,7 @@ fun TunnelList(
                     modifier = Modifier.fillMaxSize().padding(top = 80.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("No tunnels added yet! Click the + symbol to add a tunnel.")
+                    Text(stringResource(Res.string.no_tunnels_click_add))
                 }
             }
             return@LazyColumn
@@ -106,34 +126,36 @@ fun TunnelList(
                         buildList {
                             if (!uiState.isSelectionMode) {
                                 add(
-                                    ContextMenuItem("Details") {
+                                    NucleusContextMenuItem(detailsLabel) {
                                         navController.push(Route.Tunnel(item.config.id))
                                     }
                                 )
                                 add(
-                                    ContextMenuItem("Delete") {
+                                    NucleusContextMenuItem(deleteLabel) {
                                         onDelete(DeleteIntent.Tunnel(item.config))
                                     }
                                 )
                                 add(
-                                    ContextMenuItem("Export") {
+                                    NucleusContextMenuItem(exportLabel) {
                                         onExport(ExportIntent.Tunnel(item.config))
                                     }
                                 )
-                                add(ContextMenuItem("Select") { onSelected(item.config) })
+                                add(NucleusContextMenuItem(selectLabel) { onSelected(item.config) })
                             } else {
                                 add(
-                                    ContextMenuItem("Delete selected") {
+                                    NucleusContextMenuItem(deleteSelectedLabel) {
                                         onDelete(DeleteIntent.Selected)
                                     }
                                 )
                                 add(
-                                    ContextMenuItem("Export selected") {
+                                    NucleusContextMenuItem(exportSelectedLabel) {
                                         onExport(ExportIntent.Selected)
                                     }
                                 )
                                 add(
-                                    ContextMenuItem("Exit selection mode") { onExitSelectionMode() }
+                                    NucleusContextMenuItem(exitSelectionLabel) {
+                                        onExitSelectionMode()
+                                    }
                                 )
                             }
                         }
@@ -173,15 +195,19 @@ fun TunnelList(
                             }
                         },
                         selected = isSelected,
+                        description = { TunnelStatisticsSection(status = item.status) },
                         trailing = {
                             if (!uiState.isSelectionMode) {
-                                SwitchWithDivider(
-                                    checked = item.isRunning,
-                                    onClick = {
-                                        if (it) startTunnel(item.config.id)
-                                        else stopTunnel(item.config.id)
-                                    },
-                                )
+                                RequiresDaemonTooltip(daemonConnected = uiState.hasBackendStatus) {
+                                    SwitchWithDivider(
+                                        checked = item.isRunning,
+                                        enabled = uiState.hasBackendStatus,
+                                        onClick = {
+                                            if (it) startTunnel(item.config.id)
+                                            else stopTunnel(item.config.id)
+                                        },
+                                    )
+                                }
                             }
                         },
                     )

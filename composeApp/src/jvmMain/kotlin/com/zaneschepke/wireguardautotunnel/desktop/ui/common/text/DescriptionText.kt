@@ -5,10 +5,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.LocalRowEnabled
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Disabled
 
 @Composable
-fun DescriptionText(text: String, modifier: Modifier = Modifier, disabled: Boolean = false) {
+fun DescriptionText(
+    text: String,
+    modifier: Modifier = Modifier,
+    disabled: Boolean = !LocalRowEnabled.current,
+) {
     Text(
         text = text,
         style =
@@ -23,7 +28,7 @@ fun DescriptionText(text: String, modifier: Modifier = Modifier, disabled: Boole
 fun DescriptionText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
-    disabled: Boolean = false,
+    disabled: Boolean = !LocalRowEnabled.current,
 ) {
     Text(
         text = text,

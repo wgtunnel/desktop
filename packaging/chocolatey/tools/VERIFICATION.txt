@@ -3,9 +3,11 @@ Verification is intended to assist the Chocolatey community in verifying that th
 
 The embedded software can be verified by:
 
-1. Downloading the official MSIX from the GitHub Releases page:
-   https://github.com/wgtunnel/desktop/releases/latest
+1. Downloading the official NSIS installer (.exe) from the GitHub Releases page:
+   https://github.com/wgtunnel/desktop/releases/tag/<version>
 
-2. The Chocolatey package downloads that exact same file during installation.
+2. The Chocolatey package resolves and downloads that exact same file from the GitHub
+   Releases API during installation (see chocolateyInstall.ps1).
 
-The SHA256 checksum of the MSIX can be verified against the official release assets.
+3. The installer is Authenticode-signed (Azure Trusted Signing); the signature can be
+   verified directly on the downloaded .exe without needing a separate checksum.

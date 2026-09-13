@@ -1,46 +1,32 @@
-import java.util.Properties
-
 rootProject.name = "wgtunnel"
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-        maven("https://maven.hq.hydraulic.software")
-    }
+  includeBuild("../Nucleus/plugin-build")
+  repositories {
+    google()
+    mavenCentral()
+    gradlePluginPortal()
+  }
 }
 
 dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-    }
+  repositories {
+    mavenLocal()
+    google()
+    mavenCentral()
+  }
 }
 
-plugins {
-    id("com.gradleup.nmcp.settings").version("1.4.4")
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-}
+// Local dev
+//includeBuild("../core") {
+//  dependencySubstitution {
+//    substitute(module("com.wgtunnel:backend")).using(project(":backend"))
+//    substitute(module("com.wgtunnel:parser")).using(project(":parser"))
+//  }
+//}
 
-fun localProperty(name: String): String? {
-    val props = Properties()
-    val file = rootDir.resolve("local.properties")
+plugins { id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0" }
 
-    if (file.exists()) {
-        file.inputStream().use { props.load(it) }
-    }
-
-    return props.getProperty(name) ?: System.getenv(name)
-}
-
-nmcpSettings {
-    centralPortal {
-        username = localProperty("MAVEN_CENTRAL_USER")
-        password = localProperty("MAVEN_CENTRAL_PASS")
-        publishingType = "AUTOMATIC"
-    }
-}
-
-include(":composeApp", ":parser", ":daemon", ":tunnel", ":cli", ":client", ":keyring", ":shared")
+include(":composeApp", ":daemon", ":client", ":keyring", ":shared")

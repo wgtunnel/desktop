@@ -12,9 +12,10 @@ A clear and concise description of what the bug is.
 
 **Platform (please complete the following information):**
 
-- OS: [e.g. Debian, Arch, Fedora, Windows 11]
-- Desktop Environment **(Linux Only)**: [e.g. GNOME, KDE Plasma, XFCE]
-- App Version [e.g. 1.1.1]
+- OS: [Debian, Arch, Fedora, Windows 11, Windows 10]
+- Desktop Environment **(Linux Only)**: [GNOME, KDE Plasma, XFCE, Hyprland]
+- Display Protocol **(Linux Only)**: [X11, Wayland]
+- App Version [1.1.1]
 
 **To Reproduce**
 Steps to reproduce the behavior:

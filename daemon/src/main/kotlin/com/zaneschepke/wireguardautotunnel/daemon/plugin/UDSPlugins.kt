@@ -6,11 +6,14 @@ import com.zaneschepke.wireguardautotunnel.core.helper.PermissionsHelper
 import com.zaneschepke.wireguardautotunnel.core.ipc.Headers
 import com.zaneschepke.wireguardautotunnel.core.ipc.IPC
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
+import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import java.nio.file.Paths
+
+private val log = Logger.withTag("HmacShield")
 
 val hmacShieldPlugin =
     createApplicationPlugin("HmacShield") {
@@ -26,7 +29,7 @@ val hmacShieldPlugin =
                 call.request.headers[HttpHeaders.Upgrade]?.equals("websocket", ignoreCase = true) ==
                     true
             ) {
-                Logger.d { "Daemon: Allowing WebSocket handshake for ${call.request.path()}" }
+                log.d { "Daemon: Allowing WebSocket handshake for ${call.request.path()}" }
                 return@onCall
             }
 
@@ -41,27 +44,28 @@ val hmacShieldPlugin =
                 try {
                     Paths.get(keyPathStr).normalize().toAbsolutePath().toFile()
                 } catch (e: Exception) {
-                    Logger.w { "Daemon: Invalid path format: $keyPathStr" }
+                    log.w { "Daemon: Invalid path format: $keyPathStr" }
                     return@onCall call.respond(HttpStatusCode.Unauthorized, "Invalid key path")
                 }
 
-            if (keyFile.name != IPC.KEY_FILE || keyFile.parentFile?.name != IPC.USER_FOLDER) {
-                Logger.w {
-                    "Daemon: Path does not match expected structure: ${keyFile.absolutePath}"
-                }
+            if (
+                keyFile.name != IPC.KEY_FILE ||
+                    keyFile.parentFile?.name != AppVariant.current.ipcFolder
+            ) {
+                log.w { "Daemon: Path does not match expected structure: ${keyFile.absolutePath}" }
                 return@onCall call.respond(
                     HttpStatusCode.Unauthorized,
                     "Invalid key path structure",
                 )
             }
             if (!keyFile.isFile) {
-                Logger.w { "Daemon: Key file does not exist: ${keyFile.absolutePath}" }
+                log.w { "Daemon: Key file does not exist: ${keyFile.absolutePath}" }
                 return@onCall call.respond(HttpStatusCode.Unauthorized, "Key file not found")
             }
 
             // ensure it is user only owned, as we expect
             if (!PermissionsHelper.isOwnerOnly(keyFile.toPath())) {
-                Logger.e { "Daemon: Key file permissions are not 0600: ${keyFile.absolutePath}" }
+                log.e { "Daemon: Key file permissions are not 0600: ${keyFile.absolutePath}" }
                 return@onCall call.respond(
                     HttpStatusCode.Unauthorized,
                     "Invalid key file permissions",
@@ -76,14 +80,14 @@ val hmacShieldPlugin =
             val signature = call.request.headers[Headers.HMAC_SIGNATURE]
 
             if (signature == null) {
-                Logger.w { "Daemon: Missing HMAC signature" }
+                log.w { "Daemon: Missing HMAC signature" }
                 return@onCall call.respond(HttpStatusCode.Unauthorized, "Missing signature")
             }
 
             val bodyText = call.receiveText()
 
             if (!HmacProtector.verify(secret, timestamp, signature, bodyText)) {
-                Logger.e { "Daemon: HMAC Mismatch! Path: ${call.request.path()} Body: '$bodyText'" }
+                log.e { "Daemon: HMAC Mismatch! Path: ${call.request.path()} Body: '$bodyText'" }
                 return@onCall call.respond(HttpStatusCode.Unauthorized, "Invalid HMAC")
             }
         }

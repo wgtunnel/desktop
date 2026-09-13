@@ -1,10 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.crypto
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +19,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.addresses
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.back
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.util.toClipEntry
 import com.zaneschepke.wireguardautotunnel.ui.screens.support.donate.crypto.components.AddressItem
 import kotlinx.coroutines.launch
@@ -46,10 +44,10 @@ fun AddressesScreen() {
             )
         }
     ) {
-        Column(
+        ScrollableColumn(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxSize(),
         ) {
             val clipboard = LocalClipboard.current
             val scope = rememberCoroutineScope()

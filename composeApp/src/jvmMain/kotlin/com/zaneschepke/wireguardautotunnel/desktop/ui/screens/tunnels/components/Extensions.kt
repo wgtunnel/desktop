@@ -27,3 +27,14 @@ fun TunnelState.asTooltipMessage(): String {
         TunnelState.RESOLVING_DNS -> "Resolving DNS"
     }
 }
+
+fun TunnelState.asStatusLabel(): String? {
+    return when (this) {
+        TunnelState.DOWN,
+        TunnelState.STOPPING -> null
+        TunnelState.STARTING -> "Establishing connection"
+        TunnelState.RESOLVING_DNS -> "Resolving DNS"
+        TunnelState.HEALTHY -> "Connected"
+        TunnelState.HANDSHAKE_FAILURE -> "Handshake failure"
+    }
+}

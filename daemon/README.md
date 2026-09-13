@@ -1,9 +1,10 @@
 # Development
 
-For use in development.
-
-## Run Daemon
+Run the daemon from a packaged-style layout (not as root Gradle):
 
 ```shell
-sudo JAVA_HOME=$JAVA_HOME ./gradlew :daemon:run
+mise install
+./gradlew :daemon:run
 ```
+
+`JAVA_HOME` is provided by the project toolchain (mise + Gradle Temurin 25). Do not pass a global JDK 27 `JAVA_HOME` into the build.

@@ -24,15 +24,11 @@ sealed class Route : NavKey {
 
     @Keep @Serializable data object Support : Route()
 
-    @Keep @Serializable data object Lock : Route()
-
     @Keep @Serializable data object License : Route()
 
     @Keep @Serializable data object Logs : Route()
 
     @Keep @Serializable data object Appearance : Route()
-
-    @Keep @Serializable data object Language : Route()
 
     @Keep @Serializable data object Display : Route()
 
@@ -40,46 +36,39 @@ sealed class Route : NavKey {
 
     @Keep @Serializable data class Tunnel(val id: Long) : Route()
 
-    @Keep @Serializable data class SplitTunnel(val id: Int) : Route()
+    @Keep @Serializable data class Config(val id: Long) : Route()
 
-    @Keep @Serializable data class ConfigGlobal(val id: Int?) : Route()
-
-    @Keep @Serializable data class SplitTunnelGlobal(val id: Int) : Route()
+    @Keep @Serializable data class LiveConfig(val id: Long) : Route()
 
     @Keep @Serializable data object Settings : Route()
 
     @Keep @Serializable data object TunnelMonitoring : Route()
 
-    @Keep @Serializable data object AndroidIntegrations : Route()
-
     @Keep @Serializable data object Dns : Route()
+
+    @Keep @Serializable data object TunnelGlobals : Route()
+
+    @Keep @Serializable data class ConfigGlobal(val id: Long) : Route()
 
     @Keep @Serializable data object ProxySettings : Route()
 
     @Keep @Serializable data object LockdownSettings : Route()
 
+    @Keep @Serializable data object TunnelRecovery : Route()
+
     @Keep @Serializable data object AutoTunnel : Route()
 
-    @Keep @Serializable data object AdvancedAutoTunnel : Route()
-
-    @Keep @Serializable data object WifiDetectionMethod : Route()
-
     @Keep @Serializable data object WifiPreferences : Route()
-
-    @Keep @Serializable data object LocationDisclosure : Route()
 
     @Keep @Serializable data object Donate : Route()
 
     @Keep @Serializable data object Addresses : Route()
 
     @Keep @Serializable data class PreferredTunnel(val tunnelNetwork: TunnelNetwork) : Route()
-
-    @Keep @Serializable data object PingTarget : Route()
 }
 
 @Serializable
 enum class TunnelNetwork {
-    MOBILE_DATA,
     ETHERNET,
     WIFI,
 }
@@ -113,26 +102,21 @@ enum class Tab(
             when (route) {
                 is Route.Tunnels,
                 is Route.Tunnel,
-                is Route.Lock,
-                is Route.SplitTunnel -> TUNNELS
+                is Route.Config,
+                is Route.LiveConfig -> TUNNELS
                 is Route.AutoTunnel,
-                Route.AdvancedAutoTunnel,
-                Route.WifiDetectionMethod,
                 Route.WifiPreferences,
-                is Route.PreferredTunnel,
-                Route.LocationDisclosure -> AUTOTUNNEL
+                is Route.PreferredTunnel -> AUTOTUNNEL
                 is Route.Settings,
                 Route.TunnelMonitoring,
-                Route.AndroidIntegrations,
                 Route.Dns,
-                is Route.SplitTunnelGlobal,
+                Route.TunnelGlobals,
+                is Route.ConfigGlobal,
                 Route.ProxySettings,
                 Route.LockdownSettings,
+                Route.TunnelRecovery,
                 Route.Appearance,
-                Route.Language,
                 Route.Display,
-                Route.PingTarget,
-                is Route.ConfigGlobal,
                 Route.Logs -> SETTINGS
                 is Route.Support,
                 Route.License,
@@ -145,31 +129,26 @@ enum class Tab(
 fun routeSerializersModule(): SerializersModule = SerializersModule {
     polymorphic(NavKey::class) {
         subclass(Route.Support::class, Route.Support.serializer())
-        subclass(Route.Lock::class, Route.Lock.serializer())
         subclass(Route.License::class, Route.License.serializer())
         subclass(Route.Logs::class, Route.Logs.serializer())
         subclass(Route.Appearance::class, Route.Appearance.serializer())
-        subclass(Route.Language::class, Route.Language.serializer())
         subclass(Route.Display::class, Route.Display.serializer())
         subclass(Route.Tunnels::class, Route.Tunnels.serializer())
         subclass(Route.Tunnel::class, Route.Tunnel.serializer())
-        subclass(Route.SplitTunnel::class, Route.SplitTunnel.serializer())
-        subclass(Route.ConfigGlobal::class, Route.ConfigGlobal.serializer())
-        subclass(Route.SplitTunnelGlobal::class, Route.SplitTunnelGlobal.serializer())
+        subclass(Route.Config::class, Route.Config.serializer())
+        subclass(Route.LiveConfig::class, Route.LiveConfig.serializer())
         subclass(Route.Settings::class, Route.Settings.serializer())
         subclass(Route.TunnelMonitoring::class, Route.TunnelMonitoring.serializer())
-        subclass(Route.AndroidIntegrations::class, Route.AndroidIntegrations.serializer())
         subclass(Route.Dns::class, Route.Dns.serializer())
+        subclass(Route.TunnelGlobals::class, Route.TunnelGlobals.serializer())
+        subclass(Route.ConfigGlobal::class, Route.ConfigGlobal.serializer())
         subclass(Route.ProxySettings::class, Route.ProxySettings.serializer())
         subclass(Route.LockdownSettings::class, Route.LockdownSettings.serializer())
+        subclass(Route.TunnelRecovery::class, Route.TunnelRecovery.serializer())
         subclass(Route.AutoTunnel::class, Route.AutoTunnel.serializer())
-        subclass(Route.AdvancedAutoTunnel::class, Route.AdvancedAutoTunnel.serializer())
-        subclass(Route.WifiDetectionMethod::class, Route.WifiDetectionMethod.serializer())
         subclass(Route.WifiPreferences::class, Route.WifiPreferences.serializer())
-        subclass(Route.LocationDisclosure::class, Route.LocationDisclosure.serializer())
         subclass(Route.Donate::class, Route.Donate.serializer())
         subclass(Route.Addresses::class, Route.Addresses.serializer())
         subclass(Route.PreferredTunnel::class, Route.PreferredTunnel.serializer())
-        subclass(Route.PingTarget::class, Route.PingTarget.serializer())
     }
 }
