@@ -1,0 +1,44 @@
+{
+    "version": "2.0.2",
+    "description": "WireGuard and AmneziaWG VPN client with auto-tunneling, a kill switch, and proxying",
+    "homepage": "https://wgtunnel.com",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/wgtunnel/desktop/releases/download/2.0.2/wgtunnel-2.0.2-win-x64-nsis.exe#/installer.exe",
+            "hash": "a12e464d9b9e7dc9e05e0c7eb0562d853e7b80b019fc06d3741f572091e41139"
+        }
+    },
+    "installer": {
+        "script": [
+            "if (!(is_admin)) {",
+            "    error \"Administrator rights are required to install $app.\"",
+            "    break",
+            "}",
+            "",
+            "Invoke-ExternalCommand \"$dir\\installer.exe\" -ArgumentList @('/S', \"/D=$dir\") -RunAs | Out-Null",
+            "Remove-Item -Recurse -ErrorAction SilentlyContinue \"$([Environment]::GetFolderPath('commonstartmenu'))\\Programs\\WG Tunnel\"",
+            "Remove-Item \"$dir\\installer.exe\""
+        ]
+    },
+    "uninstaller": {
+        "script": "Start-Process \"$dir\\Uninstall wgtunnel.exe\" -ArgumentList @('/S') -Verb RunAs -Wait | Out-Null"
+    },
+    "bin": "wgtunnel.exe",
+    "shortcuts": [
+        [
+            "wgtunnel.exe",
+            "WG Tunnel"
+        ]
+    ],
+    "checkver": {
+        "github": "https://github.com/wgtunnel/desktop"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/wgtunnel/desktop/releases/download/$version/wgtunnel-$version-win-x64-nsis.exe#/installer.exe"
+            }
+        }
+    }
+}

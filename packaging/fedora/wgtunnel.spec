@@ -6,7 +6,7 @@
 Name:           wgtunnel
 Version:        0.0.0
 Release:        1%{?dist}
-Summary:        WireGuard and AmneziaWG VPN client with auto-tunneling, lockdown and proxying
+Summary:        WireGuard and AmneziaWG VPN client with auto-tunneling, a kill switch, and proxying
 License:        MIT
 URL:            https://wgtunnel.com
 ExclusiveArch:  x86_64
@@ -25,7 +25,7 @@ Requires(preun): systemd
 Requires(postun): systemd
 
 %description
-WireGuard and AmneziaWG VPN client with auto-tunneling, lockdown, and proxying.
+WireGuard and AmneziaWG VPN client with auto-tunneling, a kill switch, and proxying.
 
 This COPR package redistributes the GitHub release RPM.
 

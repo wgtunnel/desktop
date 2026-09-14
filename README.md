@@ -77,7 +77,7 @@ Desktop-specific:
 
 - **Native Application:** Ships as a GraalVM native image (not a JVM/Electron style app) for fast startup and a low memory footprint.
 - **System Service Daemon:** The tunnel runs as an independent system service, so it keeps running (and enables restore on boot features) even when the GUI is not.
-- **Kill switch & Tunnel Restoration on Boot:** Reapplies lockdown and reconnects the last active tunnel automatically after a reboot.
+- **Kill switch & Tunnel Restoration on Boot:** Reapplies the kill switch and reconnects the last active tunnel automatically after a reboot.
 - **Encrypted At Rest:** Tunnel configs and other sensitive data are stored encrypted (AES-256-GCM) in the local database while the encryption key lives in the OS keychain/credential store.
 - **Tunnel Management:** Import, export, editing, live statistics (including uptime and, in Local Proxy mode, the active proxy address/auth status), and sorting.
 - **System Tray Integration:** Minimize to tray with a live status badge.
