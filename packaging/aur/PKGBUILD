@@ -1,6 +1,8 @@
 # Maintainer: Zane Schepke <support@wgtunnel.com>
+# pkgver is a placeholder: publish-aur.yml rewrites it (and regenerates checksums via
+# updpkgsums) from the release tag before every AUR push.
 pkgname=wgtunnel-bin
-pkgver=1.0.2
+pkgver=0.0.0
 pkgrel=1
 install=wgtunnel-bin.install
 pkgdesc="WireGuard and AmneziaWG VPN client with auto-tunneling, lockdown and proxying"

@@ -109,3 +109,12 @@ jobs:
     with:
       tag: ${{ needs.meta.outputs.tag }}
       version: ${{ needs.meta.outputs.version }}
+
+  aur:
+    needs: [meta, publish]
+    if: needs.meta.outputs.release_type == 'release'
+    uses: ./.github/workflows/publish-aur.yml
+    secrets: inherit
+    with:
+      tag: ${{ needs.meta.outputs.tag }}
+      version: ${{ needs.meta.outputs.version }}

@@ -1,0 +1,56 @@
+name: publish-aur
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Git tag being released (e.g. 2.0.2)"
+        type: string
+        required: true
+      version:
+        description: "Version to publish (e.g. 2.0.2)"
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag'
+        required: false
+        default: '2.0.2'
+
+jobs:
+  publish:
+    name: publish-aur
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "workflow_call" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${{ github.event.inputs.tag_name }}"
+          fi
+          VERSION="${VERSION#v}"
+          echo "Publishing version: $VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Bump pkgver
+        run: |
+          set -euo pipefail
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" packaging/aur/PKGBUILD
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
+        with:
+          pkgname: wgtunnel-bin
+          pkgbuild: packaging/aur/PKGBUILD
+          assets: packaging/aur/wgtunnel-bin.install
+          updpkgsums: true
+          test: true
+          commit_username: Zane Schepke
+          commit_email: support@wgtunnel.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "upgpkg: wgtunnel-bin ${{ env.VERSION }}-1"

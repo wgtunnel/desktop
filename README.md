@@ -85,7 +85,7 @@ Desktop-specific:
 
 ## Deferred Endpoint Bootstrapping
 
-Most WireGuard clients resolve peer endpoints before bring the tunnel up. This has several drawbacks:
+Most WireGuard clients resolve peer endpoints before bringing the tunnel up. This has several drawbacks:
 1. If resolution fails or is slow (a flaky network, a DNS hiccup, a blocked resolver) the tunnel
 simply doesn't come up, and there's no protection until it does.
 2. During that resolution window, you're leaking until resolution completes successfully.
@@ -96,10 +96,10 @@ happens separately, in the background, retrying indefinitely until it succeeds.
 
 This has significant benefits:
 
-- **Immediate protection** The user is protected the moment the tunnel is toggled on, regardless of
+- **Immediate protection:** The user is protected the moment the tunnel is toggled on, regardless of
   whether or when endpoint resolution succeeds. This dramatically reduces a leak window that other clients
   suffer from.
-- **Reliability** The tunnel never fails to come up because of a flaky network or 
+- **Reliability:** The tunnel never fails to come up because of a flaky network or
   resolution failures. The tunnel is already up and blocking traffic while DNS keeps retrying in the
   background until it connects.
 
@@ -124,10 +124,24 @@ This has significant benefits:
 > [!NOTE]
 > Only `systemd`-based Linux systems are currently supported. Also, the firewall must use `nftables` or `iptables` with the nft backend (`iptables-nft`).
 
+> [!Note]
+> Direct installations from GitHub releases for `.deb` and `.rpm` packages can use the in-app updater while `.pacman` and tarball direct installs
+> will require manual updates.
+
 #### Debian / Ubuntu
 
-1. Download the `.deb` file from the latest release.
-2. From the directory where you downloaded the file:
+Preferred method - via our [apt repository](https://apt.wgtunnel.com) (for package manager updates):
+
+```bash
+curl -fsSL https://apt.wgtunnel.com/wgtunnel-archive-keyring.asc | \
+  sudo gpg --dearmor -o /usr/share/keyrings/wgtunnel-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/wgtunnel-archive-keyring.gpg] https://apt.wgtunnel.com stable main" | \
+  sudo tee /etc/apt/sources.list.d/wgtunnel.list
+sudo apt update
+sudo apt install wgtunnel
+```
+
+Or, download the `.deb` directly from the latest GitHub release:
 
 ```bash
 sudo apt install ./wgtunnel*.deb
@@ -135,46 +149,48 @@ sudo apt install ./wgtunnel*.deb
 
 #### Fedora / RHEL
 
-From the GitHub release:
+Preferred method - via [COPR](https://copr.fedorainfracloud.org/coprs/zaneschepke/wgtunnel/) (for package manager updates):
+
+```bash
+sudo dnf copr enable zaneschepke/wgtunnel
+sudo dnf install wgtunnel
+```
+
+Or, download the `.rpm` directly from the latest GitHub release:
 
 ```bash
 sudo rpm -Uvh wgtunnel*.rpm
 ```
 
-[//]: # (Or from COPR &#40;see `packaging/RELEASE_LINUX.md`&#41;:)
-
-[//]: # ()
-[//]: # (```bash)
-
-[//]: # (sudo dnf copr enable <fedora-user>/wgtunnel)
-
-[//]: # (sudo dnf install wgtunnel)
-
-[//]: # (```)
-
 #### Arch Linux
 
-From the GitHub release:
+Preferred method - via [AUR](https://aur.archlinux.org/packages/wgtunnel-bin) (for package manager updates):
+
+> [!Note]
+> Per Arch packaging guidelines, the installation does not enable or start the daemon for you. You will
+> need to start the daemon yourself after install.
+
+```bash
+yay -S wgtunnel-bin
+```
+
+Or, download the `.pacman` directly from the latest GitHub release:
 
 ```bash
 sudo pacman -U wgtunnel*.pacman
 ```
 
-> [!Note]
-> Per Arch packaging guidelines, the installation does not enable or start the daemon for you. The app will tell
-you and provide the command to start the daemon if it is not reachable or is running an incompatible version.
-
-Or from the AUR:
+Then, enable and start the daemon:
 
 ```bash
-yay -S wgtunnel-bin
+sudo systemctl enable --now wgtunnel-daemon.service
 ```
 
 #### Other distros (`.tar.gz`)
 
 Use this only if none of the formats above fit your distro. The tarball bundles its own
 `install.sh` / `uninstall.sh` (the same install location and systemd configuration the `.deb`/`.rpm`/
-`.pacman` packages use under the hood. See `packaging/linux/tar-install.sh` in the source repo if
+`.pacman` packages use under the hood). See `packaging/linux/tar-install.sh` in the source repo if
 you want to see the source script:
 
 ```bash
@@ -186,11 +202,9 @@ sudo ./install.sh
 To update, just run `sudo ./install.sh` again from a newer tarball. It copies over the
 existing install and restarts the daemon. To remove it entirely: `sudo /opt/wgtunnel/uninstall.sh`.
 
-In-app updates aren't available for this install method.
-
 #### Removing saved data
 
-Uninstalling normally leaves your saved tunnels, settings, and logs in place, so a reinstall picks 
+Uninstalling normally leaves your saved tunnels, settings, and logs in place, so a reinstall picks
 up where you left off. To wipe everything:
 
 - **Debian/Ubuntu**: `sudo apt purge wgtunnel`
@@ -202,11 +216,11 @@ up where you left off. To wipe everything:
   ```
 - **Tarball**: `sudo /opt/wgtunnel/uninstall.sh --purge`
 
-None of these clear the saved secret in your OS keyring (service `wg_tunnel`). You will need to 
+None of these clear the saved secret in your OS keyring (service `wg_tunnel`). You will need to
 remove that yourself with your keyring manager.
 
-> [!Note] 
-> Snap, Flatpak, and AppImages are not shipped and there is no plan currently to add them. The 
+> [!Note]
+> Snap, Flatpak, and AppImages are not shipped and there is no plan currently to add them. They
 > simply are not a good fit for the app due to their sandboxing limitations.
 
 ## Development
@@ -216,8 +230,8 @@ remove that yourself with your keyring manager.
 - Toolchains pinned in `.mise.toml` (JDK, Node, Go, .NET) - installed for you by `mise install` below.
 - A C toolchain for the host platform.
 - **MinGW-w64** (`x86_64-w64-mingw32-gcc`)
--  [WG Tunnel's Nucleus fork](https://github.com/wgtunnel/Nucleus) cloned in the same parent directory
-as this project
+- [WG Tunnel's Nucleus fork](https://github.com/wgtunnel/Nucleus) cloned in the same parent directory
+  as this project
 
 ### Run locally
 
