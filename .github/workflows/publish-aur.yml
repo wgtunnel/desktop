@@ -37,10 +37,13 @@ jobs:
           echo "Publishing version: $VERSION"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-      - name: Bump pkgver
+      - name: Bump pkgver and checksum
         run: |
           set -euo pipefail
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" packaging/aur/PKGBUILD
+          ASSET_URL="https://github.com/wgtunnel/desktop/releases/download/${VERSION}/wgtunnel-${VERSION}-linux-x64.pacman"
+          SHA256=$(curl -fsSL "$ASSET_URL" | sha256sum | cut -d' ' -f1)
+          sed -i "s/^sha256sums=.*/sha256sums=('${SHA256}')/" packaging/aur/PKGBUILD
 
       - name: Publish to AUR
         uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
@@ -48,8 +51,6 @@ jobs:
           pkgname: wgtunnel-bin
           pkgbuild: packaging/aur/PKGBUILD
           assets: packaging/aur/wgtunnel-bin.install
-          updpkgsums: true
-          test: true
           commit_username: Zane Schepke
           commit_email: support@wgtunnel.com
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
