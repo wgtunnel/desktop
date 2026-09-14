@@ -9,7 +9,7 @@ pkgdesc="WireGuard and AmneziaWG VPN client with auto-tunneling, lockdown and pr
 arch=('x86_64')
 url="https://wgtunnel.com"
 license=('MIT')
-depends=('systemd' 'gtk3' 'libsecret' 'gcc-libs' 'freetype2' 'fontconfig')
+depends=('systemd' 'gtk3' 'gcc-libs' 'freetype2' 'fontconfig')
 provides=("wgtunnel=${pkgver}")
 conflicts=('wgtunnel' 'wgtunnel-git')
 options=(!strip !emptydirs)
@@ -24,7 +24,7 @@ package() {
   rm -f "$pkgdir"/.PKGINFO "$pkgdir"/.MTREE "$pkgdir"/.BUILDINFO "$pkgdir"/.INSTALL
 
   install -d "$pkgdir/usr/bin"
-  ln -sf /opt/wgtunnel/bin/wgtunnel "$pkgdir/usr/bin/wgtunnel"
+  ln -sf /opt/wgtunnel/wgtunnel "$pkgdir/usr/bin/wgtunnel"
 
   local unit="$pkgdir/opt/wgtunnel/wgtunnel-daemon.service"
   [[ -f "$unit" ]] || unit="$pkgdir/opt/wgtunnel/lib/wgtunnel-daemon.service"

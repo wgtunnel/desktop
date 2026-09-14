@@ -20,7 +20,6 @@ BuildRequires:  systemd-rpm-macros
 
 Requires:       systemd
 Requires:       gtk3
-Requires:       libsecret
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
