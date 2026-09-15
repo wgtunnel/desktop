@@ -29,12 +29,14 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "workflow_call" ]; then
+            TAG="${{ inputs.tag }}"
             VERSION="${{ inputs.version }}"
           else
-            VERSION="${{ github.event.inputs.tag_name }}"
+            TAG="${{ github.event.inputs.tag_name }}"
+            VERSION="${TAG#v}"
           fi
-          VERSION="${VERSION#v}"
-          echo "Publishing version: $VERSION"
+          echo "Publishing version: $VERSION (tag: $TAG)"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Bump spec version and changelog
@@ -46,6 +48,7 @@ jobs:
             -e "s/^\* PLACEHOLDER_DATE Zane Schepke <support@wgtunnel.com> - PLACEHOLDER_VERSION-1$/* ${CHANGELOG_DATE} Zane Schepke <support@wgtunnel.com> - ${VERSION}-1/" \
             -e "s/^- Update to PLACEHOLDER_VERSION$/- Update to ${VERSION}/" \
             -e "s/^Version:.*/Version:        ${VERSION}/" \
+            -e "s/^%global tag .*/%global tag ${TAG}/" \
             packaging/fedora/wgtunnel.spec
 
       - name: Install copr-cli

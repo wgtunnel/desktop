@@ -29,19 +29,22 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "workflow_call" ]; then
+            TAG="${{ inputs.tag }}"
             VERSION="${{ inputs.version }}"
           else
-            VERSION="${{ github.event.inputs.tag_name }}"
+            TAG="${{ github.event.inputs.tag_name }}"
+            VERSION="${TAG#v}"
           fi
-          VERSION="${VERSION#v}"
-          echo "Publishing version: $VERSION"
+          echo "Publishing version: $VERSION (tag: $TAG)"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Bump pkgver and checksum
         run: |
           set -euo pipefail
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" packaging/aur/PKGBUILD
-          ASSET_URL="https://github.com/wgtunnel/desktop/releases/download/${VERSION}/wgtunnel-${VERSION}-linux-x64.pacman"
+          sed -i "s/^_tag=.*/_tag=\"${TAG}\"/" packaging/aur/PKGBUILD
+          ASSET_URL="https://github.com/wgtunnel/desktop/releases/download/${TAG}/wgtunnel-${VERSION}-linux-x64.pacman"
           SHA256=$(curl -fsSL "$ASSET_URL" | sha256sum | cut -d' ' -f1)
           sed -i "s/^sha256sums=.*/sha256sums=('${SHA256}')/" packaging/aur/PKGBUILD
 

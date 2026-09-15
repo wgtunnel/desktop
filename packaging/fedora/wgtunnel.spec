@@ -3,6 +3,7 @@
 
 # Version is a placeholder: CI rewrites it (and the %changelog placeholder
 # entry below) from the release tag before every Copr build.
+%global tag 0.0.0
 Name:           wgtunnel
 Version:        0.0.0
 Release:        1%{?dist}
@@ -12,7 +13,7 @@ URL:            https://wgtunnel.com
 ExclusiveArch:  x86_64
 
 # RPM artifact: ${name}-${version}-linux-x86_64.rpm
-Source0:        https://github.com/wgtunnel/desktop/releases/download/%{version}/wgtunnel-%{version}-linux-x86_64.rpm
+Source0:        https://github.com/wgtunnel/desktop/releases/download/%{tag}/wgtunnel-%{version}-linux-x86_64.rpm
 
 BuildRequires:  cpio
 BuildRequires:  rpm

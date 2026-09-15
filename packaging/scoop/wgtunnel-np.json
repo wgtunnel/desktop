@@ -32,12 +32,13 @@
         ]
     ],
     "checkver": {
-        "github": "https://github.com/wgtunnel/desktop"
+        "github": "https://github.com/wgtunnel/desktop",
+        "regex": "/releases/tag/(?<tag>v?(?<version>[\\d.]+))"
     },
     "autoupdate": {
         "architecture": {
             "64bit": {
-                "url": "https://github.com/wgtunnel/desktop/releases/download/$version/wgtunnel-$version-win-x64-nsis.exe#/installer.exe"
+                "url": "https://github.com/wgtunnel/desktop/releases/download/$matchTag/wgtunnel-$version-win-x64-nsis.exe#/installer.exe"
             }
         }
     }

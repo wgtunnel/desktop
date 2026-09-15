@@ -21,11 +21,13 @@ jobs:
         shell: pwsh
         run: |
           if ($env:GITHUB_EVENT_NAME -eq 'release') {
-            $version = ($env:GITHUB_REF -replace 'refs/tags/', '') -replace '^v', ''
+            $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
           } else {
-            $version = '${{ github.event.inputs.tag_name }}' -replace '^v', ''
+            $tag = '${{ github.event.inputs.tag_name }}'
           }
-          Write-Host "Publishing version: $version"
+          $version = $tag -replace '^v', ''
+          Write-Host "Publishing version: $version (tag: $tag)"
+          echo "TAG=$tag" >> $env:GITHUB_ENV
           echo "VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Update version in nuspec
@@ -39,7 +41,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $url = "https://github.com/wgtunnel/desktop/releases/download/${{ env.VERSION }}/wgtunnel-${{ env.VERSION }}-win-x64-nsis.exe"
+          $url = "https://github.com/wgtunnel/desktop/releases/download/${{ env.TAG }}/wgtunnel-${{ env.VERSION }}-win-x64-nsis.exe"
           $tempFile = Join-Path $env:RUNNER_TEMP "wgtunnel-installer.exe"
           Invoke-WebRequest -Uri $url -OutFile $tempFile
           $checksum = (Get-FileHash -Path $tempFile -Algorithm SHA256).Hash.ToLower()

@@ -16,7 +16,8 @@ options=(!strip !emptydirs)
 
 # Nucleus artifact: ${name}-${version}-${os}-${arch}.pacman
 _src="wgtunnel-${pkgver}-linux-x64.pacman"
-source=("${_src}::https://github.com/wgtunnel/desktop/releases/download/${pkgver}/${_src}")
+_tag="${pkgver}"
+source=("${_src}::https://github.com/wgtunnel/desktop/releases/download/${_tag}/${_src}")
 sha256sums=('SKIP')
 
 package() {
