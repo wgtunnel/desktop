@@ -35,6 +35,21 @@ jobs:
             -replace '<version>.*</version>', "<version>${{ env.VERSION }}</version>" | `
             Set-Content packaging\chocolatey\wgtunnel.nuspec
 
+      - name: Pin installer URL and checksum
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = "https://github.com/wgtunnel/desktop/releases/download/${{ env.VERSION }}/wgtunnel-${{ env.VERSION }}-win-x64-nsis.exe"
+          $tempFile = Join-Path $env:RUNNER_TEMP "wgtunnel-installer.exe"
+          Invoke-WebRequest -Uri $url -OutFile $tempFile
+          $checksum = (Get-FileHash -Path $tempFile -Algorithm SHA256).Hash.ToLower()
+
+          $installScript = 'packaging\chocolatey\tools\chocolateyInstall.ps1'
+          (Get-Content $installScript) `
+            -replace 'PLACEHOLDER_URL', $url `
+            -replace 'PLACEHOLDER_CHECKSUM', $checksum | `
+            Set-Content $installScript
+
       - name: Pack and push to Chocolatey
         env:
           CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
