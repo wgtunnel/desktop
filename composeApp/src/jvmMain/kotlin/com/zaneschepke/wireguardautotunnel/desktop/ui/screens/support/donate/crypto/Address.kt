@@ -7,7 +7,10 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bitcoi
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bitcoin_address
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bitcoin_cash
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bitcoin_cash_address
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bitcoin_lightning
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bitcoin_lightning_address
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.btc
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.btc_lightning
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ecash
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ecash_address
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.eth
@@ -44,6 +47,11 @@ data class Address(
                     name = Res.string.bitcoin,
                     address = Res.string.bitcoin_address,
                     icon = Res.drawable.btc,
+                ),
+                Address(
+                    name = Res.string.bitcoin_lightning,
+                    address = Res.string.bitcoin_lightning_address,
+                    icon = Res.drawable.btc_lightning,
                 ),
                 Address(
                     name = Res.string.monero,

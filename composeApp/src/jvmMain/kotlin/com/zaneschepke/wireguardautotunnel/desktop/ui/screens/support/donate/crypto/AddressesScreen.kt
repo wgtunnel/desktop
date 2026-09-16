@@ -2,6 +2,7 @@ package com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.cr
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,11 +44,11 @@ fun AddressesScreen() {
                 },
             )
         }
-    ) {
+    ) { padding ->
         ScrollableColumn(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             val clipboard = LocalClipboard.current
             val scope = rememberCoroutineScope()
