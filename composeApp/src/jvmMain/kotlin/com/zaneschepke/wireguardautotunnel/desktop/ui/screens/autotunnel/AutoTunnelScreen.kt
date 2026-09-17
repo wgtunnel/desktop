@@ -18,13 +18,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -58,16 +55,9 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_on_wifi
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.unknown
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.wifi
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.fix
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.location_justification
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.location_permissions
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.location_permissions_missing
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.open_settings
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
-import com.zaneschepke.wireguardautotunnel.desktop.ui.common.banner.WarningBanner
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
-import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.InfoDialog
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SwitchWithDivider
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
@@ -77,8 +67,8 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.RequiresDae
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.TunnelNetwork
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
-import com.zaneschepke.wireguardautotunnel.desktop.util.DesktopUtils
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AutoTunnelViewModel
+import dev.nucleusframework.core.runtime.Platform
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -100,23 +90,6 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
     }
 
     if (!uiState.isLoaded) return
-
-    var showLocationDialog by remember { mutableStateOf(false) }
-    val showLocationWarning =
-        uiState.daemonConnected && uiState.network.locationPermissionDenied
-
-    if (showLocationDialog) {
-        InfoDialog(
-            onAttest = {
-                DesktopUtils.openUri("ms-settings:privacy-location")
-                showLocationDialog = false
-            },
-            onDismiss = { showLocationDialog = false },
-            title = stringResource(Res.string.location_permissions),
-            body = { Text(stringResource(Res.string.location_justification)) },
-            confirmText = stringResource(Res.string.open_settings),
-        )
-    }
 
     val ethernetTunnel =
         remember(uiState.tunnels) { uiState.tunnels.firstOrNull { it.isEthernetTunnel } }
@@ -143,20 +116,6 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-            WarningBanner(
-                title = stringResource(Res.string.location_permissions_missing),
-                visible = showLocationWarning,
-                trailing = { _ ->
-                    TextButton(onClick = { showLocationDialog = true }) {
-                        Text(
-                            stringResource(Res.string.fix),
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                },
-                onClick = { showLocationDialog = true },
-            )
             val (title, buttonText, icon) =
                 if (uiState.autoTunnelActive) {
                     Triple(
@@ -234,7 +193,10 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                                                 }
                                             )
                                         }
-                                        if (uiState.network.bssid.isNotBlank()) {
+                                        if (
+                                            Platform.Current != Platform.Windows &&
+                                                uiState.network.bssid.isNotBlank()
+                                        ) {
                                             DescriptionText(
                                                 buildAnnotatedString {
                                                     append(stringResource(Res.string.bssid))

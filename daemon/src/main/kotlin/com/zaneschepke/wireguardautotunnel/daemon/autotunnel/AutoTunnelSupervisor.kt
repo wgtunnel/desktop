@@ -48,6 +48,9 @@ class AutoTunnelSupervisor(
     private val planFlow = MutableStateFlow(AutoTunnelConfigDto())
     private val runningFlow = MutableStateFlow(false)
 
+    private val ignoreBssid: Boolean =
+        System.getProperty("os.name").orEmpty().contains("windows", ignoreCase = true)
+
     @Volatile private var hasUserOverride = false
     private var lastNetworkKey: String? = null
     private var loopJob: Job? = null
@@ -126,8 +129,11 @@ class AutoTunnelSupervisor(
         activeIds: Set<Int>,
         plan: AutoTunnelConfigDto,
     ): AutoTunnelSnapshot {
+        val networkForEngine =
+            if (ignoreBssid) network.toAutoTunnelNetwork().copy(bssid = "")
+            else network.toAutoTunnelNetwork()
         return AutoTunnelSnapshot(
-            network = network.toAutoTunnelNetwork(),
+            network = networkForEngine,
             policy =
                 AutoTunnelPolicy(
                     isTunnelOnWifiEnabled = plan.settings.isTunnelOnWifiEnabled,
@@ -135,7 +141,8 @@ class AutoTunnelSupervisor(
                     isWildcardsEnabled = plan.settings.isWildcardsEnabled,
                     isStopOnNoInternetEnabled = plan.settings.isStopOnNoInternetEnabled,
                     trustedNetworkSsids = plan.settings.trustedNetworkSsids,
-                    trustedNetworkBssids = plan.settings.trustedNetworkBssids,
+                    trustedNetworkBssids =
+                        if (ignoreBssid) emptyList() else plan.settings.trustedNetworkBssids,
                 ),
             tunnels =
                 plan.tunnels.map {
@@ -145,7 +152,7 @@ class AutoTunnelSupervisor(
                         isPrimaryTunnel = it.isPrimaryTunnel,
                         isEthernetTunnel = it.isEthernetTunnel,
                         tunnelNetworks = it.tunnelNetworks,
-                        tunnelBssids = it.tunnelBssids,
+                        tunnelBssids = if (ignoreBssid) emptyList() else it.tunnelBssids,
                     )
                 },
             activeTunnelIds = activeIds.map { it.toLong() }.toSet(),
@@ -154,8 +161,9 @@ class AutoTunnelSupervisor(
 
     private fun updateFingerprint(snapshot: AutoTunnelSnapshot) {
         val bssidAware =
-            snapshot.policy.trustedNetworkBssids.isNotEmpty() ||
-                snapshot.tunnels.any { it.tunnelBssids.isNotEmpty() }
+            !ignoreBssid &&
+                (snapshot.policy.trustedNetworkBssids.isNotEmpty() ||
+                    snapshot.tunnels.any { it.tunnelBssids.isNotEmpty() })
         val key = snapshot.network.fingerprint(bssidAware)
         if (lastNetworkKey != key) {
             if (hasUserOverride) log.d { "Network changed, clearing user override" }
@@ -265,8 +273,7 @@ class AutoTunnelSupervisor(
                 NetworkStatusDto(
                     type = network.type,
                     ssid = network.ssid,
-                    bssid = network.bssid.uppercase(),
-                    locationPermissionDenied = network.locationPermissionDenied,
+                    bssid = if (ignoreBssid) "" else network.bssid.uppercase(),
                 ),
         )
     }

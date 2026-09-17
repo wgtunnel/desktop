@@ -37,7 +37,6 @@ data class NetworkStatusDto(
     val type: String = "disconnected",
     val ssid: String = "",
     val bssid: String = "",
-    val locationPermissionDenied: Boolean = false,
 )
 
 @Serializable

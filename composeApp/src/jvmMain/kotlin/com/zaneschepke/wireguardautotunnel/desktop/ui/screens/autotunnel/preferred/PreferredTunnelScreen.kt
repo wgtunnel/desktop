@@ -30,6 +30,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.TunnelNetwork
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.autotunnel.components.NetworkRuleInput
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AutoTunnelViewModel
+import dev.nucleusframework.core.runtime.Platform
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
@@ -102,18 +103,20 @@ fun PreferredTunnelScreen(
                                     currentSsidText = ""
                                 },
                             )
-                            NetworkRuleInput(
-                                inputTitle = stringResource(Res.string.trusted_bssid),
-                                placeholder = viewModel.bssidHints.firstOrNull().orEmpty(),
-                                rules = tunnel.tunnelBssids,
-                                onDelete = { viewModel.removeBssidMapping(tunnel, it) },
-                                currentText = currentBssidText,
-                                onValueChange = { currentBssidText = it },
-                                onSave = {
-                                    viewModel.saveBssidMapping(tunnel, it)
-                                    currentBssidText = ""
-                                },
-                            )
+                            if (Platform.Current != Platform.Windows) {
+                                NetworkRuleInput(
+                                    inputTitle = stringResource(Res.string.trusted_bssid),
+                                    placeholder = viewModel.bssidHints.firstOrNull().orEmpty(),
+                                    rules = tunnel.tunnelBssids,
+                                    onDelete = { viewModel.removeBssidMapping(tunnel, it) },
+                                    currentText = currentBssidText,
+                                    onValueChange = { currentBssidText = it },
+                                    onSave = {
+                                        viewModel.saveBssidMapping(tunnel, it)
+                                        currentBssidText = ""
+                                    },
+                                )
+                            }
                         }
                     }
                 }

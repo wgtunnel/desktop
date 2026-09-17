@@ -22,6 +22,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.DaemonConnectionStatus
 import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
+import dev.nucleusframework.core.runtime.Platform
 import dev.nucleusframework.updater.UpdateResult
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import kotlin.time.Duration.Companion.seconds
@@ -196,8 +197,7 @@ class AppViewModel(
         private const val UPDATE_AVAILABLE_TOAST_ID = "update_available"
         private val DISCONNECT_GRACE_PERIOD = 5.seconds
 
-        private val isWindows =
-            System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
+        private val isWindows = Platform.Current == Platform.Windows
         private val daemonServiceName = "${AppVariant.current.linuxFsName}-daemon"
     }
 }

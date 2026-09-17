@@ -46,6 +46,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.TunnelNetwork
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.autotunnel.components.NetworkRuleInput
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AutoTunnelViewModel
+import dev.nucleusframework.core.runtime.Platform
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
@@ -131,23 +132,25 @@ fun WifiSettingsScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                         }
                     },
                 )
-                NetworkRuleInput(
-                    inputTitle = stringResource(Res.string.trusted_bssid),
-                    placeholder = bssidHint,
-                    rules = uiState.autoTunnelSettings.trustedNetworkBssids,
-                    onDelete = { viewModel.removeTrustedBssid(it) },
-                    currentText = currentBssidText,
-                    onValueChange = { currentBssidText = it },
-                    onSave = { bssid ->
-                        viewModel.saveTrustedBssid(bssid)
-                        currentBssidText = ""
-                    },
-                    supportingContent = {
-                        if (wildcardEnabled) {
-                            DescriptionText(stringResource(Res.string.wildcard_bssid_desc))
-                        }
-                    },
-                )
+                if (Platform.Current != Platform.Windows) {
+                    NetworkRuleInput(
+                        inputTitle = stringResource(Res.string.trusted_bssid),
+                        placeholder = bssidHint,
+                        rules = uiState.autoTunnelSettings.trustedNetworkBssids,
+                        onDelete = { viewModel.removeTrustedBssid(it) },
+                        currentText = currentBssidText,
+                        onValueChange = { currentBssidText = it },
+                        onSave = { bssid ->
+                            viewModel.saveTrustedBssid(bssid)
+                            currentBssidText = ""
+                        },
+                        supportingContent = {
+                            if (wildcardEnabled) {
+                                DescriptionText(stringResource(Res.string.wildcard_bssid_desc))
+                            }
+                        },
+                    )
+                }
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.Map, contentDescription = null) },
                     title = stringResource(Res.string.tunnel_mapping),
