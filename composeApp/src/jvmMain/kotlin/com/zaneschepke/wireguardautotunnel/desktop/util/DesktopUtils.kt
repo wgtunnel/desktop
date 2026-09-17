@@ -25,4 +25,12 @@ object DesktopUtils {
             desktop.mail(URI(uriString))
         }
     }
+
+    fun openUri(uri: String): Result<Unit> = runCatching {
+        val desktop = if (Desktop.isDesktopSupported()) Desktop.getDesktop() else null
+        if (desktop == null || !desktop.isSupported(Desktop.Action.BROWSE)) {
+            throw IllegalStateException("Browse actions are not supported on this platform.")
+        }
+        desktop.browse(URI(uri))
+    }
 }

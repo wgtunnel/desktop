@@ -160,6 +160,12 @@
     <string name="active_network">Active Network: </string>
     <string name="network_name">Network: </string>
     <string name="wifi">Wi-Fi</string>
+    <string name="warning">Warning</string>
+    <string name="fix">Fix</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="location_permissions">Location Permissions</string>
+    <string name="location_permissions_missing">Location permission required to read Wi-Fi names</string>
+    <string name="location_justification">Windows 11 requires Location to be enabled for desktop apps in order to read Wi-Fi names. Turn on Location services and “Let desktop apps access your location” in Windows Settings.</string>
     <string name="tunnel_mapping_description">Map tunnels as preferred by Wi-Fi name</string>
     <string name="monitoring">Monitoring</string>
     <string name="lockdown_settings">Lockdown settings</string>

@@ -266,6 +266,7 @@ class AutoTunnelSupervisor(
                     type = network.type,
                     ssid = network.ssid,
                     bssid = network.bssid.uppercase(),
+                    locationPermissionDenied = network.locationPermissionDenied,
                 ),
         )
     }
