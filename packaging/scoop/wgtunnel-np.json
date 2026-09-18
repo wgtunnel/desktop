@@ -1,12 +1,12 @@
 {
-    "version": "2.0.2",
+    "version": "2.1.0",
     "description": "WireGuard and AmneziaWG VPN client with auto-tunneling, a kill switch, and proxying",
     "homepage": "https://wgtunnel.com",
     "license": "MIT",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/wgtunnel/desktop/releases/download/2.0.2/wgtunnel-2.0.2-win-x64-nsis.exe#/installer.exe",
-            "hash": "a12e464d9b9e7dc9e05e0c7eb0562d853e7b80b019fc06d3741f572091e41139"
+            "url": "https://github.com/wgtunnel/desktop/releases/download/v2.1.0/wgtunnel-2.1.0-win-x64-nsis.exe#/installer.exe",
+            "hash": "0d5bb5ebb52032585ed0f08d655888b3800aab112a85a64573a1d7d8a1444757"
         }
     },
     "installer": {
