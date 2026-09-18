@@ -28,7 +28,7 @@ jobs:
       - name: Determine version
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "workflow_call" ]; then
+          if [ -n "${{ inputs.tag }}" ]; then
             TAG="${{ inputs.tag }}"
             VERSION="${{ inputs.version }}"
           else
