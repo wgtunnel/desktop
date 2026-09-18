@@ -59,7 +59,9 @@ class LogCoordinator(
                     }
                 }
                 .sample(BATCH_INTERVAL)
-                .collect { _bufferedMessages.value = synchronized(bufferLock) { logBuffer.toList() } }
+                .collect {
+                    _bufferedMessages.value = synchronized(bufferLock) { logBuffer.toList() }
+                }
         }
         scope.launch {
             monitoringRepository.flow

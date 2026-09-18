@@ -17,6 +17,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.utils.io.*
 import io.ktor.websocket.*
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -31,7 +32,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
-import kotlin.time.Duration.Companion.milliseconds
 
 class UdsDaemonService(
     private val client: HttpClient,

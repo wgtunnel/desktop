@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.client.domain.model
 
+import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import kotlinx.serialization.Serializable
@@ -7,11 +8,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GeneralSettings(
     val id: Long = 1L,
-    val theme: Theme = Theme.DARK,
+    val theme: Theme = Theme.DEFAULT,
     val locale: String? = null,
     val alreadyDonated: Boolean = false,
     val restoreTunnelOnBoot: Boolean = false,
     val useSystemColors: Boolean = false,
+    val customSeedColor: Int? = null,
+    val accentStyle: AccentStyle = AccentStyle.TONAL_SPOT,
     val tunnelMode: TunnelMode = TunnelMode.VPN,
     val seamlessRecoveryEnabled: Boolean = true,
     val seamlessRecoveryBounceDelaySec: Int = 30,

@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.client.domain.repository
 
+import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.client.domain.model.GeneralSettings
@@ -21,6 +22,10 @@ interface GeneralSettingRepository {
     suspend fun updateRestoreTunnelOnBoot(enabled: Boolean)
 
     suspend fun updateSystemColors(enabled: Boolean)
+
+    suspend fun updateCustomSeedColor(color: Int?)
+
+    suspend fun updateAccentStyle(style: AccentStyle)
 
     suspend fun updateTunnelMode(mode: TunnelMode)
 

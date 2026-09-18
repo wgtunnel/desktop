@@ -32,13 +32,14 @@ import androidx.navigation3.ui.NavDisplay
 import com.dokar.sonner.Toast
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.ToasterState
+import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.auto_tunnel_active
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.check_for_update
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.connecting_to_daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_connected
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.syncing_with_daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown_active
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.syncing_with_daemon
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.animation.PulsingStatusLed
@@ -77,7 +78,6 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.state.DaemonConnectionStat
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.HealthyGreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WarningAmber
-import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.desktop.util.asTitleString
 import com.zaneschepke.wireguardautotunnel.desktop.util.toClipEntry
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
@@ -172,7 +172,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                 targetState = uiState.theme to uiState.useSystemColors,
                 animationSpec = tween(250),
                 label = "ThemeChange",
-            ) { (theme, useSystemColors) ->
+            ) { (_, _) ->
                 Column(
                     modifier =
                         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)

@@ -43,10 +43,10 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.rememberRestartToApplyChanges
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
-import com.zaneschepke.wireguardautotunnel.desktop.ui.common.textbox.rememberSyncedTextFieldState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.textbox.rememberSyncedTextFieldState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelViewModel

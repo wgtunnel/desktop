@@ -17,17 +17,16 @@ private val GNOME_ACCENT_COLORS =
         "slate" to Color(0xFF6F8396),
     )
 
-internal fun runCommand(vararg command: String): String? =
-    runCatching {
-            val process = ProcessBuilder(*command).redirectErrorStream(true).start()
-            if (!process.waitFor(2, TimeUnit.SECONDS)) {
-                process.destroyForcibly()
-                return@runCatching null
-            }
-            if (process.exitValue() != 0) return@runCatching null
-            process.inputStream.bufferedReader().readText().trim()
-        }
-        .getOrNull()
+internal fun runCommand(vararg command: String): String? = runCatching {
+    val process = ProcessBuilder(*command).redirectErrorStream(true).start()
+    if (!process.waitFor(2, TimeUnit.SECONDS)) {
+        process.destroyForcibly()
+        return@runCatching null
+    }
+    if (process.exitValue() != 0) return@runCatching null
+    process.inputStream.bufferedReader().readText().trim()
+}
+    .getOrNull()
 
 private fun commandExists(command: String): Boolean = runCommand("which", command) != null
 

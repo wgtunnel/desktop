@@ -28,7 +28,9 @@ fun LogList(
         LazyColumn(
             state = lazyColumnListState,
             modifier =
-                Modifier.fillMaxSize().padding(horizontal = 12.dp).padding(end = ScrollbarThickness),
+                Modifier.fillMaxSize()
+                    .padding(horizontal = 12.dp)
+                    .padding(end = ScrollbarThickness),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             itemsIndexed(items = logs, key = { index, _ -> index }) { _, log -> LogItem(log = log) }

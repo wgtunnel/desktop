@@ -9,6 +9,7 @@ import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.wgtunnel.backend.model.dns.DnsValidationError
+import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.BootstrapDnsProtocol
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.SeamlessRecoveryBounceDelay
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.SplitDnsSuffixTarget
@@ -18,6 +19,15 @@ import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelDnsProtocol
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources._default
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_content
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_expressive
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_fidelity
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_fruit_salad
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_monochrome
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_neutral
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_rainbow
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_tonal_spot
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_vibrant
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.default_dns_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_empty
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_host
@@ -157,3 +167,17 @@ fun DnsValidationError.asLabel(): String =
 fun SeamlessRecoveryBounceDelay.asLabel(): String =
     if (seconds >= 60) stringResource(Res.string.minutes_template, seconds / 60)
     else stringResource(Res.string.seconds_template, seconds)
+
+@Composable
+fun AccentStyle.asLabel(): String =
+    when (this) {
+        AccentStyle.TONAL_SPOT -> stringResource(Res.string.accent_style_tonal_spot)
+        AccentStyle.NEUTRAL -> stringResource(Res.string.accent_style_neutral)
+        AccentStyle.VIBRANT -> stringResource(Res.string.accent_style_vibrant)
+        AccentStyle.EXPRESSIVE -> stringResource(Res.string.accent_style_expressive)
+        AccentStyle.RAINBOW -> stringResource(Res.string.accent_style_rainbow)
+        AccentStyle.FRUIT_SALAD -> stringResource(Res.string.accent_style_fruit_salad)
+        AccentStyle.MONOCHROME -> stringResource(Res.string.accent_style_monochrome)
+        AccentStyle.FIDELITY -> stringResource(Res.string.accent_style_fidelity)
+        AccentStyle.CONTENT -> stringResource(Res.string.accent_style_content)
+    }

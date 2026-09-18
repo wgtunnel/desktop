@@ -22,6 +22,7 @@ compose-multiplatform-lifecycle = "2.11.0"
 orbitCompose = "12.0.1"
 sonner = "0.4.0"
 materialKolor = "5.0.1"
+colorPickerCompose = "1.3.0"
 nativeTray = "2.1.6"
 
 # Files
@@ -126,6 +127,7 @@ jetbrains-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecyc
 # UI
 sonner = { module = "io.github.dokar3:sonner", version.ref = "sonner" }
 material-kolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
+colorpicker-compose = { module = "com.github.skydoves:colorpicker-compose", version.ref = "colorPickerCompose" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 compose-native-tray = { module = "dev.nucleusframework:composenativetray", version.ref = "nativeTray" }
 

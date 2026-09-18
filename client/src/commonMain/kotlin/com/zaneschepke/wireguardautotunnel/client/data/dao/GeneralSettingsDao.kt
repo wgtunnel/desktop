@@ -29,6 +29,12 @@ interface GeneralSettingsDao {
     @Query("UPDATE general_settings SET use_system_colors = :enabled WHERE id = 1")
     suspend fun updateSystemColors(enabled: Boolean)
 
+    @Query("UPDATE general_settings SET custom_seed_color = :color WHERE id = 1")
+    suspend fun updateCustomSeedColor(color: Int?)
+
+    @Query("UPDATE general_settings SET accent_style = :style WHERE id = 1")
+    suspend fun updateAccentStyle(style: String)
+
     @Query("UPDATE general_settings SET tunnel_mode = :mode WHERE id = 1")
     suspend fun updateTunnelMode(mode: Int)
 

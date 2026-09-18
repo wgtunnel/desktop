@@ -115,8 +115,9 @@ class LogRecorder(
         stream.flush()
     }
 
-    private fun ownedLogFiles(): Array<File>? =
-        logDir.listFiles { f -> f.isFile && isOwnedFileName(f.name) }
+    private fun ownedLogFiles(): Array<File>? = logDir.listFiles { f ->
+        f.isFile && isOwnedFileName(f.name)
+    }
 
     private fun isOwnedFileName(name: String): Boolean =
         name.startsWith(FILE_PREFIX) && name.endsWith("_$source.txt")
@@ -158,9 +159,8 @@ class LogRecorder(
         var folderSize = ownedFolderSize()
         while (folderSize >= maxFolderSize) {
             val victim =
-                ownedLogFiles()
-                    ?.filter { it != currentFile }
-                    ?.minByOrNull { it.lastModified() } ?: break
+                ownedLogFiles()?.filter { it != currentFile }?.minByOrNull { it.lastModified() }
+                    ?: break
             if (!victim.delete()) break
             folderSize = ownedFolderSize()
         }

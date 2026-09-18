@@ -90,8 +90,7 @@ fun TunnelStatisticsSection(
                     )
                 }
                 proxy.http?.let { http ->
-                    val protected =
-                        !http.username.isNullOrBlank() || !http.password.isNullOrBlank()
+                    val protected = !http.username.isNullOrBlank() || !http.password.isNullOrBlank()
                     StatText(
                         text =
                             stringResource(

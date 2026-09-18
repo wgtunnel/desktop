@@ -1,7 +1,13 @@
 package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import co.touchlab.kermit.Logger
+import com.dokar.sonner.ToastType
+import com.materialkolor.ktx.themeColor
+import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
@@ -16,21 +22,23 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_outdated_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_restart_command_label
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_start_command_label
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.theme_from_image_failed
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_available_in_support_template
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.DaemonConnectionStatus
+import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Aqua
 import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
 import dev.nucleusframework.core.runtime.Platform
 import dev.nucleusframework.updater.UpdateResult
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -67,21 +75,34 @@ class AppViewModel(
                             locale = settings.locale ?: state.locale,
                             alreadyDonated = settings.alreadyDonated,
                             useSystemColors = settings.useSystemColors,
+                            customSeedColor = settings.customSeedColor,
+                            accentStyle = settings.accentStyle,
                             tunnelMode = settings.tunnelMode,
                         )
                     }
                 }
             }
             intent {
-                daemonService.alive.collect { alive ->
-                    reduce {
-                        state.copy(
-                            daemonStatus =
-                                if (alive) DaemonConnectionStatus.SYNCING
-                                else DaemonConnectionStatus.DISCONNECTED
-                        )
+                combine(daemonService.alive, backendService.statusFlow()) { alive, status ->
+                        alive to status
                     }
-                }
+                    .collect { (alive, status) ->
+                        reduce {
+                            if (!alive) {
+                                state.copy(
+                                    daemonStatus = DaemonConnectionStatus.DISCONNECTED,
+                                    lockdownActive = false,
+                                    tunnelStatuses = emptyList(),
+                                )
+                            } else {
+                                state.copy(
+                                    daemonStatus = DaemonConnectionStatus.CONNECTED,
+                                    tunnelStatuses = status.activeTunnels,
+                                    lockdownActive = status.killSwitchEnabled,
+                                )
+                            }
+                        }
+                    }
             }
             intent {
                 daemonService.alive
@@ -128,21 +149,7 @@ class AppViewModel(
                     reduce { state.copy(autoTunnelEnabled = settings.isAutoTunnelEnabled) }
                 }
             }
-            intent {
-                backendService
-                    .statusFlow()
-                    .map { it.killSwitchEnabled to it.activeTunnels }
-                    .distinctUntilChanged()
-                    .collect { (lockdown, tunnelStates) ->
-                        reduce {
-                            state.copy(
-                                tunnelStatuses = tunnelStates,
-                                lockdownActive = lockdown,
-                                daemonStatus = DaemonConnectionStatus.CONNECTED,
-                            )
-                        }
-                    }
-            }
+
             intent {
                 if (!appUpdater.isSupported()) return@intent
                 when (val result = appUpdater.check()) {
@@ -179,9 +186,34 @@ class AppViewModel(
 
     fun setUseSystemColors(enabled: Boolean) = intent {
         settingsRepository.updateSystemColors(enabled)
+        // Mutually exclusive with a picked/derived accent color.
+        if (enabled) settingsRepository.updateCustomSeedColor(null)
     }
 
     fun setTheme(theme: Theme) = intent { settingsRepository.updateTheme(theme) }
+
+    fun setCustomSeedColor(color: Color?) = intent {
+        settingsRepository.updateCustomSeedColor(color?.toArgb())
+        // Mutually exclusive with the system accent color.
+        if (color != null) settingsRepository.updateSystemColors(false)
+    }
+
+    fun setSeedColorFromImage(image: ImageBitmap) = intent {
+        val color = runCatching { image.themeColor(fallback = Aqua) }.getOrNull()
+        if (color == null) {
+            postSideEffect(
+                AppSideEffect.Toast(
+                    message = getString(Res.string.theme_from_image_failed),
+                    type = ToastType.Error,
+                )
+            )
+            return@intent
+        }
+        settingsRepository.updateCustomSeedColor(color.toArgb())
+        settingsRepository.updateSystemColors(false)
+    }
+
+    fun setAccentStyle(style: AccentStyle) = intent { settingsRepository.updateAccentStyle(style) }
 
     private fun daemonStartCommand(): String =
         if (isWindows) "net start $daemonServiceName"

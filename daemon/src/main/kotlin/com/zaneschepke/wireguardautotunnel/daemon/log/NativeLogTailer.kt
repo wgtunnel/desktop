@@ -6,6 +6,7 @@ import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import java.io.File
 import java.io.RandomAccessFile
 import java.time.Instant
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.time.Duration.Companion.milliseconds
 
 class NativeLogTailer(private val logDir: File) {
     private val log = Logger.withTag("NativeLogTailer")

@@ -38,12 +38,13 @@ import com.zaneschepke.wireguardautotunnel.client.data.entity.TunnelConfig
             ProxySettings::class,
             AutoTunnelSettings::class,
         ],
-    version = 3,
+    version = 4,
     exportSchema = true,
     autoMigrations =
         [
             AutoMigration(from = 1, to = 2),
             AutoMigration(from = 2, to = 3, spec = AppDatabase.Migrate2To3::class),
+            AutoMigration(from = 3, to = 4),
         ],
 )
 @ColumnTypeConverters(AppKeyringConverter::class, StringListConverter::class)

@@ -118,9 +118,7 @@ object PermissionsHelper {
                     }
                     val exitCode = ProcessBuilder("chmod", "700", pathString).start().waitFor()
                     if (exitCode == 0) {
-                        log.d {
-                            "Successfully set directory permissions using chmod: $pathString"
-                        }
+                        log.d { "Successfully set directory permissions using chmod: $pathString" }
                     } else {
                         log.e { "chmod failed with exit code $exitCode for: $pathString" }
                     }

@@ -14,6 +14,9 @@ data class GeneralSettings(
     val restoreTunnelOnBoot: Boolean = false,
     @ColumnInfo(name = "use_system_colors", defaultValue = "0")
     val useSystemColors: Boolean = false,
+    @ColumnInfo(name = "custom_seed_color") val customSeedColor: Int? = null,
+    @ColumnInfo(name = "accent_style", defaultValue = "TONAL_SPOT")
+    val accentStyle: String = "TONAL_SPOT",
     @ColumnInfo(name = "tunnel_mode", defaultValue = "0") val tunnelMode: Int = 0,
     @ColumnInfo(name = "seamless_recovery", defaultValue = "1")
     val seamlessRecoveryEnabled: Boolean = true,
@@ -21,5 +24,6 @@ data class GeneralSettings(
     val seamlessRecoveryBounceDelaySec: Int = 30,
     @ColumnInfo(name = "global_amnezia_enabled", defaultValue = "0")
     val isGlobalAmneziaEnabled: Boolean = false,
-    @ColumnInfo(name = "last_notified_update_version") val lastNotifiedUpdateVersion: String? = null,
+    @ColumnInfo(name = "last_notified_update_version")
+    val lastNotifiedUpdateVersion: String? = null,
 )

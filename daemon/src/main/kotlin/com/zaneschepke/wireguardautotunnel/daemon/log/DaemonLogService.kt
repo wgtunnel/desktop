@@ -36,7 +36,8 @@ class DaemonLogService(
     private val nativeTailer = NativeLogTailer(logDir)
     @Volatile private var started = false
 
-    // Native (Go) lines are live-view only, not persisted to our own files and handled by NativeLogTailer.
+    // Native (Go) lines are live-view only, not persisted to our own files and handled by
+    // NativeLogTailer.
     val messages: Flow<LogMessageDto>
         get() = merge(recorder.messages, nativeTailer.messages)
 
@@ -63,9 +64,7 @@ class DaemonLogService(
         // (separately) on every daemon reconnect, so this routinely fires twice in a row.
         if (started) return
         started = true
-        withContext(Dispatchers.IO) {
-            Files.createDirectories(logDir.toPath())
-        }
+        withContext(Dispatchers.IO) { Files.createDirectories(logDir.toPath()) }
         PermissionsHelper.secureDaemonDataDirectory(logDir.toPath())
         recorder.start()
         nativeTailer.start(scope)
@@ -122,7 +121,9 @@ class DaemonLogService(
 
     // Drop kermit's stdout to prevent duplication
     private fun formatJournalLine(rawLine: String): String? {
-        val obj = runCatching { journalJson.parseToJsonElement(rawLine).jsonObject }.getOrNull() ?: return null
+        val obj =
+            runCatching { journalJson.parseToJsonElement(rawLine).jsonObject }.getOrNull()
+                ?: return null
         val message = (obj["MESSAGE"] as? JsonPrimitive)?.contentOrNull ?: return null
         if (OWN_LOG_PREFIX.containsMatchIn(message)) return null
         val micros = (obj["__REALTIME_TIMESTAMP"] as? JsonPrimitive)?.contentOrNull?.toLongOrNull()

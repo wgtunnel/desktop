@@ -55,25 +55,26 @@ import com.dokar.sonner.ToasterDefaults
 import com.dokar.sonner.rememberToasterState
 import com.wgtunnel.backend.BackendLog
 import com.wgtunnel.backend.LogLevel
+import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.di.databaseModule
 import com.zaneschepke.wireguardautotunnel.client.di.serviceModule
+import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.app_name
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.appicon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.titleicon
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
-import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.di.viewModelModule
 import com.zaneschepke.wireguardautotunnel.desktop.ui.WindowIntent
-import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asColor
-import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asTooltipMessage
-import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TrayBadgeState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.CommandToastMessage
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.CopyCommandAction
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.NavigateAction
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asColor
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asTooltipMessage
+import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TrayBadgeState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.HealthyGreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WGTunnelTheme
@@ -118,8 +119,10 @@ fun main(args: Array<String>) {
         var nucleusWindowRef: NucleusWindow? by remember { mutableStateOf(null) }
         var isMainWindowVisible by remember { mutableStateOf(true) }
 
-        var theme by remember { mutableStateOf(Theme.DARK) }
+        var theme by remember { mutableStateOf(Theme.DEFAULT) }
         var useSystemColors by remember { mutableStateOf(false) }
+        var customSeedColor by remember { mutableStateOf<Color?>(null) }
+        var accentStyle by remember { mutableStateOf(AccentStyle.TONAL_SPOT) }
 
         val windowState = rememberWindowState(size = DpSize(1000.dp, 700.dp))
 
@@ -202,7 +205,7 @@ fun main(args: Array<String>) {
             Item(label = "Exit") { exitApplication() }
         }
 
-        WGTunnelTheme(theme, useSystemColors) {
+        WGTunnelTheme(theme, useSystemColors, customSeedColor, accentStyle) {
             MaterialDecoratedWindow(
                 visible = isMainWindowVisible,
                 onCloseRequest = { handleWindowIntent(WindowIntent.HIDE) },
@@ -269,9 +272,16 @@ fun main(args: Array<String>) {
                     val viewModel: AppViewModel = koinViewModel()
                     val uiState by viewModel.collectAsState()
 
-                    LaunchedEffect(uiState.theme, uiState.useSystemColors) {
+                    LaunchedEffect(
+                        uiState.theme,
+                        uiState.useSystemColors,
+                        uiState.customSeedColor,
+                        uiState.accentStyle,
+                    ) {
                         theme = uiState.theme
                         useSystemColors = uiState.useSystemColors
+                        customSeedColor = uiState.customSeedColor?.let { Color(it) }
+                        accentStyle = uiState.accentStyle
                     }
 
                     val currentTunnelStatus by remember {
@@ -342,7 +352,9 @@ fun main(args: Array<String>) {
                                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                                 border = { BorderStroke(0.dp, Color.Transparent) },
                                 background = {
-                                    SolidColor(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp))
+                                    SolidColor(
+                                        MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                                    )
                                 },
                                 iconSlot = { toast ->
                                     val (icon, color) =
@@ -389,7 +401,7 @@ fun main(args: Array<String>) {
                                                             .padding(
                                                                 horizontal = 8.dp,
                                                                 vertical = 4.dp,
-                                                            )
+                                                            ),
                                                 )
                                             }
                                         else -> ToasterDefaults.messageSlot(toast)

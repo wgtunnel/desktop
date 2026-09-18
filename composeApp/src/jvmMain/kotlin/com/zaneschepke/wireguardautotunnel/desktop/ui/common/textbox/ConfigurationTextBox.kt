@@ -45,7 +45,8 @@ fun ConfigurationTextBox(
     containerColor: Color = MaterialTheme.colorScheme.background,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val (textFieldValue, onTextFieldValueChange) = rememberSyncedTextFieldState(value, onValueChange)
+    val (textFieldValue, onTextFieldValueChange) =
+        rememberSyncedTextFieldState(value, onValueChange)
 
     Box(modifier = modifier.padding(top = 6.dp)) {
         BasicTextField(

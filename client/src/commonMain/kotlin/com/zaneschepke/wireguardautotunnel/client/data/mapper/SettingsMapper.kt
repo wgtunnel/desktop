@@ -1,6 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.client.data.mapper
 
 import com.zaneschepke.wireguardautotunnel.client.data.entity.GeneralSettings as Entity
+import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.client.domain.model.GeneralSettings as Domain
@@ -8,11 +9,15 @@ import com.zaneschepke.wireguardautotunnel.client.domain.model.GeneralSettings a
 fun Entity.toDomain(): Domain =
     Domain(
         id = id,
-        theme = runCatching { Theme.valueOf(theme.uppercase()) }.getOrDefault(Theme.DARK),
+        theme = runCatching { Theme.valueOf(theme.uppercase()) }.getOrDefault(Theme.DEFAULT),
         locale = locale,
         alreadyDonated = alreadyDonated,
         restoreTunnelOnBoot = restoreTunnelOnBoot,
         useSystemColors = useSystemColors,
+        customSeedColor = customSeedColor,
+        accentStyle =
+            runCatching { AccentStyle.valueOf(accentStyle.uppercase()) }
+                .getOrDefault(AccentStyle.TONAL_SPOT),
         tunnelMode = TunnelMode.fromValue(tunnelMode),
         seamlessRecoveryEnabled = seamlessRecoveryEnabled,
         seamlessRecoveryBounceDelaySec = seamlessRecoveryBounceDelaySec,
@@ -28,6 +33,8 @@ fun Domain.toEntity(): Entity =
         alreadyDonated = alreadyDonated,
         restoreTunnelOnBoot = restoreTunnelOnBoot,
         useSystemColors = useSystemColors,
+        customSeedColor = customSeedColor,
+        accentStyle = accentStyle.name,
         tunnelMode = tunnelMode.value,
         seamlessRecoveryEnabled = seamlessRecoveryEnabled,
         seamlessRecoveryBounceDelaySec = seamlessRecoveryBounceDelaySec,
