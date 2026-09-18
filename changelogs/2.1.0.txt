@@ -1,0 +1,6 @@
+What's new:
+- Improved app theme options
+- Bugfix for Linux app crashes on old hardware
+- Windows network monitoring fixes
+- DoT tunnel DNS fixes
+- Fixes in app updater GitHub tag detection issue

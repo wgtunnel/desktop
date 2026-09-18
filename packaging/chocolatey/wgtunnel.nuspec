@@ -15,7 +15,9 @@
     <tags>wgtunnel wireguard vpn nsis amneziawg killswitch</tags>
     <licenseUrl>https://github.com/wgtunnel/desktop/blob/master/LICENSE</licenseUrl>
     <copyright>Copyright Zane Schepke</copyright>
-    <releaseNotes>https://github.com/wgtunnel/desktop/releases/tag/$version$</releaseNotes>
+    <!-- $version$ is Chocolatey's own nuspec token and it does not match the real release tag (strips "v"), so
+    this uses an explicit placeholder the workflow substitutes with the actual tag instead. -->
+    <releaseNotes>https://github.com/wgtunnel/desktop/releases/tag/PLACEHOLDER_TAG</releaseNotes>
     <bugTrackerUrl>https://github.com/wgtunnel/desktop/issues</bugTrackerUrl>
     <docsUrl>https://wgtunnel.com/docs/getting-started</docsUrl>
     <iconUrl>https://www.wgtunnel.com/img/logo.png</iconUrl>

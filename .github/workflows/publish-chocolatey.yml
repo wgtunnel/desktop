@@ -34,7 +34,8 @@ jobs:
         shell: pwsh
         run: |
           (Get-Content packaging\chocolatey\wgtunnel.nuspec) `
-            -replace '<version>.*</version>', "<version>${{ env.VERSION }}</version>" | `
+            -replace '<version>.*</version>', "<version>${{ env.VERSION }}</version>" `
+            -replace 'PLACEHOLDER_TAG', "${{ env.TAG }}" | `
             Set-Content packaging\chocolatey\wgtunnel.nuspec
 
       - name: Pin installer URL and checksum
