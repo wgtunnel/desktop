@@ -34,6 +34,18 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
     abstract val linuxUninstallScript: RegularFileProperty
 
     @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val linuxAfterInstallScript: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val linuxBeforeInstallScript: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val linuxBeforeRemoveScript: RegularFileProperty
+
+    @get:InputFile
     @get:Optional
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val windowsServiceXml: RegularFileProperty
@@ -45,21 +57,60 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
 
     @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
+    // Separate from outputDir/common (which feeds appResourcesRootDir and gets bundled into the
+    // app payload) since these are install-time hooks consumed directly by electron-builder/fpm.
+    @get:OutputDirectory abstract val hooksOutputDir: DirectoryProperty
+
     @TaskAction
     fun stage() {
-        val out = outputDir.get().asFile
-        out.deleteRecursively()
+        // appResourcesRootDir requires a common/<os>/<target> layout (Nucleus copies
+        // common/ contents to the app root, next to the native executable for GraalVM
+        // packaging). Everything here is platform-agnostic at the tar/install-script level,
+        // so it all lands under common.
+        val root = outputDir.get().asFile
+        root.deleteRecursively()
+        val out = root.resolve("common")
         out.mkdirs()
         val fsName = appFsName.get()
         val display = appDisplayName.get()
         out.resolve("wgtunnel-daemon.service")
             .writeText(replaceTokens(linuxService.get().asFile.readText(), fsName, display))
-        out.resolve("install.sh").writeExecutable(
-            replaceTokens(linuxInstallScript.get().asFile.readText(), fsName, display)
-        )
-        out.resolve("uninstall.sh").writeExecutable(
-            replaceTokens(linuxUninstallScript.get().asFile.readText(), fsName, display)
-        )
+        out.resolve("install.sh")
+            .writeExecutable(
+                replaceTokens(linuxInstallScript.get().asFile.readText(), fsName, display)
+            )
+        out.resolve("uninstall.sh")
+            .writeExecutable(
+                replaceTokens(linuxUninstallScript.get().asFile.readText(), fsName, display)
+            )
+
+        val hooks = hooksOutputDir.get().asFile
+        hooks.deleteRecursively()
+        hooks.mkdirs()
+        hooks
+            .resolve("before-install.sh")
+            .writeExecutable(
+                replaceTokens(linuxBeforeInstallScript.get().asFile.readText(), fsName, display)
+            )
+        hooks
+            .resolve("before-remove.sh")
+            .writeExecutable(
+                replaceTokens(linuxBeforeRemoveScript.get().asFile.readText(), fsName, display)
+            )
+        // Pacman only calls after-upgrade (never after-install) when replacing an
+        // already-installed package, so it needs its own copy of the same registration
+        // logic
+        hooks
+            .resolve("after-upgrade.sh")
+            .writeExecutable(
+                linuxAfterInstallScript
+                    .get()
+                    .asFile
+                    .readText()
+                    .replace("\${executable}", fsName)
+                    .replace("\${sanitizedProductName}", fsName)
+            )
+
         if (!windows.get()) return
         windowsServiceXml.orNull?.asFile?.let { xml ->
             out.resolve("service-wrapper.xml")

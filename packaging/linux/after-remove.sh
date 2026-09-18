@@ -2,7 +2,11 @@
 
 set +e
 
-UNIT_NAME='${sanitizedProductName}-daemon.service'
+UNIT_NAME='${executable}-daemon.service'
+# before-install.sh always overwrites this fresh before it's ever read, so a
+# stale value here can't cause wrong behavior on a future install. Avoid leaving it behind
+# indefinitely on a full uninstall.
+rm -f '/run/${executable}-daemon.was-active'
 if command -v systemctl >/dev/null 2>&1; then
   systemctl disable --now "$UNIT_NAME" >/dev/null 2>&1 || true
   systemctl stop "$UNIT_NAME" >/dev/null 2>&1 || true

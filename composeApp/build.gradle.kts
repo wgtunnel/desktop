@@ -76,6 +76,7 @@ kotlin {
             // UI
             implementation(libs.sonner)
             implementation(libs.material.kolor)
+            implementation(libs.colorpicker.compose)
             implementation(libs.localina)
             implementation(libs.reorderable)
             implementation(libs.compose.native.tray)
@@ -123,7 +124,11 @@ val stagePackagingSidecars =
         linuxService.set(rootProject.file("packaging/linux/wgtunnel-daemon.service"))
         linuxInstallScript.set(rootProject.file("packaging/linux/tar-install.sh"))
         linuxUninstallScript.set(rootProject.file("packaging/linux/tar-uninstall.sh"))
+        linuxAfterInstallScript.set(rootProject.file("packaging/linux/after-install.sh"))
+        linuxBeforeInstallScript.set(rootProject.file("packaging/linux/before-install.sh"))
+        linuxBeforeRemoveScript.set(rootProject.file("packaging/linux/before-remove.sh"))
         outputDir.set(layout.buildDirectory.dir("packaging-sidecars"))
+        hooksOutputDir.set(layout.buildDirectory.dir("packaging-hooks"))
         if (isWindows) {
             dependsOn(":daemon:buildWinSW")
             windowsServiceXml.set(rootProject.file("packaging/windows/service-wrapper.xml"))
@@ -132,6 +137,28 @@ val stagePackagingSidecars =
                     .layout
                     .projectDirectory
                     .dir("winsw/artifacts/bin/WinSW/x64/Release/net7.0-windows/win-x64/publish")
+            )
+        }
+    }
+
+// Combines stagePackagingSidecars "common" output with the compiled daemon binary
+// (nested under common/bin/) into one tree, fed to nativeDistributions.appResourcesRootDir.
+val stageAppResources =
+    tasks.register<Sync>("stageAppResources") {
+        description = "Combine packaging sidecars and the compiled daemon binary for appResourcesRootDir"
+        into(layout.buildDirectory.dir("app-resources-root"))
+        from(stagePackagingSidecars.map { it.outputDir })
+        into("common/bin") {
+            from(
+                fileTree(
+                    project(":daemon")
+                        .layout
+                        .buildDirectory
+                        .dir("compose/tmp/main/graalvm/nativeCompile")
+                ) {
+                    include("wgtunnel-daemon", "wgtunnel-daemon.exe")
+                    builtBy(":daemon:nativeImageCompile")
+                }
             )
         }
     }
@@ -207,21 +234,8 @@ nucleus.application {
         )
         cleanupNativeLibs = true
 
-        // Include WinSW and XML
-        appContent.from(stagePackagingSidecars)
-
-        // Include the compiled GraalVM daemon
-        appContent.from(
-            fileTree(
-                project(":daemon")
-                    .layout
-                    .buildDirectory
-                    .dir("compose/tmp/main/graalvm/nativeCompile")
-            ) {
-                include("wgtunnel-daemon", "wgtunnel-daemon.exe")
-                builtBy(":daemon:nativeImageCompile")
-            }
-        )
+        // appResourcesRootDir's common/ contents are copied next to the native executable
+        appResourcesRootDir.set(layout.dir(stageAppResources.map { it.destinationDir }))
 
         publish {
             github {
@@ -241,14 +255,25 @@ nucleus.application {
             rpmRequires = listOf("systemd")
             pacmanDepends = listOf("systemd")
             iconFile.set(rootProject.file("packaging/linux/icon.png"))
-            // One script for every Linux format: Nucleus only supports a single shared
-            // afterInstall per project, and CI packages deb/rpm/pacman/tar together in one
-            // Gradle invocation, so a build-time per-format choice isn't reliable here - see
-            // after-install.sh for how it tells Arch apart from Debian/Fedora at runtime.
             afterInstall.set(rootProject.file("packaging/linux/after-install.sh"))
             afterRemove.set(rootProject.file("packaging/linux/after-remove.sh"))
-            beforeInstall.set(rootProject.file("packaging/linux/before-install.sh"))
-            beforeRemove.set(rootProject.file("packaging/linux/before-remove.sh"))
+            // electron-builder doesn't substitute template variables in before hooks, so these
+            // point at stagePackagingSidecars's pre-substituted copies instead of the raw templates.
+            beforeInstall.set(
+                layout.file(stagePackagingSidecars.map { it.hooksOutputDir.get().asFile.resolve("before-install.sh") })
+            )
+            beforeRemove.set(
+                layout.file(stagePackagingSidecars.map { it.hooksOutputDir.get().asFile.resolve("before-remove.sh") })
+            )
+            // Pacman only runs afterUpgrade/beforeUpgrade (never afterInstall/beforeInstall) when
+            // replacing an already-installed package, so the same registration/stop logic needs to
+            // be reachable from both
+            afterUpgrade.set(
+                layout.file(stagePackagingSidecars.map { it.hooksOutputDir.get().asFile.resolve("after-upgrade.sh") })
+            )
+            beforeUpgrade.set(
+                layout.file(stagePackagingSidecars.map { it.hooksOutputDir.get().asFile.resolve("before-install.sh") })
+            )
             appImage.desktopEntries =
                 mapOf(
                     "Name" to appDisplayName,
@@ -318,17 +343,13 @@ val windowsNativeArch =
 
 val wintunDllFile = rootProject.file("packaging/windows/wintun/win32-$windowsNativeArch/wintun.dll")
 
-val graalvmSidecarTaskNames = mutableListOf("copyGraalvmPackagingSidecars")
+// Service unit / WinSW / install-script sidecars reach the app image via
+// stageAppResources -> nativeDistributions.appResourcesRootDir
+val graalvmSidecarTaskNames = mutableListOf<String>()
 
-tasks.register<Copy>("copyGraalvmPackagingSidecars") {
-    group = "nucleus"
-    description = "Copy JVM packaging sidecars (service unit, WinSW) into the GraalVM app image."
-    dependsOn(stagePackagingSidecars, "copyGraalvmBinaryToOutput")
-    doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
-    from(stagePackagingSidecars)
-    into(graalvmLaunchersDir)
-}
-
+// Windows-only: WinSW needs the daemon exe and wintun.dll sitting next to the GUI binary at the
+// app root, not under bin/ so this copy stays. On Linux/other platforms the daemon binary already reaches bin/ via
+// stageAppResources -> appResourcesRootDir, so no equivalent task is needed there.
 if (isWindows) {
     tasks.register<Copy>("copyGraalvmExtraLaunchersToRoot") {
         group = "nucleus"
@@ -342,17 +363,6 @@ if (isWindows) {
         into(graalvmLaunchersDir)
     }
     graalvmSidecarTaskNames += "copyGraalvmExtraLaunchersToRoot"
-} else {
-    tasks.register<Copy>("copyGraalvmExtraLaunchersToBin") {
-        group = "nucleus"
-        description = "Copy native daemon into the GraalVM app image bin/ directory."
-        dependsOn(copyGraalvmSidecarDepends)
-        doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
-        graalvmNativeCompileDirs.forEach { from(it) }
-        include(*graalvmLauncherNames.toTypedArray())
-        into(graalvmLaunchersDir.map { it.dir("bin") })
-    }
-    graalvmSidecarTaskNames += "copyGraalvmExtraLaunchersToBin"
 }
 
 tasks.withType<Copy>().configureEach {

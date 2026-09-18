@@ -230,8 +230,6 @@ remove that yourself with your keyring manager.
 - Toolchains pinned in `.mise.toml` (JDK, Node, Go, .NET) - installed for you by `mise install` below.
 - A C toolchain for the host platform.
 - **MinGW-w64** (`x86_64-w64-mingw32-gcc`)
-- [WG Tunnel's Nucleus fork](https://github.com/wgtunnel/Nucleus) cloned in the same parent directory
-  as this project
 
 ### Run locally
 

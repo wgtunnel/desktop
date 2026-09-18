@@ -38,6 +38,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set latest tag
+        uses: rickstaa/action-create-tag@v1
+        id: tag_creation
+        with:
+          tag: "latest"
+          message: "Automated tag for HEAD commit"
+          force_push_tag: true
+          github_token: ${{ env.GH_TOKEN }}
+          tag_exists_error: false
+
+      - name: Get latest release
+        id: latest_release
+        uses: kaliber5/action-get-release@v1
+        with:
+          token: ${{ env.GH_TOKEN }}
+          latest: true
+
+      - name: Generate Changelog
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ env.GH_TOKEN }}
+          toTag: ${{ steps.latest_release.outputs.tag_name }}
+          fromTag: "latest"
+          writeToFile: false
+
+      - name: Read curated release notes
+        id: release_notes
+        run: |
+          set -euo pipefail
+          FILE="changelogs/${{ inputs.version }}.txt"
+          if [ -f "$FILE" ]; then
+            NOTES="$(cat "$FILE")"
+          else
+            echo "No curated changelog found at $FILE, skipping."
+            NOTES=""
+          fi
+          {
+            echo "notes<<EOF_RELEASE_NOTES"
+            echo "$NOTES"
+            echo "EOF_RELEASE_NOTES"
+          } >> "$GITHUB_OUTPUT"
+
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -51,15 +94,30 @@ jobs:
           gh release delete "$TAG" --yes --cleanup-tag || true
 
       - name: Generate update YML
-        uses: wgtunnel/Nucleus/.github/actions/generate-update-yml@main
+        uses: NucleusFramework/Nucleus/.github/actions/generate-update-yml@main
         with:
           artifacts-path: artifacts
           version: ${{ inputs.version }}
           channel: ${{ inputs.channel }}
 
       - name: Publish GitHub Release
-        uses: wgtunnel/Nucleus/.github/actions/publish-release@main
+        uses: NucleusFramework/Nucleus/.github/actions/publish-release@main
         with:
           artifacts-path: artifacts
           tag: ${{ inputs.tag }}
           release-type: ${{ inputs.release_type }}
+
+      - name: Set release notes
+        env:
+          RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
+          CHANGELOG: ${{ steps.changelog.outputs.changes }}
+        run: |
+          set -euo pipefail
+          BODY_FILE="$(mktemp)"
+          {
+            printf '%s\n' "$RELEASE_NOTES"
+            echo
+            echo "### Changelog"
+            printf '%s\n' "$CHANGELOG"
+          } > "$BODY_FILE"
+          gh release edit "${{ inputs.tag }}" --notes-file "$BODY_FILE"
