@@ -1,6 +1,5 @@
 package com.zaneschepke.wireguardautotunnel.desktop
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -168,174 +167,165 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
             LocalNavController provides navController,
             LocalToaster provides toaster,
         ) {
-            Crossfade(
-                targetState = uiState.theme to uiState.useSystemColors,
-                animationSpec = tween(250),
-                label = "ThemeChange",
-            ) { (_, _) ->
-                Column(
-                    modifier =
-                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
-                ) {
-                    Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                        WideNavigationRail(
-                            state = railState,
-                            header = {
-                                Column(
-                                    horizontalAlignment = Alignment.Start,
-                                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                                    modifier = Modifier.padding(bottom = 16.dp),
-                                ) {
-                                    CustomTooltip(text = headerDescription) {
-                                        IconButton(
-                                            onClick = {
-                                                scope.launch {
+            Column(
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            ) {
+                Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    WideNavigationRail(
+                        state = railState,
+                        header = {
+                            Column(
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.padding(bottom = 16.dp),
+                            ) {
+                                CustomTooltip(text = headerDescription) {
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch {
+                                                if (
+                                                    railState.targetValue ==
+                                                        WideNavigationRailValue.Expanded
+                                                )
+                                                    railState.collapse()
+                                                else railState.expand()
+                                            }
+                                        },
+                                        modifier =
+                                            Modifier.padding(start = 24.dp).semantics {
+                                                stateDescription =
                                                     if (
-                                                        railState.targetValue ==
+                                                        railState.currentValue ==
                                                             WideNavigationRailValue.Expanded
                                                     )
-                                                        railState.collapse()
-                                                    else railState.expand()
-                                                }
+                                                        "Expanded"
+                                                    else "Collapsed"
                                             },
-                                            modifier =
-                                                Modifier.padding(start = 24.dp).semantics {
-                                                    stateDescription =
-                                                        if (
-                                                            railState.currentValue ==
-                                                                WideNavigationRailValue.Expanded
-                                                        )
-                                                            "Expanded"
-                                                        else "Collapsed"
-                                                },
+                                    ) {
+                                        if (
+                                            railState.targetValue ==
+                                                WideNavigationRailValue.Expanded
                                         ) {
-                                            if (
-                                                railState.targetValue ==
-                                                    WideNavigationRailValue.Expanded
-                                            ) {
-                                                Icon(
-                                                    Icons.AutoMirrored.Filled.MenuOpen,
-                                                    headerDescription,
-                                                )
-                                            } else {
-                                                Icon(Icons.Filled.Menu, headerDescription)
-                                            }
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.MenuOpen,
+                                                headerDescription,
+                                            )
+                                        } else {
+                                            Icon(Icons.Filled.Menu, headerDescription)
                                         }
                                     }
-                                }
-                            },
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Tab.entries.forEach { tab ->
-                                    WideNavigationRailItem(
-                                        railExpanded =
-                                            railState.targetValue ==
-                                                WideNavigationRailValue.Expanded,
-                                        selected = currentTab == tab,
-                                        onClick = { navController.popUpTo(tab.startRoute) },
-                                        icon = { Icon(tab.activeIcon, null) },
-                                        label = { Text(stringResource(tab.titleRes)) },
-                                    )
                                 }
                             }
-                        }
-                        Scaffold(containerColor = Color.Transparent) {
-                            NavDisplay(
-                                backStack = backStack,
-                                onBack = { navController.pop() },
-                                transitionSpec = {
-                                    val initialIndex =
-                                        previousRoute?.let(Tab::fromRoute)?.index ?: 0
-                                    val targetIndex = currentRoute?.let(Tab::fromRoute)?.index ?: 0
-
-                                    if (initialIndex != targetIndex) {
-                                        val isMovingDown = targetIndex > initialIndex
-                                        (fadeIn(tween(200)) +
-                                            slideInVertically(tween(200)) {
-                                                if (isMovingDown) 30 else -30
-                                            }) togetherWith (fadeOut(tween(150)))
-                                    } else {
-                                        (fadeIn(tween(200)) +
-                                            scaleIn(
-                                                initialScale = 0.95f,
-                                                animationSpec = tween(200),
-                                            )) togetherWith fadeOut(tween(150))
-                                    }
-                                },
-                                popTransitionSpec = {
-                                    (fadeIn(tween(200)) +
-                                        scaleIn(
-                                            initialScale = 1.05f,
-                                            animationSpec = tween(200),
-                                        )) togetherWith
-                                        (fadeOut(tween(150)) +
-                                            scaleOut(
-                                                targetScale = 0.95f,
-                                                animationSpec = tween(150),
-                                            ))
-                                },
-                                predictivePopTransitionSpec = {
-                                    (fadeIn(tween(200)) +
-                                        scaleIn(
-                                            initialScale = 1.05f,
-                                            animationSpec = tween(200),
-                                        )) togetherWith
-                                        (fadeOut(tween(150)) +
-                                            scaleOut(
-                                                targetScale = 0.95f,
-                                                animationSpec = tween(150),
-                                            ))
-                                },
-                                entryDecorators =
-                                    listOf(
-                                        rememberSaveableStateHolderNavEntryDecorator(),
-                                        rememberViewModelStoreNavEntryDecorator(),
-                                    ),
-                                entryProvider =
-                                    entryProvider {
-                                        currentTab.startRoute
-                                        entry<Route.Tunnels> { TunnelsScreen() }
-                                        entry<Route.Tunnel> {
-                                            val viewModel: TunnelViewModel =
-                                                koinViewModel(parameters = { parametersOf(it.id) })
-                                            TunnelSettingsScreen(viewModel)
-                                        }
-                                        entry<Route.Config> {
-                                            val viewModel: TunnelViewModel =
-                                                koinViewModel(parameters = { parametersOf(it.id) })
-                                            ConfigScreen(viewModel, live = false)
-                                        }
-                                        entry<Route.LiveConfig> {
-                                            val viewModel: TunnelViewModel =
-                                                koinViewModel(parameters = { parametersOf(it.id) })
-                                            ConfigScreen(viewModel, live = true)
-                                        }
-                                        entry<Route.Settings> { SettingsScreen() }
-                                        entry<Route.Logs> { LogsScreen() }
-                                        entry<Route.Dns> { DnsSettingsScreen() }
-                                        entry<Route.TunnelGlobals> { TunnelGlobalsScreen() }
-                                        entry<Route.ConfigGlobal> { GlobalConfigScreen() }
-                                        entry<Route.ProxySettings> { ProxySettingsScreen() }
-                                        entry<Route.LockdownSettings> { LockdownSettingsScreen() }
-                                        entry<Route.TunnelRecovery> { TunnelRecoveryScreen() }
-                                        entry<Route.TunnelMonitoring> { MonitoringScreen() }
-                                        entry<Route.AutoTunnel> { AutoTunnelScreen() }
-                                        entry<Route.WifiPreferences> { WifiSettingsScreen() }
-                                        entry<Route.PreferredTunnel> {
-                                            PreferredTunnelScreen(it.tunnelNetwork)
-                                        }
-                                        entry<Route.Support> { SupportScreen() }
-                                        entry<Route.License> { LicenseScreen() }
-                                        entry<Route.Donate> { DonateScreen(viewModel) }
-                                        entry<Route.Addresses> { AddressesScreen() }
-                                        entry<Route.Appearance> { AppearanceScreen() }
-                                        entry<Route.Display> { DisplayScreen(viewModel) }
-                                    },
-                            )
+                        },
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Tab.entries.forEach { tab ->
+                                WideNavigationRailItem(
+                                    railExpanded =
+                                        railState.targetValue == WideNavigationRailValue.Expanded,
+                                    selected = currentTab == tab,
+                                    onClick = { navController.popUpTo(tab.startRoute) },
+                                    icon = { Icon(tab.activeIcon, null) },
+                                    label = { Text(stringResource(tab.titleRes)) },
+                                )
+                            }
                         }
                     }
-                    StatusFooter(uiState = uiState)
+                    Scaffold(containerColor = Color.Transparent) {
+                        NavDisplay(
+                            backStack = backStack,
+                            onBack = { navController.pop() },
+                            transitionSpec = {
+                                val initialIndex = previousRoute?.let(Tab::fromRoute)?.index ?: 0
+                                val targetIndex = currentRoute?.let(Tab::fromRoute)?.index ?: 0
+
+                                if (initialIndex != targetIndex) {
+                                    val isMovingDown = targetIndex > initialIndex
+                                    (fadeIn(tween(200)) +
+                                        slideInVertically(tween(200)) {
+                                            if (isMovingDown) 30 else -30
+                                        }) togetherWith (fadeOut(tween(150)))
+                                } else {
+                                    (fadeIn(tween(200)) +
+                                        scaleIn(
+                                            initialScale = 0.95f,
+                                            animationSpec = tween(200),
+                                        )) togetherWith fadeOut(tween(150))
+                                }
+                            },
+                            popTransitionSpec = {
+                                (fadeIn(tween(200)) +
+                                    scaleIn(
+                                        initialScale = 1.05f,
+                                        animationSpec = tween(200),
+                                    )) togetherWith
+                                    (fadeOut(tween(150)) +
+                                        scaleOut(
+                                            targetScale = 0.95f,
+                                            animationSpec = tween(150),
+                                        ))
+                            },
+                            predictivePopTransitionSpec = {
+                                (fadeIn(tween(200)) +
+                                    scaleIn(
+                                        initialScale = 1.05f,
+                                        animationSpec = tween(200),
+                                    )) togetherWith
+                                    (fadeOut(tween(150)) +
+                                        scaleOut(
+                                            targetScale = 0.95f,
+                                            animationSpec = tween(150),
+                                        ))
+                            },
+                            entryDecorators =
+                                listOf(
+                                    rememberSaveableStateHolderNavEntryDecorator(),
+                                    rememberViewModelStoreNavEntryDecorator(),
+                                ),
+                            entryProvider =
+                                entryProvider {
+                                    currentTab.startRoute
+                                    entry<Route.Tunnels> { TunnelsScreen() }
+                                    entry<Route.Tunnel> {
+                                        val viewModel: TunnelViewModel =
+                                            koinViewModel(parameters = { parametersOf(it.id) })
+                                        TunnelSettingsScreen(viewModel)
+                                    }
+                                    entry<Route.Config> {
+                                        val viewModel: TunnelViewModel =
+                                            koinViewModel(parameters = { parametersOf(it.id) })
+                                        ConfigScreen(viewModel, live = false)
+                                    }
+                                    entry<Route.LiveConfig> {
+                                        val viewModel: TunnelViewModel =
+                                            koinViewModel(parameters = { parametersOf(it.id) })
+                                        ConfigScreen(viewModel, live = true)
+                                    }
+                                    entry<Route.Settings> { SettingsScreen() }
+                                    entry<Route.Logs> { LogsScreen() }
+                                    entry<Route.Dns> { DnsSettingsScreen() }
+                                    entry<Route.TunnelGlobals> { TunnelGlobalsScreen() }
+                                    entry<Route.ConfigGlobal> { GlobalConfigScreen() }
+                                    entry<Route.ProxySettings> { ProxySettingsScreen() }
+                                    entry<Route.LockdownSettings> { LockdownSettingsScreen() }
+                                    entry<Route.TunnelRecovery> { TunnelRecoveryScreen() }
+                                    entry<Route.TunnelMonitoring> { MonitoringScreen() }
+                                    entry<Route.AutoTunnel> { AutoTunnelScreen() }
+                                    entry<Route.WifiPreferences> { WifiSettingsScreen() }
+                                    entry<Route.PreferredTunnel> {
+                                        PreferredTunnelScreen(it.tunnelNetwork)
+                                    }
+                                    entry<Route.Support> { SupportScreen() }
+                                    entry<Route.License> { LicenseScreen() }
+                                    entry<Route.Donate> { DonateScreen(viewModel) }
+                                    entry<Route.Addresses> { AddressesScreen() }
+                                    entry<Route.Appearance> { AppearanceScreen() }
+                                    entry<Route.Display> { DisplayScreen(viewModel) }
+                                },
+                        )
+                    }
                 }
+                StatusFooter(uiState = uiState)
             }
         }
     }

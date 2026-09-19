@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.PaletteStyle
+import com.materialkolor.ktx.animateColorScheme
 import com.materialkolor.rememberDynamicColorScheme
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
@@ -61,7 +62,13 @@ fun WGTunnelTheme(
                     scheme
                 }
             }
-    MaterialTheme(colorScheme = colorScheme, typography = InterTypography(), content = content)
+    // Animates each color individually so a theme change transitions smoothly
+    // without tearing down and rebuilding the composition below
+    MaterialTheme(
+        colorScheme = animateColorScheme(colorScheme),
+        typography = InterTypography(),
+        content = content,
+    )
 }
 
 private fun AccentStyle.toPaletteStyle(): PaletteStyle =
