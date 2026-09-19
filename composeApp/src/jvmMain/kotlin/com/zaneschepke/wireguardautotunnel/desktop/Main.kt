@@ -156,12 +156,6 @@ fun main(args: Array<String>) {
             }
         }
 
-        LaunchedEffect(windowState.isMinimized) {
-            if (windowState.isMinimized) {
-                handleWindowIntent(WindowIntent.HIDE)
-            }
-        }
-
         val isSingleInstance =
             SingleInstanceManager.isSingleInstance(
                 onRestoreRequest = { handleWindowIntent(WindowIntent.SHOW) }
