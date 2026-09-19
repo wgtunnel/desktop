@@ -119,6 +119,11 @@ This has significant benefits:
 2. Run the installer. Accept the Admin rights prompt (UAC) so the daemon can be installed as a system service.
 3. Launch the app.
 
+Also available on [Chocolatey](https://community.chocolatey.org/packages/wgtunnel):
+```powershell
+choco install wgtunnel
+```
+
 ### Linux
 
 > [!NOTE]
