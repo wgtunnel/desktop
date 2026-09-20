@@ -58,6 +58,7 @@ import com.wgtunnel.backend.BackendLog
 import com.wgtunnel.backend.LogLevel
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.client.di.databaseModule
 import com.zaneschepke.wireguardautotunnel.client.di.serviceModule
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
@@ -146,6 +147,7 @@ fun main(args: Array<String>) {
         var useSystemColors by remember { mutableStateOf(false) }
         var customSeedColor by remember { mutableStateOf<Color?>(null) }
         var accentStyle by remember { mutableStateOf(AccentStyle.TONAL_SPOT) }
+        var trayIconAppearance by remember { mutableStateOf(TrayIconAppearance.AUTOMATIC) }
 
         val windowState = rememberWindowState(size = DpSize(1000.dp, 700.dp))
 
@@ -199,13 +201,19 @@ fun main(args: Array<String>) {
 
         Tray(
             iconContent = {
-                val isDark = isSystemInDarkMode()
+                val useLightIcon =
+                    when (trayIconAppearance) {
+                        TrayIconAppearance.AUTOMATIC -> isSystemInDarkMode()
+                        TrayIconAppearance.LIGHT -> true
+                        TrayIconAppearance.DARK -> false
+                    }
                 Box(modifier = Modifier.fillMaxSize()) {
                     Image(
                         painter = painterResource(Res.drawable.titleicon),
                         contentDescription = appName,
                         modifier = Modifier.fillMaxSize(),
-                        colorFilter = ColorFilter.tint(if (isDark) Color.White else Color.Black),
+                        colorFilter =
+                            ColorFilter.tint(if (useLightIcon) Color.White else Color.Black),
                     )
 
                     trayBadgeState?.let {
@@ -299,11 +307,13 @@ fun main(args: Array<String>) {
                         uiState.useSystemColors,
                         uiState.customSeedColor,
                         uiState.accentStyle,
+                        uiState.trayIconAppearance,
                     ) {
                         theme = uiState.theme
                         useSystemColors = uiState.useSystemColors
                         customSeedColor = uiState.customSeedColor?.let { Color(it) }
                         accentStyle = uiState.accentStyle
+                        trayIconAppearance = uiState.trayIconAppearance
                     }
 
                     // Keeps the OS registration in sync with the saved preference - not just at

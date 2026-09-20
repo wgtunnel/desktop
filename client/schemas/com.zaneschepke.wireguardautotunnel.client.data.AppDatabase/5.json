@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 5,
-    "identityHash": "cd4c1ae8c402a75e4f5d764bba042802",
+    "identityHash": "eca1812be6392d856e5748ddd9e86d3e",
     "entities": [
       {
         "tableName": "tunnel_config",
@@ -142,7 +142,7 @@
       },
       {
         "tableName": "general_settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `theme` TEXT NOT NULL DEFAULT 'DARK', `locale` TEXT, `already_donated` INTEGER NOT NULL DEFAULT 0, `restore_tunnel_on_boot` INTEGER NOT NULL DEFAULT 0, `launch_at_login` INTEGER NOT NULL DEFAULT 1, `use_system_colors` INTEGER NOT NULL DEFAULT 0, `custom_seed_color` INTEGER, `accent_style` TEXT NOT NULL DEFAULT 'TONAL_SPOT', `tunnel_mode` INTEGER NOT NULL DEFAULT 0, `seamless_recovery` INTEGER NOT NULL DEFAULT 1, `seamless_recovery_bounce_delay_sec` INTEGER NOT NULL DEFAULT 30, `global_amnezia_enabled` INTEGER NOT NULL DEFAULT 0, `last_notified_update_version` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `theme` TEXT NOT NULL DEFAULT 'DARK', `locale` TEXT, `already_donated` INTEGER NOT NULL DEFAULT 0, `restore_tunnel_on_boot` INTEGER NOT NULL DEFAULT 0, `launch_at_login` INTEGER NOT NULL DEFAULT 1, `use_system_colors` INTEGER NOT NULL DEFAULT 0, `custom_seed_color` INTEGER, `accent_style` TEXT NOT NULL DEFAULT 'TONAL_SPOT', `tray_icon_appearance` TEXT NOT NULL DEFAULT 'AUTOMATIC', `tunnel_mode` INTEGER NOT NULL DEFAULT 0, `seamless_recovery` INTEGER NOT NULL DEFAULT 1, `seamless_recovery_bounce_delay_sec` INTEGER NOT NULL DEFAULT 30, `global_amnezia_enabled` INTEGER NOT NULL DEFAULT 0, `last_notified_update_version` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -201,6 +201,13 @@
             "affinity": "TEXT",
             "notNull": true,
             "defaultValue": "'TONAL_SPOT'"
+          },
+          {
+            "fieldPath": "trayIconAppearance",
+            "columnName": "tray_icon_appearance",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'AUTOMATIC'"
           },
           {
             "fieldPath": "tunnelMode",
@@ -493,7 +500,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cd4c1ae8c402a75e4f5d764bba042802')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'eca1812be6392d856e5748ddd9e86d3e')"
     ]
   }
 }

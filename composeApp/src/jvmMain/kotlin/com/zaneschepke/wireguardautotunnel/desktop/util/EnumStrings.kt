@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.wgtunnel.backend.model.dns.DnsValidationError
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
+import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.BootstrapDnsProtocol
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.SeamlessRecoveryBounceDelay
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.SplitDnsSuffixTarget
@@ -28,6 +30,9 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_rainbow
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_tonal_spot
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_vibrant
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.amoled
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.automatic
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dark
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.default_dns_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_empty
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_host
@@ -39,6 +44,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.doh
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dot
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.encrypted_dns
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.encrypted_dns_desc
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.light
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.local_proxy
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.local_proxy_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.minutes_template
@@ -180,4 +186,22 @@ fun AccentStyle.asLabel(): String =
         AccentStyle.MONOCHROME -> stringResource(Res.string.accent_style_monochrome)
         AccentStyle.FIDELITY -> stringResource(Res.string.accent_style_fidelity)
         AccentStyle.CONTENT -> stringResource(Res.string.accent_style_content)
+    }
+
+@Composable
+fun Theme.asLabel(): String =
+    when (this) {
+        Theme.DEFAULT -> stringResource(Res.string._default)
+        Theme.DARK -> stringResource(Res.string.dark)
+        Theme.LIGHT -> stringResource(Res.string.light)
+        Theme.AMOLED -> stringResource(Res.string.amoled)
+        Theme.SYSTEM -> stringResource(Res.string.system)
+    }
+
+@Composable
+fun TrayIconAppearance.asLabel(): String =
+    when (this) {
+        TrayIconAppearance.AUTOMATIC -> stringResource(Res.string.automatic)
+        TrayIconAppearance.LIGHT -> stringResource(Res.string.light)
+        TrayIconAppearance.DARK -> stringResource(Res.string.dark)
     }

@@ -7,12 +7,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Contrast
+import androidx.compose.material.icons.outlined.DesktopWindows
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -34,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.*
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
@@ -41,6 +41,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.AccentColorPickerDialog
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dropdown.LabeledDropdown
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.util.asLabel
 import com.zaneschepke.wireguardautotunnel.desktop.util.decodeImageBitmap
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
@@ -49,7 +50,6 @@ import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.readBytes
-import kotlin.enums.enumEntries
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -80,15 +80,14 @@ fun DisplayScreen(appViewModel: AppViewModel) {
             )
         }
     ) { padding ->
-        Column(
+        ScrollableColumn(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top,
-            modifier =
-                Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             Column {
                 GroupLabel(
-                    stringResource(Res.string.colors),
+                    stringResource(Res.string.theme),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
                 SurfaceRow(
@@ -103,34 +102,14 @@ fun DisplayScreen(appViewModel: AppViewModel) {
                 )
             }
             Column {
-                GroupLabel(
-                    stringResource(Res.string.themes),
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                LabeledDropdown(
+                    title = stringResource(Res.string.theme),
+                    leading = { Icon(Icons.Outlined.Contrast, contentDescription = null) },
+                    currentValue = uiState.theme,
+                    onSelected = { selected -> selected?.let { appViewModel.setTheme(it) } },
+                    options = Theme.entries,
+                    optionToString = { (it ?: Theme.DEFAULT).asLabel() },
                 )
-                enumEntries<Theme>().forEach {
-                    val title =
-                        when (it) {
-                            Theme.DEFAULT -> stringResource(Res.string._default)
-                            Theme.DARK -> stringResource(Res.string.dark)
-                            Theme.LIGHT -> stringResource(Res.string.light)
-                            Theme.AMOLED -> stringResource(Res.string.amoled)
-                            Theme.SYSTEM -> stringResource(Res.string.system)
-                        }
-                    SurfaceRow(
-                        title = title,
-                        trailing =
-                            if (uiState.theme == it) {
-                                {
-                                    Icon(
-                                        Icons.Outlined.Check,
-                                        stringResource(Res.string.selected),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            } else null,
-                        onClick = { appViewModel.setTheme(it) },
-                    )
-                }
             }
             Column {
                 GroupLabel(
@@ -200,6 +179,22 @@ fun DisplayScreen(appViewModel: AppViewModel) {
                     onSelected = { selected -> selected?.let { appViewModel.setAccentStyle(it) } },
                     options = AccentStyle.entries,
                     optionToString = { (it ?: AccentStyle.TONAL_SPOT).asLabel() },
+                )
+            }
+            Column {
+                GroupLabel(
+                    stringResource(Res.string.tray),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+                LabeledDropdown(
+                    title = stringResource(Res.string.tray_icon_color),
+                    leading = { Icon(Icons.Outlined.DesktopWindows, contentDescription = null) },
+                    currentValue = uiState.trayIconAppearance,
+                    onSelected = { selected ->
+                        selected?.let { appViewModel.setTrayIconAppearance(it) }
+                    },
+                    options = TrayIconAppearance.entries,
+                    optionToString = { (it ?: TrayIconAppearance.AUTOMATIC).asLabel() },
                 )
             }
         }

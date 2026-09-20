@@ -9,6 +9,7 @@ import com.dokar.sonner.ToastType
 import com.materialkolor.ktx.themeColor
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
@@ -79,6 +80,7 @@ class AppViewModel(
                             useSystemColors = settings.useSystemColors,
                             customSeedColor = settings.customSeedColor,
                             accentStyle = settings.accentStyle,
+                            trayIconAppearance = settings.trayIconAppearance,
                             tunnelMode = settings.tunnelMode,
                         )
                     }
@@ -216,6 +218,10 @@ class AppViewModel(
     }
 
     fun setAccentStyle(style: AccentStyle) = intent { settingsRepository.updateAccentStyle(style) }
+
+    fun setTrayIconAppearance(appearance: TrayIconAppearance) = intent {
+        settingsRepository.updateTrayIconAppearance(appearance)
+    }
 
     private fun daemonStartCommand(): String =
         if (isWindows) "net start $daemonServiceName"

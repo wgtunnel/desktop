@@ -6,6 +6,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.mapper.toDomain
 import com.zaneschepke.wireguardautotunnel.client.data.mapper.toEntity
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.client.domain.model.GeneralSettings as Domain
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
@@ -54,6 +55,10 @@ class RoomSettingsRepository(private val settingsDao: GeneralSettingsDao) :
 
     override suspend fun updateAccentStyle(style: AccentStyle) {
         settingsDao.updateAccentStyle(style.name)
+    }
+
+    override suspend fun updateTrayIconAppearance(appearance: TrayIconAppearance) {
+        settingsDao.updateTrayIconAppearance(appearance.name)
     }
 
     override suspend fun updateTunnelMode(mode: TunnelMode) {

@@ -38,6 +38,9 @@ interface GeneralSettingsDao {
     @Query("UPDATE general_settings SET accent_style = :style WHERE id = 1")
     suspend fun updateAccentStyle(style: String)
 
+    @Query("UPDATE general_settings SET tray_icon_appearance = :appearance WHERE id = 1")
+    suspend fun updateTrayIconAppearance(appearance: String)
+
     @Query("UPDATE general_settings SET tunnel_mode = :mode WHERE id = 1")
     suspend fun updateTunnelMode(mode: Int)
 

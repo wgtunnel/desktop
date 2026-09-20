@@ -2,6 +2,7 @@ package com.zaneschepke.wireguardautotunnel.desktop.ui.state
 
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 
@@ -19,6 +20,7 @@ data class AppUiState(
     val useSystemColors: Boolean = false,
     val customSeedColor: Int? = null,
     val accentStyle: AccentStyle = AccentStyle.TONAL_SPOT,
+    val trayIconAppearance: TrayIconAppearance = TrayIconAppearance.AUTOMATIC,
     val daemonStatus: DaemonConnectionStatus = DaemonConnectionStatus.DISCONNECTED,
     val locale: String = DEFAULT_LOCALE,
     val alreadyDonated: Boolean = false,

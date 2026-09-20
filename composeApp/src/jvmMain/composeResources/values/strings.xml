@@ -107,6 +107,9 @@
     <string name="select_image">Select image</string>
     <string name="choose_accent_color">Choose accent color</string>
     <string name="palette_style">Palette style</string>
+    <string name="tray">Tray</string>
+    <string name="tray_icon_color">Tray icon color</string>
+    <string name="automatic">Automatic</string>
     <string name="accent_style_tonal_spot">Tonal Spot</string>
     <string name="accent_style_neutral">Neutral</string>
     <string name="accent_style_vibrant">Vibrant</string>
@@ -295,7 +298,7 @@
     <string name="add_a_tunnel">Add a tunnel</string>
     <string name="select_all">Select all</string>
     <string name="colors">Colors</string>
-    <string name="themes">Themes</string>
+    <string name="theme">Theme</string>
     <string name="use_system_colors">Use system colors</string>
     <string name="lockdown_active">Lockdown active</string>
     <string name="auto_tunnel_active">Auto-tunnel enabled</string>

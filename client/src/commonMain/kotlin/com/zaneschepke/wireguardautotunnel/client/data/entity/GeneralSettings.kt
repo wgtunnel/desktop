@@ -18,6 +18,8 @@ data class GeneralSettings(
     @ColumnInfo(name = "custom_seed_color") val customSeedColor: Int? = null,
     @ColumnInfo(name = "accent_style", defaultValue = "TONAL_SPOT")
     val accentStyle: String = "TONAL_SPOT",
+    @ColumnInfo(name = "tray_icon_appearance", defaultValue = "AUTOMATIC")
+    val trayIconAppearance: String = "AUTOMATIC",
     @ColumnInfo(name = "tunnel_mode", defaultValue = "0") val tunnelMode: Int = 0,
     @ColumnInfo(name = "seamless_recovery", defaultValue = "1")
     val seamlessRecoveryEnabled: Boolean = true,

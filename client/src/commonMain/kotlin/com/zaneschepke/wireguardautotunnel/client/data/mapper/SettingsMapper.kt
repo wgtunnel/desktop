@@ -3,6 +3,7 @@ package com.zaneschepke.wireguardautotunnel.client.data.mapper
 import com.zaneschepke.wireguardautotunnel.client.data.entity.GeneralSettings as Entity
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
+import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.client.domain.model.GeneralSettings as Domain
 
@@ -19,6 +20,9 @@ fun Entity.toDomain(): Domain =
         accentStyle =
             runCatching { AccentStyle.valueOf(accentStyle.uppercase()) }
                 .getOrDefault(AccentStyle.TONAL_SPOT),
+        trayIconAppearance =
+            runCatching { TrayIconAppearance.valueOf(trayIconAppearance.uppercase()) }
+                .getOrDefault(TrayIconAppearance.AUTOMATIC),
         tunnelMode = TunnelMode.fromValue(tunnelMode),
         seamlessRecoveryEnabled = seamlessRecoveryEnabled,
         seamlessRecoveryBounceDelaySec = seamlessRecoveryBounceDelaySec,
@@ -37,6 +41,7 @@ fun Domain.toEntity(): Entity =
         useSystemColors = useSystemColors,
         customSeedColor = customSeedColor,
         accentStyle = accentStyle.name,
+        trayIconAppearance = trayIconAppearance.name,
         tunnelMode = tunnelMode.value,
         seamlessRecoveryEnabled = seamlessRecoveryEnabled,
         seamlessRecoveryBounceDelaySec = seamlessRecoveryBounceDelaySec,

@@ -3,6 +3,7 @@ package com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.component
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,6 +40,8 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SwitchWithDivider
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollbarThickness
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.appScrollbarStyle
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.CustomTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.RequiresDaemonTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
@@ -91,8 +94,7 @@ fun TunnelList(
     val exportSelectedLabel = stringResource(Res.string.export_selected)
     val exitSelectionLabel = stringResource(Res.string.exit_selection_mode)
 
-    LazyColumn(
-        state = lazyListState,
+    Box(
         modifier =
             modifier
                 .background(MaterialTheme.colorScheme.background)
@@ -102,118 +104,136 @@ fun TunnelList(
                         true
                     } else false
                 }
-                .fillMaxSize(),
+                .fillMaxSize()
     ) {
-        if (uiState.tunnelItems.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(top = 80.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(stringResource(Res.string.no_tunnels_click_add))
-                }
-            }
-            return@LazyColumn
-        }
-
-        items(uiState.tunnelItems, key = { it.config.id }) { item ->
-            val isSelected = uiState.selectedTunnels.contains(item.config)
-            ReorderableItem(reorderableState, key = item.config.id) { isDragging ->
-                val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
-
-                ContextMenuArea(
-                    items = {
-                        buildList {
-                            if (!uiState.isSelectionMode) {
-                                add(
-                                    NucleusContextMenuItem(detailsLabel) {
-                                        navController.push(Route.Tunnel(item.config.id))
-                                    }
-                                )
-                                add(
-                                    NucleusContextMenuItem(deleteLabel) {
-                                        onDelete(DeleteIntent.Tunnel(item.config))
-                                    }
-                                )
-                                add(
-                                    NucleusContextMenuItem(exportLabel) {
-                                        onExport(ExportIntent.Tunnel(item.config))
-                                    }
-                                )
-                                add(NucleusContextMenuItem(selectLabel) { onSelected(item.config) })
-                            } else {
-                                add(
-                                    NucleusContextMenuItem(deleteSelectedLabel) {
-                                        onDelete(DeleteIntent.Selected)
-                                    }
-                                )
-                                add(
-                                    NucleusContextMenuItem(exportSelectedLabel) {
-                                        onExport(ExportIntent.Selected)
-                                    }
-                                )
-                                add(
-                                    NucleusContextMenuItem(exitSelectionLabel) {
-                                        onExitSelectionMode()
-                                    }
-                                )
-                            }
-                        }
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier.fillMaxSize().padding(end = ScrollbarThickness),
+        ) {
+            if (uiState.tunnelItems.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(top = 80.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(stringResource(Res.string.no_tunnels_click_add))
                     }
-                ) {
-                    SurfaceRow(
-                        title = item.config.name,
-                        modifier =
-                            Modifier.shadow(elevation)
-                                .animateItem()
-                                .then(
-                                    if (!uiState.isSelectionMode) Modifier.draggableHandle()
-                                    else Modifier
-                                )
-                                .pointerHoverIcon(PointerIcon.Hand)
-                                .then(if (isDragging) Modifier.zIndex(1f) else Modifier),
-                        onClick = {
-                            if (!uiState.isSelectionMode) {
-                                navController.push(Route.Tunnel(item.config.id))
-                            }
-                        },
-                        leading = {
-                            val item = uiState.tunnelItems.first { it.config.id == item.config.id }
-                            @Composable
-                            fun icon() {
-                                Icon(
-                                    Icons.Rounded.Circle,
-                                    contentDescription = null,
-                                    tint = item.stateColor,
-                                    modifier = Modifier.size(14.dp),
-                                )
-                            }
-                            val tooltipMessage = item.status?.state?.asTooltipMessage()
-                            if (!tooltipMessage.isNullOrBlank()) {
-                                CustomTooltip(text = tooltipMessage) { icon() }
-                            } else {
-                                icon()
-                            }
-                        },
-                        selected = isSelected,
-                        description = { TunnelStatisticsSection(status = item.status) },
-                        trailing = {
-                            if (!uiState.isSelectionMode) {
-                                RequiresDaemonTooltip(daemonConnected = uiState.hasBackendStatus) {
-                                    SwitchWithDivider(
-                                        checked = item.isRunning,
-                                        enabled = uiState.hasBackendStatus,
-                                        onClick = {
-                                            if (it) startTunnel(item.config.id)
-                                            else stopTunnel(item.config.id)
-                                        },
+                }
+                return@LazyColumn
+            }
+
+            items(uiState.tunnelItems, key = { it.config.id }) { item ->
+                val isSelected = uiState.selectedTunnels.contains(item.config)
+                ReorderableItem(reorderableState, key = item.config.id) { isDragging ->
+                    val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
+
+                    ContextMenuArea(
+                        items = {
+                            buildList {
+                                if (!uiState.isSelectionMode) {
+                                    add(
+                                        NucleusContextMenuItem(detailsLabel) {
+                                            navController.push(Route.Tunnel(item.config.id))
+                                        }
+                                    )
+                                    add(
+                                        NucleusContextMenuItem(deleteLabel) {
+                                            onDelete(DeleteIntent.Tunnel(item.config))
+                                        }
+                                    )
+                                    add(
+                                        NucleusContextMenuItem(exportLabel) {
+                                            onExport(ExportIntent.Tunnel(item.config))
+                                        }
+                                    )
+                                    add(
+                                        NucleusContextMenuItem(selectLabel) {
+                                            onSelected(item.config)
+                                        }
+                                    )
+                                } else {
+                                    add(
+                                        NucleusContextMenuItem(deleteSelectedLabel) {
+                                            onDelete(DeleteIntent.Selected)
+                                        }
+                                    )
+                                    add(
+                                        NucleusContextMenuItem(exportSelectedLabel) {
+                                            onExport(ExportIntent.Selected)
+                                        }
+                                    )
+                                    add(
+                                        NucleusContextMenuItem(exitSelectionLabel) {
+                                            onExitSelectionMode()
+                                        }
                                     )
                                 }
                             }
-                        },
-                    )
+                        }
+                    ) {
+                        SurfaceRow(
+                            title = item.config.name,
+                            modifier =
+                                Modifier.shadow(elevation)
+                                    .animateItem()
+                                    .then(
+                                        if (!uiState.isSelectionMode) Modifier.draggableHandle()
+                                        else Modifier
+                                    )
+                                    .pointerHoverIcon(PointerIcon.Hand)
+                                    .then(if (isDragging) Modifier.zIndex(1f) else Modifier),
+                            onClick = {
+                                if (!uiState.isSelectionMode) {
+                                    navController.push(Route.Tunnel(item.config.id))
+                                }
+                            },
+                            leading = {
+                                val item =
+                                    uiState.tunnelItems.first { it.config.id == item.config.id }
+                                @Composable
+                                fun icon() {
+                                    Icon(
+                                        Icons.Rounded.Circle,
+                                        contentDescription = null,
+                                        tint = item.stateColor,
+                                        modifier = Modifier.size(14.dp),
+                                    )
+                                }
+                                val tooltipMessage = item.status?.state?.asTooltipMessage()
+                                if (!tooltipMessage.isNullOrBlank()) {
+                                    CustomTooltip(text = tooltipMessage) { icon() }
+                                } else {
+                                    icon()
+                                }
+                            },
+                            selected = isSelected,
+                            description = { TunnelStatisticsSection(status = item.status) },
+                            trailing = {
+                                if (!uiState.isSelectionMode) {
+                                    RequiresDaemonTooltip(
+                                        daemonConnected = uiState.hasBackendStatus
+                                    ) {
+                                        SwitchWithDivider(
+                                            checked = item.isRunning,
+                                            enabled = uiState.hasBackendStatus,
+                                            onClick = {
+                                                if (it) startTunnel(item.config.id)
+                                                else stopTunnel(item.config.id)
+                                            },
+                                        )
+                                    }
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
+
+        VerticalScrollbar(
+            adapter = rememberScrollbarAdapter(lazyListState),
+            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+            style = appScrollbarStyle(),
+        )
     }
 }
