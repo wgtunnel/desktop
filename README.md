@@ -127,7 +127,9 @@ choco install wgtunnel
 ### Linux
 
 > [!NOTE]
-> Only `systemd`-based Linux systems are currently supported. Also, the firewall must use `nftables` or `iptables` with the nft backend (`iptables-nft`).
+> The firewall must use `nftables` or `iptables` with the nft backend (`iptables-nft`). On `systemd`-based
+> distros the daemon starts automatically at boot. On other init systems, it installs but needs to be
+> started manually or integrated with your init system (see the note printed after install).
 
 > [!Note]
 > Direct installations from GitHub releases for `.deb` and `.rpm` packages can use the in-app updater while `.pacman` and tarball direct installs
@@ -194,9 +196,11 @@ sudo systemctl enable --now wgtunnel-daemon.service
 #### Other distros (`.tar.gz`)
 
 Use this only if none of the formats above fit your distro. The tarball bundles its own
-`install.sh` / `uninstall.sh` (the same install location and systemd configuration the `.deb`/`.rpm`/
-`.pacman` packages use under the hood). See `packaging/linux/tar-install.sh` in the source repo if
-you want to see the source script:
+`install.sh` / `uninstall.sh` (the same install location the `.deb`/`.rpm`/`.pacman` packages use
+under the hood). On `systemd`-based systems it also enables and starts the daemon automatically.
+On other init systems, the daemon is installed but needs to be started manually (the script prints
+the exact command). See `packaging/linux/tar-install.sh` in the source repo if you want to see the
+source script:
 
 ```bash
 tar -xzf wgtunnel*-linux-x64.tar.gz

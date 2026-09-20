@@ -5,11 +5,12 @@ pkgname=wgtunnel-bin
 pkgver=0.0.0
 pkgrel=1
 install=wgtunnel-bin.install
-pkgdesc="WireGuard and AmneziaWG VPN client with auto-tunneling, a kill switch, and proxying"
+pkgdesc="An advanced, open-source client for WireGuard and AmneziaWG."
 arch=('x86_64')
 url="https://wgtunnel.com"
 license=('MIT')
-depends=('systemd' 'gtk3' 'gcc-libs' 'freetype2' 'fontconfig')
+depends=('gtk3' 'gcc-libs' 'freetype2' 'fontconfig')
+optdepends=('systemd: enables automatic daemon startup and management')
 provides=("wgtunnel=${pkgver}")
 conflicts=('wgtunnel' 'wgtunnel-git')
 options=(!strip !emptydirs)

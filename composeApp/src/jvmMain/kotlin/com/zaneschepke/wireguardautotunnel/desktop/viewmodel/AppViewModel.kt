@@ -34,6 +34,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
 import dev.nucleusframework.core.runtime.Platform
 import dev.nucleusframework.updater.UpdateResult
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
+import java.io.File
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
@@ -116,13 +117,18 @@ class AppViewModel(
                         if (alive) {
                             postSideEffect(AppSideEffect.DismissToast(DAEMON_NOT_RUNNING_TOAST_ID))
                         } else {
+                            val message = getString(Res.string.daemon_not_running)
                             postSideEffect(
-                                AppSideEffect.ActionableToast(
-                                    id = DAEMON_NOT_RUNNING_TOAST_ID,
-                                    message = getString(Res.string.daemon_not_running),
-                                    copyText = daemonStartCommand(),
-                                    copyLabel = getString(Res.string.daemon_start_command_label),
-                                )
+                                if (isWindows || isSystemdActive) {
+                                    AppSideEffect.ActionableToast(
+                                        id = DAEMON_NOT_RUNNING_TOAST_ID,
+                                        message = message,
+                                        copyText = daemonStartCommand(),
+                                        copyLabel = getString(Res.string.daemon_start_command_label),
+                                    )
+                                } else {
+                                    AppSideEffect.Toast(message = message, type = ToastType.Warning)
+                                }
                             )
                         }
                     }
@@ -130,18 +136,23 @@ class AppViewModel(
             intent {
                 daemonService.remoteVersion.filterNotNull().collect { remoteVersion ->
                     if (remoteVersion != BuildConfig.APP_VERSION) {
-                        postSideEffect(
-                            AppSideEffect.ActionableToast(
-                                id = DAEMON_OUTDATED_TOAST_ID,
-                                message =
-                                    getString(
-                                        Res.string.daemon_outdated_template,
-                                        remoteVersion,
-                                        BuildConfig.APP_VERSION,
-                                    ),
-                                copyText = daemonRestartCommand(),
-                                copyLabel = getString(Res.string.daemon_restart_command_label),
+                        val message =
+                            getString(
+                                Res.string.daemon_outdated_template,
+                                remoteVersion,
+                                BuildConfig.APP_VERSION,
                             )
+                        postSideEffect(
+                            if (isWindows || isSystemdActive) {
+                                AppSideEffect.ActionableToast(
+                                    id = DAEMON_OUTDATED_TOAST_ID,
+                                    message = message,
+                                    copyText = daemonRestartCommand(),
+                                    copyLabel = getString(Res.string.daemon_restart_command_label),
+                                )
+                            } else {
+                                AppSideEffect.Toast(message = message, type = ToastType.Warning)
+                            }
                         )
                     } else {
                         postSideEffect(AppSideEffect.DismissToast(DAEMON_OUTDATED_TOAST_ID))
@@ -223,6 +234,7 @@ class AppViewModel(
         settingsRepository.updateTrayIconAppearance(appearance)
     }
 
+    // Only called when isWindows or isSystemdActive.
     private fun daemonStartCommand(): String =
         if (isWindows) "net start $daemonServiceName"
         else "sudo systemctl enable --now $daemonServiceName.service"
@@ -239,5 +251,6 @@ class AppViewModel(
 
         private val isWindows = Platform.Current == Platform.Windows
         private val daemonServiceName = "${AppVariant.current.linuxFsName}-daemon"
+        private val isSystemdActive = File("/run/systemd/system").isDirectory
     }
 }

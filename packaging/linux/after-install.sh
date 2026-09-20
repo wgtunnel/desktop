@@ -36,7 +36,7 @@ if [ -f "$UNIT_SRC" ]; then
   sed -i "s|^WorkingDirectory=.*|WorkingDirectory=$APP_ROOT|" "$UNIT_DST"
 fi
 
-if command -v systemctl >/dev/null 2>&1; then
+if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload >/dev/null 2>&1 || true
   if command -v pacman >/dev/null 2>&1; then
     # Per Arch packaging guidelines, don't auto-enable/start services on install.
@@ -64,6 +64,21 @@ EOF
     # correct for fresh installs and upgrades alike.
     systemctl restart "$UNIT_NAME" >/dev/null 2>&1 || true
   fi
+else
+  cat <<EOF
+
+=== WG Tunnel Installed ===
+
+    systemd was not detected, so the daemon's service unit was installed but not enabled.
+    WG Tunnel needs the daemon running to run tunnels.
+
+    To test immediately in the foreground:
+        sudo $APP_ROOT/bin/wgtunnel-daemon
+
+    For a persistent setup, configure your init system to run it at boot. The installed
+    systemd unit ($UNIT_DST) can be used as a reference for what it needs.
+
+EOF
 fi
 
 exit 0
