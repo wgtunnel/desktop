@@ -56,6 +56,29 @@ object FilePathsHelper {
         }
     }
 
+    /**
+     * A per-user cache directory that's excluded from OS-level backups. Used for ephemeral,
+     * client-side state that should never be part of a database backup/restore. Used for things
+     * like which tunnel was last started (which should not be a saved preference).
+     */
+    fun getClientCacheDir(): File {
+        val variant = AppVariant.current
+        val home = System.getProperty("user.home")
+        return when {
+            isWindows -> {
+                val localAppData = System.getenv("LOCALAPPDATA") ?: "$home\\AppData\\Local"
+                File("$localAppData\\${variant.desktopAppName}")
+            }
+            isMac -> {
+                File("$home/Library/Caches/${variant.desktopAppName}")
+            }
+            else -> {
+                val xdgCacheHome = System.getenv("XDG_CACHE_HOME") ?: "$home/.cache"
+                File("$xdgCacheHome/${variant.linuxFsName}")
+            }
+        }
+    }
+
     fun getAppLogDir(): File = File(getDatabaseDir(), "logs")
 
     fun getDaemonLogDir(): Path = getDaemonCacheBaseDir().resolve("logs")

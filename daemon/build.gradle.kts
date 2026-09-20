@@ -19,7 +19,7 @@ val daemonJvmArgs =
         "-XX:ReservedCodeCacheSize=48m",
         "-Xss512k",
         "-Dkotlinx.coroutines.io.parallelism=16",
-        "--enable-native-access=ALL-UNNAMED"
+        "--enable-native-access=ALL-UNNAMED",
     )
 
 dependencies {

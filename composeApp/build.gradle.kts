@@ -90,6 +90,7 @@ kotlin {
             implementation(libs.bundles.nucleus)
             implementation(libs.nucleus.graalvm.runtime)
             implementation(libs.nucleus.updater.runtime)
+            implementation(libs.nucleus.autolaunch)
             implementation(project(":daemon"))
         }
     }

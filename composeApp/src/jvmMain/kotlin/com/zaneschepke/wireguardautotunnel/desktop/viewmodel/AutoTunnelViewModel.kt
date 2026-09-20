@@ -88,11 +88,6 @@ class AutoTunnelViewModel(
         )
     }
 
-    fun setStartOnBoot(enabled: Boolean) = intent {
-        if (!state.daemonConnected) return@intent
-        autoTunnelRepository.upsert(state.autoTunnelSettings.copy(startOnBoot = enabled))
-    }
-
     fun setWildcardsEnabled(enabled: Boolean) = intent {
         autoTunnelRepository.upsert(state.autoTunnelSettings.copy(isWildcardsEnabled = enabled))
     }

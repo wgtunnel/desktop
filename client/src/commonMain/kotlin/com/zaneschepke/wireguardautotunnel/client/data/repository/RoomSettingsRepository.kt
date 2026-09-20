@@ -40,6 +40,10 @@ class RoomSettingsRepository(private val settingsDao: GeneralSettingsDao) :
         settingsDao.updateRestoreTunnelOnBoot(enabled)
     }
 
+    override suspend fun updateLaunchAtLogin(enabled: Boolean) {
+        settingsDao.updateLaunchAtLogin(enabled)
+    }
+
     override suspend fun updateSystemColors(enabled: Boolean) {
         settingsDao.updateSystemColors(enabled)
     }

@@ -10,8 +10,6 @@ interface DaemonService {
 
     suspend fun setRestoreKillSwitch(enabled: Boolean): Result<Unit>
 
-    suspend fun setRestoreTunnel(enabled: Boolean): Result<Unit>
-
     suspend fun updateAutoTunnelConfig(plan: AutoTunnelConfigDto): Result<Unit>
 
     suspend fun getAutoTunnelStatus(): Result<AutoTunnelStatusDto>

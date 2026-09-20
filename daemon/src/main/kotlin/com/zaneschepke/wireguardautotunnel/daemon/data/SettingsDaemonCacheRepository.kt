@@ -3,9 +3,7 @@ package com.zaneschepke.wireguardautotunnel.daemon.data
 import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.helper.PermissionsHelper
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelConfigDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.KillSwitchConfigDto
-import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.StartTunnelRequest
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -30,6 +28,24 @@ class SettingsDaemonCacheRepository(
         PermissionsHelper.secureDaemonDataDirectory(baseCacheDir)
         if (Files.exists(storePath) && Files.size(storePath) > 0) {
             Files.newInputStream(storePath).use { props.load(it) }
+        }
+        pruneObsoleteKeys()
+    }
+
+    // These all moved out of the daemon (they were per-user concepts with no way for the daemon to
+    // know
+    // which locally-authenticated user's data was even being restored on a multi-user machine)
+    private fun pruneObsoleteKeys() {
+        val obsoleteKeys =
+            listOf(
+                "last_start_request",
+                "last_active_tunnel_id",
+                "restore_on_boot",
+                "auto_tunnel_plan",
+            )
+        synchronized(lock) {
+            val removedAny = obsoleteKeys.map { props.remove(it) != null }.any { it }
+            if (removedAny) persistLocked()
         }
     }
 
@@ -57,42 +73,6 @@ class SettingsDaemonCacheRepository(
 
     override suspend fun getKillSwitchRestore(): Boolean = getBoolean(KEY_KS_RESTORE)
 
-    override suspend fun updateLastStartRequest(tunnelId: Long, request: StartTunnelRequest) {
-        synchronized(lock) {
-            props[KEY_LAST_TUNNEL_ID] = tunnelId.toString()
-            props[KEY_LAST_START] = json.encodeToString(StartTunnelRequest.serializer(), request)
-            persistLocked()
-        }
-    }
-
-    override suspend fun getLastStartRequest(): Pair<Long, StartTunnelRequest>? {
-        val id = getLong(KEY_LAST_TUNNEL_ID) ?: return null
-        val raw = getString(KEY_LAST_START) ?: return null
-        val request =
-            runCatching { json.decodeFromString(StartTunnelRequest.serializer(), raw) }.getOrNull()
-                ?: return null
-        return id to request
-    }
-
-    override suspend fun setRestoreTunnelOnBoot(enabled: Boolean) =
-        put(KEY_RESTORE_ON_BOOT, enabled.toString())
-
-    override suspend fun getRestoreTunnelOnBoot(): Boolean = getBoolean(KEY_RESTORE_ON_BOOT)
-
-    override suspend fun updateAutoTunnelPlan(plan: AutoTunnelConfigDto?) {
-        if (plan == null) {
-            remove(KEY_AUTO_TUNNEL_PLAN)
-        } else {
-            put(KEY_AUTO_TUNNEL_PLAN, json.encodeToString(AutoTunnelConfigDto.serializer(), plan))
-        }
-    }
-
-    override suspend fun getAutoTunnelPlan(): AutoTunnelConfigDto? {
-        val raw = getString(KEY_AUTO_TUNNEL_PLAN) ?: return null
-        return runCatching { json.decodeFromString(AutoTunnelConfigDto.serializer(), raw) }
-            .getOrNull()
-    }
-
     override suspend fun setLocalLoggingEnabled(enabled: Boolean) =
         put(KEY_LOCAL_LOGGING, enabled.toString())
 
@@ -101,8 +81,6 @@ class SettingsDaemonCacheRepository(
     private fun getString(key: String): String? = synchronized(lock) { props.getProperty(key) }
 
     private fun getBoolean(key: String): Boolean = getString(key)?.toBoolean() == true
-
-    private fun getLong(key: String): Long? = getString(key)?.toLongOrNull()
 
     private fun put(key: String, value: String) {
         synchronized(lock) {
@@ -134,10 +112,6 @@ class SettingsDaemonCacheRepository(
         private const val KEY_KS_ENABLED = "killswitch_enabled"
         private const val KEY_KS_CONFIG = "killswitch_config"
         private const val KEY_KS_RESTORE = "killswitch_restore"
-        private const val KEY_LAST_START = "last_start_request"
-        private const val KEY_LAST_TUNNEL_ID = "last_active_tunnel_id"
-        private const val KEY_RESTORE_ON_BOOT = "restore_on_boot"
-        private const val KEY_AUTO_TUNNEL_PLAN = "auto_tunnel_plan"
         private const val KEY_LOCAL_LOGGING = "local_logging"
     }
 }

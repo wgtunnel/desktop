@@ -31,11 +31,11 @@ class SupportViewModel(private val appUpdater: AppUpdater) :
         if (pending != null) {
             reduce { state.copy(updateBusy = true) }
             runCatching { appUpdater.downloadAndInstall(pending) }
-                .onFailure { error ->
+                .onFailure {
                     reduce { state.copy(updateBusy = false) }
                     postSideEffect(
                         AppSideEffect.Toast(
-                            error.message ?: getString(Res.string.update_download_failed),
+                            getString(Res.string.update_download_failed),
                             ToastType.Error,
                         )
                     )

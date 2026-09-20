@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WG Tunnel</string>
+    <string name="tray_open">Open WG Tunnel</string>
+    <string name="tray_minimize_to_tray">Minimize to Tray</string>
+    <string name="tray_exit">Exit</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="collapse_rail">Collapse rail</string>
+    <string name="expand_rail">Expand rail</string>
+    <string name="failed_to_read_conf_file">Failed to read .conf file</string>
+    <string name="failed_to_read_zip_archive">Failed to read .zip archive</string>
+    <string name="only_conf_or_zip_supported">Only \'.conf\' or \'.zip\' files supported</string>
+    <string name="tunnel_state_starting">Starting</string>
+    <string name="tunnel_state_stopping">Stopping</string>
+    <string name="tunnel_state_healthy">Healthy</string>
+    <string name="tunnel_state_handshake_failure">Handshake failure</string>
+    <string name="tunnel_state_resolving_dns">Resolving DNS</string>
+    <string name="tunnel_state_establishing_connection">Establishing connection</string>
+    <string name="tunnel_state_connected">Connected</string>
     <string name="github_url" translatable="false">https://github.com/wgtunnel/wgtunnel/issues</string>
     <string name="github_sponsors_url" translatable="false">https://github.com/sponsors/zaneschepke</string>
     <string name="kofi_url" translatable="false">https://ko-fi.com/zaneschepke</string>
@@ -35,7 +51,6 @@
     <string name="set_primary_tunnel">Tunnel used when no preferred tunnel is configured</string>
     <string name="settings">Settings</string>
     <string name="support">Support</string>
-    <string name="restart_at_boot">Start on boot</string>
     <string name="never">Never</string>
     <string name="logs">Logs</string>
     <string name="appearance">Appearance</string>
@@ -50,7 +65,7 @@
     <string name="local_logging">Local logs monitor</string>
     <string name="stop_on_no_internet">Stop on no internet</string>
     <string name="allow_lan_traffic">Allow LAN traffic</string>
-    <string name="bypass_lan_for_kill_switch">Bypass LAN for kill switch</string>
+    <string name="bypass_lan_for_kill_switch">Exempts local network traffic from the kill switch. Use with caution as this can cause leaks if your LAN has its own route to the internet</string>
     <string name="stop">Stop</string>
     <string name="auto_tunnel">Auto-tunnel</string>
     <string name="save">Save</string>
@@ -203,7 +218,9 @@
     <string name="local_proxy_desc">Expose the tunnel as a local SOCKS5/HTTP proxy</string>
     <string name="vpn_desc">Standard system-wide VPN mode</string>
     <string name="stop_on_no_internet_desc">Stop the tunnel when the device has no network connection</string>
-    <string name="start_on_boot_desc">Start auto-tunnel automatically on boot</string>
+    <string name="restore_auto_tunnel_at_login">Restore auto-tunnel at login</string>
+    <string name="restore_auto_tunnel_at_login_desc">Re-enables auto-tunnel at login so it decides what starts</string>
+    <string name="restore_auto_tunnel_at_login_locked_reason">Turn off restore tunnel at login first, so auto-tunnel decides what starts</string>
     <string name="local_logging_desc">Local log storage with live viewer</string>
     <string name="tunnel_globals">Tunnel globals</string>
     <string name="tunnel_globals_desc">Global configuration overrides for all tunnels</string>
@@ -250,8 +267,16 @@
     <string name="daemon_start_command_label">Copy Start Command</string>
     <string name="daemon_outdated_template">The running daemon (v%1$s) is older than this app (v%2$s). Restart it to finish updating.</string>
     <string name="daemon_restart_command_label">Copy Restart Command</string>
+    <string name="startup">At Login</string>
+    <string name="startup_desc">What launches automatically when you log in</string>
     <string name="protect_on_startup">Protect on system startup</string>
-    <string name="restore_tunnel_on_boot">Restore tunnel on system startup</string>
+    <string name="protect_on_startup_desc">Blocks all traffic from the moment the daemon starts at boot, before you log in</string>
+    <string name="restore_tunnel_at_login">Restore tunnel at login</string>
+    <string name="restore_tunnel_at_login_desc">Restores the last active tunnel at login</string>
+    <string name="launch_at_login">Launch app login</string>
+    <string name="launch_at_login_desc">App starts in the system tray at login</string>
+    <string name="launch_at_login_locked_reason">Required while restore tunnel or auto-tunnel at login is enabled</string>
+    <string name="autolaunch_update_failed">Failed to update launch at login setting</string>
     <string name="copied_to_clipboard">Copied to clipboard: %1$s</string>
     <string name="invalid_config_template">Invalid Config: %1$s</string>
     <string name="details">Details</string>

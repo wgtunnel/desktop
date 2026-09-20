@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.core.crypto
 
+import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import kotlin.io.encoding.Base64
@@ -27,6 +28,8 @@ object HmacProtector {
 
         val expected = generateSignature(key, timestamp, payload)
 
-        return expected == signature
+        // Constant time compare as a plain equals short-circuits on the first mismatched
+        // byte, which leaks timing information an attacker could use to forge a signature.
+        return MessageDigest.isEqual(expected.toByteArray(), signature.toByteArray())
     }
 }

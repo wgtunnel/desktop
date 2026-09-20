@@ -12,6 +12,7 @@ data class GeneralSettings(
     val locale: String? = null,
     val alreadyDonated: Boolean = false,
     val restoreTunnelOnBoot: Boolean = false,
+    val launchAtLogin: Boolean = true,
     val useSystemColors: Boolean = false,
     val customSeedColor: Int? = null,
     val accentStyle: AccentStyle = AccentStyle.TONAL_SPOT,

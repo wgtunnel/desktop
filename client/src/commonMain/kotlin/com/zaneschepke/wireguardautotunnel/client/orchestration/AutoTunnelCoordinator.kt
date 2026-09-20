@@ -108,7 +108,6 @@ class AutoTunnelCoordinator(
         }
         return AutoTunnelConfigDto(
             enabled = settings.isAutoTunnelEnabled,
-            startOnBoot = settings.startOnBoot,
             settings =
                 AutoTunnelSettingsDto(
                     isTunnelOnWifiEnabled = settings.isTunnelOnWifiEnabled,

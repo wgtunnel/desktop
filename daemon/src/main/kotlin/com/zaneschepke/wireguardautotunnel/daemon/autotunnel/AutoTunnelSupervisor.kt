@@ -15,7 +15,6 @@ import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelConfigDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelStatusDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelTunnelConfigDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.NetworkStatusDto
-import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toBackendMode
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toCore
 import com.zaneschepke.wireguardautotunnel.daemon.tunnel.DesktopNetworkMonitor
@@ -38,7 +37,6 @@ import kotlinx.coroutines.sync.withLock
 
 class AutoTunnelSupervisor(
     private val backend: Backend,
-    private val cacheRepository: DaemonCacheRepository,
     private val networkMonitor: DesktopNetworkMonitor,
     private val scope: CoroutineScope,
 ) {
@@ -65,18 +63,8 @@ class AutoTunnelSupervisor(
     val status: AutoTunnelStatusDto
         get() = statusOf(runningFlow.value, planFlow.value, networkMonitor.info.value)
 
-    suspend fun restoreFromCache() {
-        val plan = cacheRepository.getAutoTunnelPlan() ?: return
-        planFlow.value = plan
-        if (plan.enabled && plan.startOnBoot) {
-            log.i { "Restoring auto-tunnel on boot" }
-            start()
-        }
-    }
-
     suspend fun updatePlan(plan: AutoTunnelConfigDto) {
         if (planFlow.value != plan) {
-            cacheRepository.updateAutoTunnelPlan(plan)
             planFlow.value = plan
         }
         if (plan.enabled) start() else stop()
@@ -224,7 +212,6 @@ class AutoTunnelSupervisor(
                 .onFailure { log.e(it) { "Invalid auto-tunnel config for ${tunnelPlan.name}" } }
                 .getOrNull() ?: return
         val tunnel = RunningTunnel.fromRequest(tunnelPlan.id.toInt(), request)
-        cacheRepository.updateLastStartRequest(tunnelPlan.id, request)
         repeat(START_ATTEMPTS) { attempt ->
             val result =
                 backend.start(tunnel, request.toBackendMode(config), request.tunnelDns?.toCore())

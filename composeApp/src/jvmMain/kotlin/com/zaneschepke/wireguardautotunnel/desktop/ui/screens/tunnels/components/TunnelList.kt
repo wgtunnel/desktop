@@ -188,8 +188,9 @@ fun TunnelList(
                                     modifier = Modifier.size(14.dp),
                                 )
                             }
-                            if (item.tooltipMessage.isNotBlank()) {
-                                CustomTooltip(text = item.tooltipMessage) { icon() }
+                            val tooltipMessage = item.status?.state?.asTooltipMessage()
+                            if (!tooltipMessage.isNullOrBlank()) {
+                                CustomTooltip(text = tooltipMessage) { icon() }
                             } else {
                                 icon()
                             }

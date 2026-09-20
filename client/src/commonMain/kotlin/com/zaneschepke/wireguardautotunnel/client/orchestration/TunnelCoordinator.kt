@@ -12,6 +12,7 @@ import com.zaneschepke.wireguardautotunnel.client.domain.model.LockdownSettings
 import com.zaneschepke.wireguardautotunnel.client.domain.model.MonitoringSettings
 import com.zaneschepke.wireguardautotunnel.client.domain.model.ProxySettings
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.ClientCacheRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.DnsSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
@@ -40,6 +41,7 @@ class TunnelCoordinator(
     private val tunnelService: TunnelService,
     private val backendService: BackendService,
     private val tunnelRepository: TunnelRepository,
+    private val clientCacheRepository: ClientCacheRepository,
     settingsRepository: GeneralSettingRepository,
     dnsSettingsRepository: DnsSettingsRepository,
     monitoringSettingsRepository: MonitoringSettingsRepository,
@@ -94,7 +96,9 @@ class TunnelCoordinator(
         }
         activeTunnelIds().filter { it != config.id }.forEach { tunnelService.stopTunnel(it) }
         val request = buildStartRequest(config, snapshot)
-        tunnelService.startTunnel(config.id, request)
+        tunnelService.startTunnel(config.id, request).onSuccess {
+            clientCacheRepository.updateLastStartedTunnelId(config.id)
+        }
     }
 
     suspend fun stopTunnel(id: Long): Result<Unit> = tunnelMutex.withLock {

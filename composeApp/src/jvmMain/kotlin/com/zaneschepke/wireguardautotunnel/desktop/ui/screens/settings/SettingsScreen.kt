@@ -12,6 +12,7 @@ import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MonitorHeart
+import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.ViewHeadline
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,10 +41,11 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.kill_s
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.kill_switch_label
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.local_logging
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.local_logging_desc
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.restore_tunnel_on_boot
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.sdk
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.settings
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.startup
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.startup_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_globals
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_globals_desc
@@ -54,7 +56,6 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.PreferenceTrailing
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SwitchWithDivider
-import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.OptionPickerMenu
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.PickerOption
@@ -203,23 +204,6 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     title = stringResource(Res.string.tunnel_monitoring),
                     onClick = { navController.push(Route.TunnelMonitoring) },
                 )
-                SurfaceRow(
-                    leading = { Icon(Icons.Outlined.Autorenew, contentDescription = null) },
-                    title = stringResource(Res.string.restore_tunnel_on_boot),
-                    trailing = {
-                        RequiresDaemonTooltip(daemonConnected = uiState.daemonConnected) {
-                            ThemedSwitch(
-                                checked = uiState.settings.restoreTunnelOnBoot,
-                                enabled = uiState.daemonConnected,
-                                onClick = { viewModel.onRestoreTunnelOnBoot(it) },
-                            )
-                        }
-                    },
-                    enabled = uiState.daemonConnected,
-                    onClick = {
-                        viewModel.onRestoreTunnelOnBoot(!uiState.settings.restoreTunnelOnBoot)
-                    },
-                )
             }
             Column(modifier = Modifier.padding(bottom = 16.dp)) {
                 GroupLabel(
@@ -247,6 +231,12 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                         DescriptionText(stringResource(Res.string.local_logging_desc))
                     },
                     onClick = { navController.push(Route.Logs) },
+                )
+                SurfaceRow(
+                    leading = { Icon(Icons.Outlined.PowerSettingsNew, contentDescription = null) },
+                    title = stringResource(Res.string.startup),
+                    description = { DescriptionText(stringResource(Res.string.startup_desc)) },
+                    onClick = { navController.push(Route.Startup) },
                 )
             }
         }

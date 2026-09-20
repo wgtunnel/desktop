@@ -1,7 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.client.data.service
 
 import co.touchlab.kermit.Logger
-import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
@@ -36,7 +35,6 @@ import kotlinx.serialization.json.Json
 class UdsDaemonService(
     private val client: HttpClient,
     private val lockdownSettingsRepository: LockdownSettingsRepository,
-    private val generalSettingsRepository: GeneralSettingRepository,
     private val json: Json,
     scope: CoroutineScope,
 ) : DaemonService {
@@ -159,16 +157,6 @@ class UdsDaemonService(
             Unit
         }
             .onFailure { lockdownSettingsRepository.updateRestoreOnBoot(!enabled) }
-    }
-
-    override suspend fun setRestoreTunnel(enabled: Boolean): Result<Unit> {
-        generalSettingsRepository.updateRestoreTunnelOnBoot(enabled)
-        return safeDaemonCall {
-            val request = FlagRequest(enabled)
-            client.put(Routes.DAEMON_RESTORE_TUNNEL) { setBody(request) }
-            Unit
-        }
-            .onFailure { generalSettingsRepository.updateRestoreTunnelOnBoot(!enabled) }
     }
 
     override suspend fun updateAutoTunnelConfig(plan: AutoTunnelConfigDto): Result<Unit> =

@@ -12,6 +12,7 @@ data class GeneralSettings(
     @ColumnInfo(name = "already_donated", defaultValue = "0") val alreadyDonated: Boolean = false,
     @ColumnInfo(name = "restore_tunnel_on_boot", defaultValue = "0")
     val restoreTunnelOnBoot: Boolean = false,
+    @ColumnInfo(name = "launch_at_login", defaultValue = "1") val launchAtLogin: Boolean = true,
     @ColumnInfo(name = "use_system_colors", defaultValue = "0")
     val useSystemColors: Boolean = false,
     @ColumnInfo(name = "custom_seed_color") val customSeedColor: Int? = null,

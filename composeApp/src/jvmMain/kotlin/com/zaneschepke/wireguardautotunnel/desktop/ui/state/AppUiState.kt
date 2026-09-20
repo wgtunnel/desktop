@@ -22,6 +22,8 @@ data class AppUiState(
     val daemonStatus: DaemonConnectionStatus = DaemonConnectionStatus.DISCONNECTED,
     val locale: String = DEFAULT_LOCALE,
     val alreadyDonated: Boolean = false,
+    val restoreTunnelOnBoot: Boolean = false,
+    val launchAtLogin: Boolean = true,
     val lockdownActive: Boolean = false,
     val autoTunnelEnabled: Boolean = false,
     val tunnelStatuses: List<TunnelStatus> = emptyList(),

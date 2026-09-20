@@ -21,6 +21,8 @@ interface GeneralSettingRepository {
 
     suspend fun updateRestoreTunnelOnBoot(enabled: Boolean)
 
+    suspend fun updateLaunchAtLogin(enabled: Boolean)
+
     suspend fun updateSystemColors(enabled: Boolean)
 
     suspend fun updateCustomSeedColor(color: Int?)

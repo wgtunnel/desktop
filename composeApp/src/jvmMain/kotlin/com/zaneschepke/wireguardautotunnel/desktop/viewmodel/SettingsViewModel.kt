@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.DnsSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
@@ -24,6 +25,7 @@ class SettingsViewModel(
     private val monitoringRepository: MonitoringSettingsRepository,
     private val dnsSettingsRepository: DnsSettingsRepository,
     private val tunnelRepository: TunnelRepository,
+    private val autoTunnelRepository: AutoTunnelSettingsRepository,
     private val daemonService: DaemonService,
     private val tunnelBackendCoordinator: TunnelBackendCoordinator,
 ) : OrbitContainerHost<SettingsUiState, SettingsUiState, AppSideEffect>, ViewModel() {
@@ -43,6 +45,9 @@ class SettingsViewModel(
                     ) { settings, lockdown, monitoring, dns, global ->
                         SettingsSnapshot(settings, lockdown, monitoring, dns, global)
                     }
+                    .combine(autoTunnelRepository.flow) { snapshot, autoTunnel ->
+                        snapshot.copy(autoTunnel = autoTunnel)
+                    }
                     .collect { snapshot ->
                         reduce {
                             state.copy(
@@ -52,6 +57,7 @@ class SettingsViewModel(
                                 monitoring = snapshot.monitoring,
                                 dns = snapshot.dns,
                                 globalTunnelConfig = snapshot.global,
+                                autoTunnel = snapshot.autoTunnel,
                             )
                         }
                     }
@@ -60,10 +66,18 @@ class SettingsViewModel(
         }
 
     fun onRestoreTunnelOnBoot(enabled: Boolean) = intent {
-        daemonService.setRestoreTunnel(enabled).onFailure {
-            val message = (it as? ClientException).asUserMessage()
-            postSideEffect(AppSideEffect.Toast(message, ToastType.Error))
+        settingsRepository.updateRestoreTunnelOnBoot(enabled)
+        if (enabled) {
+            settingsRepository.updateLaunchAtLogin(true)
+            if (state.autoTunnel.startOnBoot) {
+                autoTunnelRepository.upsert(state.autoTunnel.copy(startOnBoot = false))
+            }
         }
+    }
+
+    fun onLaunchAtLogin(enabled: Boolean) = intent {
+        if (state.settings.restoreTunnelOnBoot) return@intent
+        settingsRepository.updateLaunchAtLogin(enabled)
     }
 
     fun onSeamlessRecovery(enabled: Boolean) = intent {
@@ -96,19 +110,17 @@ class SettingsViewModel(
         }
     }
 
+    fun onAutoTunnelStartOnBoot(enabled: Boolean) = intent {
+        if (state.settings.restoreTunnelOnBoot) return@intent
+        autoTunnelRepository.upsert(state.autoTunnel.copy(startOnBoot = enabled))
+        if (enabled) settingsRepository.updateLaunchAtLogin(true)
+    }
+
     fun onRestoreKillSwitchOnBoot(enabled: Boolean) = intent {
         daemonService.setRestoreKillSwitch(enabled).onFailure {
             val message = (it as? ClientException).asUserMessage()
             postSideEffect(AppSideEffect.Toast(message, ToastType.Error))
         }
-    }
-
-    fun setGlobalAmneziaEnabled(enabled: Boolean) = intent {
-        settingsRepository.updateGlobalAmneziaEnabled(enabled)
-    }
-
-    fun setGlobalTunnelDnsEnabled(enabled: Boolean) = intent {
-        dnsSettingsRepository.upsert(state.dns.copy(isGlobalTunnelConfigDnsEnabled = enabled))
     }
 
     fun setLocalLogging(enabled: Boolean) = intent {
@@ -121,5 +133,7 @@ class SettingsViewModel(
         val monitoring: com.zaneschepke.wireguardautotunnel.client.domain.model.MonitoringSettings,
         val dns: com.zaneschepke.wireguardautotunnel.client.domain.model.DnsSettings,
         val global: com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig?,
+        val autoTunnel: com.zaneschepke.wireguardautotunnel.client.domain.model.AutoTunnelSettings =
+            com.zaneschepke.wireguardautotunnel.client.domain.model.AutoTunnelSettings(),
     )
 }

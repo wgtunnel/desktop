@@ -39,6 +39,7 @@ object PermissionsHelper {
 
     // windows permission flags
     private const val WIN_DIR_MODIFY_INHERIT = ":(OI)(CI)(M)"
+    private const val WIN_DIR_READ_EXECUTE_INHERIT = ":(OI)(CI)(RX)"
     private const val WIN_FULL_CONTROL_INHERIT = ":(OI)(CI)(F)"
     private const val WIN_READY_ONLY = ":(R)"
     private const val WIN_FULL_CONTROL = ":(F)"
@@ -131,12 +132,42 @@ object PermissionsHelper {
         }
     }
 
-    fun setupDirectoryPermissionsWindows(runtimeDirPath: String) {
+    /**
+     * Locks down the daemon's runtime directory before the socket file exists in it: `Users` only
+     * gets traverse/list rights, not create/delete. Only the daemon (System/Administrators) can
+     * place or replace files there.
+     */
+    fun setupRuntimeDirectoryPermissionsWindows(runtimeDirPath: String) {
         try {
             val process =
                 ProcessBuilder(
                         ICACLS,
                         runtimeDirPath,
+                        WIN_GRANT,
+                        "$SID_USERS$WIN_DIR_READ_EXECUTE_INHERIT",
+                        WIN_GRANT,
+                        "$SID_SYSTEM$WIN_FULL_CONTROL_INHERIT",
+                        WIN_GRANT,
+                        "$SID_ADMINISTRATORS$WIN_FULL_CONTROL_INHERIT",
+                    )
+                    .start()
+
+            if (process.waitFor() != 0) {
+                val error = process.errorStream.bufferedReader().use { it.readText() }
+                log.e { "icacls runtime directory setup failed: $error" }
+            }
+        } catch (e: Exception) {
+            log.e(e) { "Failed to set Windows runtime directory ACLs" }
+        }
+    }
+
+    /** Grants any local user read/write access to the socket file itself, once it exists. */
+    fun setupSocketFilePermissionsWindows(socketPath: String) {
+        try {
+            val process =
+                ProcessBuilder(
+                        ICACLS,
+                        socketPath,
                         WIN_GRANT,
                         "$SID_USERS$WIN_DIR_MODIFY_INHERIT",
                         WIN_GRANT,
@@ -148,10 +179,10 @@ object PermissionsHelper {
 
             if (process.waitFor() != 0) {
                 val error = process.errorStream.bufferedReader().use { it.readText() }
-                log.e { "icacls directory setup failed: $error" }
+                log.e { "icacls socket file setup failed: $error" }
             }
         } catch (e: Exception) {
-            log.e(e) { "Failed to set Windows directory ACLs" }
+            log.e(e) { "Failed to set Windows socket file ACLs" }
         }
     }
 
@@ -183,7 +214,7 @@ object PermissionsHelper {
             runCatching {
                 retry(socketRetryPolicy) {
                     if (!socketFile.exists()) throw FileNotFoundException("Socket not found yet")
-                    setupDirectoryPermissionsWindows(socketPath)
+                    setupSocketFilePermissionsWindows(socketPath)
                 }
                 logWindowsACLs(socketPath)
             }
@@ -249,7 +280,9 @@ object PermissionsHelper {
     }
 
     private fun applyWindowsOwnerOnlyPermissions(path: Path) {
-        val currentUser = System.getProperty("user.name")
+        // Resolved by SID rather than by name to avoid non-ASCII account name
+        val ownerPrincipal =
+            WindowsSid.ownerOf(path)?.let { "*$it" } ?: System.getProperty("user.name")
 
         try {
             val process =
@@ -262,7 +295,7 @@ object PermissionsHelper {
                         WIN_GRANT_REPLACE,
                         "$SID_ADMINISTRATORS$WIN_READY_ONLY",
                         WIN_GRANT_REPLACE,
-                        "$currentUser$WIN_FULL_CONTROL",
+                        "$ownerPrincipal$WIN_FULL_CONTROL",
                     )
                     .start()
 

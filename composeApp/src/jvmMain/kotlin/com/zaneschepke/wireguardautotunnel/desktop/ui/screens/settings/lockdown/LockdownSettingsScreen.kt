@@ -20,6 +20,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bypass
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.configuration
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown_settings
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.protect_on_startup
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.protect_on_startup_desc
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
@@ -81,6 +82,9 @@ fun LockdownSettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                 SurfaceRow(
                     leading = { Icon(Icons.Outlined.RestartAlt, contentDescription = null) },
                     title = stringResource(Res.string.protect_on_startup),
+                    description = {
+                        DescriptionText(stringResource(Res.string.protect_on_startup_desc))
+                    },
                     enabled = uiState.lockdownEnabled && uiState.daemonConnected,
                     trailing = {
                         RequiresDaemonTooltip(daemonConnected = uiState.daemonConnected) {

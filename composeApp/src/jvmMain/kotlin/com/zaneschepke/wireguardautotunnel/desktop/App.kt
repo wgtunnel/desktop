@@ -35,8 +35,10 @@ import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.auto_tunnel_active
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.check_for_update
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.collapse_rail
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.connecting_to_daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_connected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.expand_rail
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown_active
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.syncing_with_daemon
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
@@ -64,6 +66,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.logs.Logs
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.monitoring.MonitoringScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.proxy.ProxySettingsScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.recovery.TunnelRecoveryScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.settings.startup.StartupScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.SupportScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.DonateScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.crypto.AddressesScreen
@@ -150,9 +153,9 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
 
     val headerDescription =
         if (railState.targetValue == WideNavigationRailValue.Expanded) {
-            "Collapse rail"
+            stringResource(Res.string.collapse_rail)
         } else {
-            "Expand rail"
+            stringResource(Res.string.expand_rail)
         }
 
     if (!uiState.isLoaded) {
@@ -308,6 +311,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                                     entry<Route.ConfigGlobal> { GlobalConfigScreen() }
                                     entry<Route.ProxySettings> { ProxySettingsScreen() }
                                     entry<Route.LockdownSettings> { LockdownSettingsScreen() }
+                                    entry<Route.Startup> { StartupScreen() }
                                     entry<Route.TunnelRecovery> { TunnelRecoveryScreen() }
                                     entry<Route.TunnelMonitoring> { MonitoringScreen() }
                                     entry<Route.AutoTunnel> { AutoTunnelScreen() }

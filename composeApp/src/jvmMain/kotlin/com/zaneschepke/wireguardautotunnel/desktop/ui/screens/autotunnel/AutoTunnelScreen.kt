@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PublicOff
-import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.SettingsEthernet
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.Button
@@ -36,7 +35,6 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.active
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.auto_tunnel
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.auto_tunnel_not_running
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.auto_tunnel_running
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.automation
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bssid
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ethernet
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.globe
@@ -45,9 +43,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.networ
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.networks
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_network
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.preferred_tunnel_label
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.restart_at_boot
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.start
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.start_on_boot_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.stop
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.stop_on_no_internet
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.stop_on_no_internet_desc
@@ -280,30 +276,6 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                             !uiState.autoTunnelSettings.isStopOnNoInternetEnabled
                         )
                     },
-                )
-            }
-            Column {
-                GroupLabel(
-                    stringResource(Res.string.automation),
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-                SurfaceRow(
-                    leading = { Icon(Icons.Outlined.RestartAlt, contentDescription = null) },
-                    title = stringResource(Res.string.restart_at_boot),
-                    trailing = {
-                        RequiresDaemonTooltip(daemonConnected = uiState.daemonConnected) {
-                            ThemedSwitch(
-                                checked = uiState.autoTunnelSettings.startOnBoot,
-                                enabled = uiState.daemonConnected,
-                                onClick = { viewModel.setStartOnBoot(it) },
-                            )
-                        }
-                    },
-                    description = {
-                        DescriptionText(stringResource(Res.string.start_on_boot_desc))
-                    },
-                    enabled = uiState.daemonConnected,
-                    onClick = { viewModel.setStartOnBoot(!uiState.autoTunnelSettings.startOnBoot) },
                 )
             }
         }

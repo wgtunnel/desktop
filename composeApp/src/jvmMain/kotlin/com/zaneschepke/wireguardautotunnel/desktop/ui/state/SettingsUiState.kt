@@ -1,6 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.desktop.ui.state
 
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
+import com.zaneschepke.wireguardautotunnel.client.domain.model.AutoTunnelSettings
 import com.zaneschepke.wireguardautotunnel.client.domain.model.DnsSettings
 import com.zaneschepke.wireguardautotunnel.client.domain.model.GeneralSettings
 import com.zaneschepke.wireguardautotunnel.client.domain.model.LockdownSettings
@@ -13,6 +14,7 @@ data class SettingsUiState(
     val lockdown: LockdownSettings = LockdownSettings(),
     val monitoring: MonitoringSettings = MonitoringSettings(),
     val dns: DnsSettings = DnsSettings(),
+    val autoTunnel: AutoTunnelSettings = AutoTunnelSettings(),
     val globalTunnelConfig: TunnelConfig? = null,
     val updateBusy: Boolean = false,
     val updateMessage: String? = null,

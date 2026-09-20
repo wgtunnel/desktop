@@ -23,6 +23,9 @@ interface GeneralSettingsDao {
     @Query("UPDATE general_settings SET restore_tunnel_on_boot = :enabled WHERE id = 1")
     suspend fun updateRestoreTunnelOnBoot(enabled: Boolean)
 
+    @Query("UPDATE general_settings SET launch_at_login = :enabled WHERE id = 1")
+    suspend fun updateLaunchAtLogin(enabled: Boolean)
+
     @Query("UPDATE general_settings SET already_donated = :donated WHERE id = 1")
     suspend fun updateAlreadyDonated(donated: Boolean)
 

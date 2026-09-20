@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AutoTunnelConfigDto(
     val enabled: Boolean = false,
-    val startOnBoot: Boolean = false,
     val settings: AutoTunnelSettingsDto = AutoTunnelSettingsDto(),
     val tunnels: List<AutoTunnelTunnelConfigDto> = emptyList(),
 )

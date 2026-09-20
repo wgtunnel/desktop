@@ -5,7 +5,6 @@ import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asColor
-import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asTooltipMessage
 
 data class TunnelsUiState(
     val tunnelItems: List<TunnelUiItem> = emptyList(),
@@ -24,7 +23,4 @@ data class TunnelUiItem(val config: TunnelConfig, val status: TunnelStatus? = nu
 
     val stateColor: Color
         get() = status?.state?.asColor() ?: TunnelState.DOWN.asColor()
-
-    val tooltipMessage: String
-        get() = status?.state?.asTooltipMessage() ?: ""
 }

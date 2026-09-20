@@ -74,6 +74,8 @@ class AppViewModel(
                             theme = settings.theme,
                             locale = settings.locale ?: state.locale,
                             alreadyDonated = settings.alreadyDonated,
+                            restoreTunnelOnBoot = settings.restoreTunnelOnBoot,
+                            launchAtLogin = settings.launchAtLogin,
                             useSystemColors = settings.useSystemColors,
                             customSeedColor = settings.customSeedColor,
                             accentStyle = settings.accentStyle,

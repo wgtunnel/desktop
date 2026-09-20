@@ -35,14 +35,6 @@ fun Route.daemonRoutes(
         } finally {}
     }
 
-    put(Routes.DAEMON_RESTORE_TUNNEL) {
-        val request = call.receive<FlagRequest>()
-        log.d { "Updating restore tunnel to ${request.value}" }
-        daemonCacheRepository.setRestoreTunnelOnBoot(request.value)
-        log.d { "Successfully updated restore tunnel to ${request.value}" }
-        call.respond(HttpStatusCode.OK, "Tunnel restore updated to ${request.value}")
-    }
-
     put(Routes.DAEMON_RESTORE_KILL_SWITCH) {
         val request = call.receive<FlagRequest>()
         log.d { "Updating restore kill switch to ${request.value}" }
@@ -53,9 +45,7 @@ fun Route.daemonRoutes(
 
     put(Routes.DAEMON_AUTO_TUNNEL_PLAN) {
         val plan = call.receive<AutoTunnelConfigDto>()
-        log.d {
-            "Updating auto-tunnel plan enabled=${plan.enabled} startOnBoot=${plan.startOnBoot} tunnels=${plan.tunnels.size}"
-        }
+        log.d { "Updating auto-tunnel plan enabled=${plan.enabled} tunnels=${plan.tunnels.size}" }
         autoTunnelSupervisor.updatePlan(plan)
         call.respond(HttpStatusCode.OK, "Auto-tunnel plan updated")
     }

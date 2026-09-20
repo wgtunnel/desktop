@@ -49,6 +49,7 @@ import androidx.compose.ui.window.rememberWindowState
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.platformLogWriter
+import com.dokar.sonner.Toast
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.ToasterDefaults
@@ -59,11 +60,21 @@ import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.di.databaseModule
 import com.zaneschepke.wireguardautotunnel.client.di.serviceModule
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.ClientCacheRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
+import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
 import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.app_name
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.appicon
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.autolaunch_update_failed
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dismiss
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.lockdown_active
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.titleicon
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tray_exit
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tray_minimize_to_tray
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tray_open
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
@@ -83,6 +94,9 @@ import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
 import dev.nucleusframework.application.NucleusBackend
 import dev.nucleusframework.application.NucleusWindow
 import dev.nucleusframework.application.nucleusApplication
+import dev.nucleusframework.autolaunch.AutoLaunch
+import dev.nucleusframework.autolaunch.AutoLaunchConfig
+import dev.nucleusframework.autolaunch.AutoLaunchResult
 import dev.nucleusframework.composenativetray.tray.api.Tray
 import dev.nucleusframework.core.runtime.SingleInstanceManager
 import dev.nucleusframework.darkmodedetector.isSystemInDarkMode
@@ -91,9 +105,12 @@ import dev.nucleusframework.window.material.MaterialDecoratedWindow
 import dev.nucleusframework.window.material.MaterialTitleBar
 import dev.nucleusframework.window.newFullscreenControls
 import java.nio.file.Paths
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.KoinApplication
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
 import org.orbitmvi.orbit.compose.collectAsState
@@ -115,9 +132,15 @@ fun main(args: Array<String>) {
             lockIdentifier = AppVariant.current.lockIdentifier,
         )
 
+    AutoLaunchConfig.backgroundReason = "Resume tunnels and auto-tunnel after login"
+    AutoLaunch.preload()
+
+    val wasStartedAtLogin = AutoLaunch.wasStartedAtLogin(args)
+
     nucleusApplication(args = args, backend = NucleusBackend.Tao) {
         var nucleusWindowRef: NucleusWindow? by remember { mutableStateOf(null) }
-        var isMainWindowVisible by remember { mutableStateOf(true) }
+        // A login-triggered launch should come up quietly in the tray
+        var isMainWindowVisible by remember { mutableStateOf(!wasStartedAtLogin) }
 
         var theme by remember { mutableStateOf(Theme.DEFAULT) }
         var useSystemColors by remember { mutableStateOf(false) }
@@ -169,6 +192,10 @@ fun main(args: Array<String>) {
         var trayBadgeState: TrayBadgeState? by remember { mutableStateOf(null) }
         val appIcon = painterResource(Res.drawable.appicon)
         val appName = stringResource(Res.string.app_name)
+        val trayOpenLabel = stringResource(Res.string.tray_open)
+        val trayMinimizeLabel = stringResource(Res.string.tray_minimize_to_tray)
+        val trayExitLabel = stringResource(Res.string.tray_exit)
+        val trayLockdownActiveLabel = stringResource(Res.string.lockdown_active)
 
         Tray(
             iconContent = {
@@ -194,9 +221,9 @@ fun main(args: Array<String>) {
             tooltip = appName,
             primaryAction = { handleWindowIntent(WindowIntent.SHOW) },
         ) {
-            Item(label = "Open WG Tunnel") { handleWindowIntent(WindowIntent.SHOW) }
-            Item(label = "Minimize to Tray") { handleWindowIntent(WindowIntent.HIDE) }
-            Item(label = "Exit") { exitApplication() }
+            Item(label = trayOpenLabel) { handleWindowIntent(WindowIntent.SHOW) }
+            Item(label = trayMinimizeLabel) { handleWindowIntent(WindowIntent.HIDE) }
+            Item(label = trayExitLabel) { exitApplication() }
         }
 
         WGTunnelTheme(theme, useSystemColors, customSeedColor, accentStyle) {
@@ -265,6 +292,7 @@ fun main(args: Array<String>) {
                     val toaster = rememberToasterState()
                     val viewModel: AppViewModel = koinViewModel()
                     val uiState by viewModel.collectAsState()
+                    val autoLaunchFailedLabel = stringResource(Res.string.autolaunch_update_failed)
 
                     LaunchedEffect(
                         uiState.theme,
@@ -276,6 +304,57 @@ fun main(args: Array<String>) {
                         useSystemColors = uiState.useSystemColors
                         customSeedColor = uiState.customSeedColor?.let { Color(it) }
                         accentStyle = uiState.accentStyle
+                    }
+
+                    // Keeps the OS registration in sync with the saved preference - not just at
+                    // startup, since toggling the setting should take effect immediately.
+                    LaunchedEffect(uiState.isLoaded, uiState.launchAtLogin) {
+                        if (!uiState.isLoaded) return@LaunchedEffect
+                        val result =
+                            withContext(Dispatchers.IO) {
+                                if (uiState.launchAtLogin) AutoLaunch.enable()
+                                else AutoLaunch.disable()
+                            }
+                        if (result != AutoLaunchResult.OK && result != AutoLaunchResult.UNCHANGED) {
+                            Logger.w { "AutoLaunch sync returned $result" }
+                            toaster.show(Toast(autoLaunchFailedLabel, type = ToastType.Warning))
+                        }
+                    }
+
+                    // Restore features should only trigger if launch was actually triggered by
+                    // the login mechanism, not a normal manual reopen
+                    if (wasStartedAtLogin) {
+                        val clientCacheRepository = koinInject<ClientCacheRepository>()
+                        val tunnelRepository = koinInject<TunnelRepository>()
+                        val tunnelCoordinator = koinInject<TunnelCoordinator>()
+                        val autoTunnelRepository = koinInject<AutoTunnelSettingsRepository>()
+                        var restoreAttempted by remember { mutableStateOf(false) }
+
+                        LaunchedEffect(uiState.isLoaded) {
+                            if (restoreAttempted || !uiState.isLoaded) return@LaunchedEffect
+                            restoreAttempted = true
+
+                            val autoTunnelSettings = autoTunnelRepository.get()
+                            if (autoTunnelSettings.startOnBoot) {
+                                if (!autoTunnelSettings.isAutoTunnelEnabled) {
+                                    Logger.i { "Enabling auto-tunnel at login (startOnBoot)" }
+                                    autoTunnelRepository.updateAutoTunnelEnabled(true)
+                                }
+                                return@LaunchedEffect
+                            }
+
+                            if (!uiState.restoreTunnelOnBoot) return@LaunchedEffect
+                            val id = clientCacheRepository.getLastStartedTunnelId()
+                            val config = id?.let { tunnelRepository.getById(it) }
+                            if (config == null) {
+                                Logger.i { "Nothing to restore at login (no cached tunnel)" }
+                                return@LaunchedEffect
+                            }
+                            Logger.i { "Restoring tunnel ${config.name} at login" }
+                            tunnelCoordinator.startTunnel(config).onFailure {
+                                Logger.e(it) { "Failed to restore tunnel at login" }
+                            }
+                        }
                     }
 
                     val currentTunnelStatus by remember {
@@ -314,17 +393,23 @@ fun main(args: Array<String>) {
                         }
                     }
 
-                    LaunchedEffect(currentTunnelStatus, uiState.lockdownActive) {
+                    val currentTunnelTooltipMessage = currentTunnelStatus?.state?.asTooltipMessage()
+
+                    LaunchedEffect(
+                        currentTunnelStatus,
+                        currentTunnelTooltipMessage,
+                        uiState.lockdownActive,
+                    ) {
                         val status = currentTunnelStatus
                         trayBadgeState =
                             when {
                                 uiState.lockdownActive && status == null ->
-                                    TrayBadgeState(ErrorRed, "Lockdown active")
+                                    TrayBadgeState(ErrorRed, trayLockdownActiveLabel)
                                 status == null -> null
                                 else ->
                                     TrayBadgeState(
                                         status.state.asColor(),
-                                        status.state.asTooltipMessage(),
+                                        currentTunnelTooltipMessage.orEmpty(),
                                     )
                             }
                     }
@@ -443,7 +528,8 @@ fun main(args: Array<String>) {
                                         IconButton(onClick = { toaster.dismiss(toast.id) }) {
                                             Icon(
                                                 Icons.Filled.Close,
-                                                contentDescription = "Dismiss",
+                                                contentDescription =
+                                                    stringResource(Res.string.dismiss),
                                                 tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }

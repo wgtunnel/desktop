@@ -5,7 +5,6 @@ object Routes {
     const val DAEMON_STATUS = "$DAEMON_BASE/status"
     const val DAEMON_STATUS_WS = "$DAEMON_BASE/status/ws"
 
-    const val DAEMON_RESTORE_TUNNEL = "$DAEMON_BASE/restore/tunnel"
     const val DAEMON_RESTORE_KILL_SWITCH = "$DAEMON_BASE/restore/kill-switch"
 
     const val DAEMON_AUTO_TUNNEL_PLAN = "$DAEMON_BASE/auto-tunnel/plan"

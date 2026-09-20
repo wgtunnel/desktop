@@ -14,6 +14,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.dao.LockdownSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.MonitoringSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.ProxySettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.TunnelConfigDao
+import com.zaneschepke.wireguardautotunnel.client.data.repository.PropertiesClientCacheRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomAutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomDnsSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomLockdownSettingsRepository
@@ -22,6 +23,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomProxySetti
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomTunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.ClientCacheRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.DnsSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
@@ -83,4 +85,5 @@ val databaseModule = module {
     single<MonitoringSettingsRepository> { RoomMonitoringSettingsRepository(get()) }
     single<ProxySettingsRepository> { RoomProxySettingsRepository(get()) }
     single<AutoTunnelSettingsRepository> { RoomAutoTunnelSettingsRepository(get()) }
+    single<ClientCacheRepository> { PropertiesClientCacheRepository() }
 }

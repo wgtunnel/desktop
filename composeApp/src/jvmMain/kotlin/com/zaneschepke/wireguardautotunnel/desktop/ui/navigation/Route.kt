@@ -54,6 +54,8 @@ sealed class Route : NavKey {
 
     @Keep @Serializable data object LockdownSettings : Route()
 
+    @Keep @Serializable data object Startup : Route()
+
     @Keep @Serializable data object TunnelRecovery : Route()
 
     @Keep @Serializable data object AutoTunnel : Route()
@@ -117,7 +119,8 @@ enum class Tab(
                 Route.TunnelRecovery,
                 Route.Appearance,
                 Route.Display,
-                Route.Logs -> SETTINGS
+                Route.Logs,
+                Route.Startup -> SETTINGS
                 is Route.Support,
                 Route.License,
                 Route.Donate,
@@ -144,6 +147,7 @@ fun routeSerializersModule(): SerializersModule = SerializersModule {
         subclass(Route.ConfigGlobal::class, Route.ConfigGlobal.serializer())
         subclass(Route.ProxySettings::class, Route.ProxySettings.serializer())
         subclass(Route.LockdownSettings::class, Route.LockdownSettings.serializer())
+        subclass(Route.Startup::class, Route.Startup.serializer())
         subclass(Route.TunnelRecovery::class, Route.TunnelRecovery.serializer())
         subclass(Route.AutoTunnel::class, Route.AutoTunnel.serializer())
         subclass(Route.WifiPreferences::class, Route.WifiPreferences.serializer())

@@ -93,7 +93,9 @@ fun serviceModule(appVersionLabel: String) = module {
             install("HmacSigner") {
                 requestPipeline.intercept(HttpRequestPipeline.Render) { payload ->
                     val path = context.url.encodedPath
-                    if (path == Routes.DAEMON_BASE) return@intercept
+                    // Matches the daemon's own exemption for the alive check - no point signing
+                    // a request that carries no meaningful information to protect.
+                    if (path == Routes.DAEMON_STATUS) return@intercept
 
                     val secret = IPC.getIPCSecret()
                     val timestamp = System.currentTimeMillis() / 1000
@@ -121,7 +123,6 @@ fun serviceModule(appVersionLabel: String) = module {
         UdsDaemonService(
             client = get(),
             lockdownSettingsRepository = get(),
-            generalSettingsRepository = get(),
             json = get(),
             scope = get(),
         )
@@ -150,6 +151,7 @@ fun serviceModule(appVersionLabel: String) = module {
             tunnelService = get(),
             backendService = get(),
             tunnelRepository = get(),
+            clientCacheRepository = get(),
             settingsRepository = get(),
             dnsSettingsRepository = get(),
             monitoringSettingsRepository = get(),

@@ -2,11 +2,9 @@ package com.zaneschepke.wireguardautotunnel.daemon
 
 import co.touchlab.kermit.Logger
 import com.wgtunnel.backend.Backend
-import com.wgtunnel.parser.Config
 import com.zaneschepke.wireguardautotunnel.core.helper.PermissionsHelper
 import com.zaneschepke.wireguardautotunnel.daemon.autotunnel.AutoTunnelSupervisor
 import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
-import com.zaneschepke.wireguardautotunnel.daemon.dto.toBackendMode
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toCore
 import com.zaneschepke.wireguardautotunnel.daemon.log.DaemonLogService
 import com.zaneschepke.wireguardautotunnel.daemon.plugin.hmacShieldPlugin
@@ -14,7 +12,6 @@ import com.zaneschepke.wireguardautotunnel.daemon.routes.backendRoutes
 import com.zaneschepke.wireguardautotunnel.daemon.routes.daemonRoutes
 import com.zaneschepke.wireguardautotunnel.daemon.routes.tunnelRoutes
 import com.zaneschepke.wireguardautotunnel.daemon.tunnel.DesktopNetworkMonitor
-import com.zaneschepke.wireguardautotunnel.daemon.tunnel.RunningTunnel
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
@@ -87,7 +84,7 @@ class TunnelDaemon(
         runtimeDir.mkdirs()
 
         if (isWindows()) {
-            PermissionsHelper.setupDirectoryPermissionsWindows(runtimeDir.absolutePath)
+            PermissionsHelper.setupRuntimeDirectoryPermissionsWindows(runtimeDir.absolutePath)
         } else {
             PermissionsHelper.setupDirectoryPermissionsUnix(runtimeDir.absolutePath)
         }
@@ -123,7 +120,7 @@ class TunnelDaemon(
                     install(hmacShieldPlugin)
                     routing {
                         daemonRoutes(cacheRepository, autoTunnelSupervisor, daemonLogService)
-                        tunnelRoutes(backend, cacheRepository, autoTunnelSupervisor)
+                        tunnelRoutes(backend, autoTunnelSupervisor)
                         backendRoutes(backend, cacheRepository)
                     }
                     monitor.subscribe(ApplicationStarted) {
@@ -138,27 +135,6 @@ class TunnelDaemon(
             } else {
                 PermissionsHelper.setupSocketPermissionsWithPollUnix(socketPath)
             }
-        }
-
-        scope.launch {
-            autoTunnelSupervisor.restoreFromCache()
-            if (autoTunnelSupervisor.status.running) {
-                daemonLog.i { "Skipping last-tunnel restore; auto-tunnel will select the tunnel" }
-                return@launch
-            }
-            val restoreTun = cacheRepository.getRestoreTunnelOnBoot()
-            if (!restoreTun) return@launch
-            daemonLog.i { "Attempting to restore previous tunnel" }
-            val (id, request) = cacheRepository.getLastStartRequest() ?: return@launch
-            val config =
-                runCatching { Config.parseQuickString(request.quickConfig) }
-                    .onFailure { daemonLog.e(it) { "Failed to parse restored tunnel config" } }
-                    .getOrNull() ?: return@launch
-            val tunnel = RunningTunnel.fromRequest(id.toInt(), request)
-            backend
-                .start(tunnel, request.toBackendMode(config), request.tunnelDns?.toCore())
-                .onFailure { daemonLog.e(it) { "Failed to restore tunnel ${request.name}" } }
-                .onSuccess { daemonLog.i { "Restored tunnel ${request.name}" } }
         }
     }
 

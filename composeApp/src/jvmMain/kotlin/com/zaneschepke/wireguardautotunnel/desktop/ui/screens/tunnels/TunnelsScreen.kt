@@ -29,6 +29,9 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel_message
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_selected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.failed_to_read_conf_file
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.failed_to_read_zip_archive
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.only_conf_or_zip_supported
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_all
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnels
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.yes
@@ -97,6 +100,9 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
     if (!uiState.isLoaded) return
 
     val scope = rememberCoroutineScope()
+    val failedToReadConfMessage = stringResource(Res.string.failed_to_read_conf_file)
+    val failedToReadZipMessage = stringResource(Res.string.failed_to_read_zip_archive)
+    val unsupportedFileTypeMessage = stringResource(Res.string.only_conf_or_zip_supported)
     val pickerLauncher =
         rememberFilePickerLauncher(mode = FileKitMode.Single) { platformFile: PlatformFile? ->
             platformFile?.let { file ->
@@ -110,9 +116,7 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                                 viewModel.onConfImport(text, file.nameWithoutExtension)
                             }
                                 .onFailure {
-                                    toaster.show(
-                                        Toast(ToastType.Error, "Failed to read .conf file")
-                                    )
+                                    toaster.show(Toast(ToastType.Error, failedToReadConfMessage))
                                 }
                         }
                         FileUtils.ZIP_FILE_EXTENSION -> {
@@ -122,16 +126,14 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                                 viewModel.onMultiConfImport(configMap)
                             }
                                 .onFailure {
-                                    toaster.show(
-                                        Toast(ToastType.Error, "Failed to read .zip archive")
-                                    )
+                                    toaster.show(Toast(ToastType.Error, failedToReadZipMessage))
                                 }
                         }
                         else -> {
                             toaster.show(
                                 Toast(
                                     type = ToastType.Warning,
-                                    message = "Only '.conf' or '.zip' files supported",
+                                    message = unsupportedFileTypeMessage,
                                 )
                             )
                         }
