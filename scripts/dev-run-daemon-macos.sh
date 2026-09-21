@@ -8,14 +8,13 @@ cd "$(dirname "$SCRIPT_DIR")"
 export WGTUNNEL_VARIANT="${WGTUNNEL_VARIANT:-debug}"
 
 echo "Building daemon as normal user (variant=$WGTUNNEL_VARIANT)..."
-mapfile -t DEV_RUN_INFO < <(./gradlew -q :daemon:printDevRunInfo | tail -n 3)
-JAVA_BIN="${DEV_RUN_INFO[0]}"
-read -r -a JVM_ARGS <<<"${DEV_RUN_INFO[1]}"
-CLASSPATH="${DEV_RUN_INFO[2]}"
+DEV_RUN_OUTPUT="$(./gradlew -q :daemon:printDevRunInfo | tail -n 3)"
+JAVA_BIN="$(sed -n '1p' <<<"$DEV_RUN_OUTPUT")"
+JVM_ARGS_LINE="$(sed -n '2p' <<<"$DEV_RUN_OUTPUT")"
+CLASSPATH="$(sed -n '3p' <<<"$DEV_RUN_OUTPUT")"
+read -r -a JVM_ARGS <<<"$JVM_ARGS_LINE"
 
-# Matches FilePathsHelper's isMac branch: no /run on macOS (SIP seals the system
-# volume, so a plain sudo mkdir -p /run fails), and /Library/Application Support
-# for the daemon's root-owned cache/db instead of /var/lib.
+
 FS_NAME="wgtunnel-${WGTUNNEL_VARIANT}"
 if [ "$WGTUNNEL_VARIANT" = "release" ]; then
   FS_NAME="wgtunnel"
