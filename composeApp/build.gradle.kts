@@ -1,4 +1,5 @@
 import dev.nucleusframework.desktop.application.dsl.CompressionLevel
+import dev.nucleusframework.desktop.application.dsl.DmgFormat
 import dev.nucleusframework.desktop.application.dsl.GarbageCollector
 import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
 import dev.nucleusframework.desktop.application.dsl.ReleaseChannel
@@ -91,6 +92,7 @@ kotlin {
             implementation(libs.nucleus.graalvm.runtime)
             implementation(libs.nucleus.updater.runtime)
             implementation(libs.nucleus.autolaunch)
+            implementation(libs.nucleus.service.management.macos)
             implementation(project(":daemon"))
         }
     }
@@ -104,6 +106,8 @@ kotlin {
 buildConfig { buildConfigField("APP_VERSION", provider { "${project.version}" }) }
 
 val isWindows = System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
+val isMacOS = System.getProperty("os.name").orEmpty().startsWith("Mac", ignoreCase = true)
+val macDaemonBundleIdValue = "com.wgtunnel.$appFsName.daemon"
 val packagedJvmArgs =
     listOf(
         "-Dapp.variant=$packagingVariant",
@@ -122,6 +126,9 @@ val stagePackagingSidecars =
         appFsName.set(packagingAppFsName)
         appDisplayName.set(packagingAppDisplayName)
         windows.set(isWindows)
+        macOS.set(isMacOS)
+        macDaemonBundleId.set(macDaemonBundleIdValue)
+        macDaemonPlist.set(rootProject.file("packaging/macos/com.wgtunnel.daemon.plist"))
         linuxService.set(rootProject.file("packaging/linux/wgtunnel-daemon.service"))
         linuxInstallScript.set(rootProject.file("packaging/linux/tar-install.sh"))
         linuxUninstallScript.set(rootProject.file("packaging/linux/tar-uninstall.sh"))
@@ -202,6 +209,7 @@ nucleus.application {
             TargetFormat.Rpm,
             TargetFormat.Pacman,
             TargetFormat.Tar,
+            TargetFormat.Dmg,
         )
         appName = appDisplayName
         packageName = appFsName
@@ -322,6 +330,49 @@ nucleus.application {
                 }
             }
         }
+
+        macOS {
+            packageName = appFsName
+            bundleID = "com.wgtunnel.$appFsName"
+            dockName = appDisplayName
+            appCategory = "public.app-category.utilities"
+            // SMAppService's .daemon type (used to register the privileged LaunchDaemon -
+            // see AppServiceManager in the GUI code) requires macOS 13.0 (Ventura)+.
+            minimumSystemVersion = "13.0"
+            // TODO: no .icns yet - packaging/linux/icon.png is a raster PNG, macOS needs a
+            // proper multi-resolution .icns. Falls back to a generic app icon until added.
+            // iconFile.set(rootProject.file("packaging/macos/icon.icns"))
+
+            dmg { format = DmgFormat.ULFO }
+
+            // TODO: once codesigning is in place, JNI-loaded dylibs from core's native
+            // backend (built independently of this signing identity) will likely need
+            // com.apple.security.cs.disable-library-validation in an entitlements file
+            // passed via entitlementsFile - unverified until tested against a signed build.
+
+            signing {
+                val identity = System.getenv("APPLE_SIGNING_IDENTITY")
+                if (!identity.isNullOrBlank()) {
+                    sign.set(true)
+                    this.identity.set(identity)
+                    System.getenv("APPLE_SIGNING_KEYCHAIN")?.let { keychain.set(it) }
+                }
+            }
+
+            notarization {
+                val teamId = System.getenv("APPLE_TEAM_ID")
+                if (!teamId.isNullOrBlank()) {
+                    this.teamID.set(teamId)
+                    val keychainProfileEnv = System.getenv("APPLE_NOTARIZATION_KEYCHAIN_PROFILE")
+                    if (!keychainProfileEnv.isNullOrBlank()) {
+                        keychainProfile.set(keychainProfileEnv)
+                    } else {
+                        System.getenv("APPLE_ID")?.let { appleID.set(it) }
+                        System.getenv("APPLE_APP_SPECIFIC_PASSWORD")?.let { password.set(it) }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -364,6 +415,39 @@ if (isWindows) {
         into(graalvmLaunchersDir)
     }
     graalvmSidecarTaskNames += "copyGraalvmExtraLaunchersToRoot"
+}
+
+// macOS-only: SMAppService's .daemon type requires the LaunchDaemon plist embedded at
+// Contents/Library/LaunchDaemons/ inside the .app bundle - unlike launchAgents{}, nucleus's
+// Gradle DSL has no first-class block for this yet (see AGENTS.md/CLAUDE.md in the Nucleus repo
+// for context), so this stages it directly. graalvmLaunchersDir's exact structure at this point
+// (flat staging vs already Contents/MacOS/-shaped) is unverified against a real macOS build -
+// this searches for Contents/ rather than assuming a fixed depth, but the search root and the
+// plist's BundleProgram path in packaging/macos/com.wgtunnel.daemon.plist both need confirming
+// once this actually runs on a Mac.
+if (isMacOS) {
+    val stageMacDaemonPlist =
+        tasks.register<Copy>("stageMacDaemonPlist") {
+            group = "nucleus"
+            description = "Embed the daemon LaunchDaemon plist into the built .app bundle for SMAppService."
+            dependsOn(copyGraalvmSidecarDepends, stagePackagingSidecars)
+            doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
+            from(stagePackagingSidecars.map { it.outputDir.get().asFile.resolve("macos") }) {
+                include("*.plist")
+            }
+            into(
+                provider {
+                    val appDir = graalvmLaunchersDir.get().asFile
+                    val contentsDir =
+                        appDir
+                            .walkTopDown()
+                            .firstOrNull { it.isDirectory && it.name == "Contents" }
+                            ?: appDir.resolve("Contents")
+                    contentsDir.resolve("Library/LaunchDaemons")
+                }
+            )
+        }
+    graalvmSidecarTaskNames += "stageMacDaemonPlist"
 }
 
 tasks.withType<Copy>().configureEach {

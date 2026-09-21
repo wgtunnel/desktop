@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>__DAEMON_BUNDLE_ID__</string>
+    <!-- SMAppService-managed LaunchDaemons resolve BundleProgram relative to the
+         .app bundle's actual install location, unlike the absolute-path Program
+         key used by legacy launchd plists dropped into /Library/LaunchDaemons
+         by a root install script. Path assumes the daemon binary lands at
+         Contents/MacOS/bin/__APP_FSNAME__-daemon via the same
+         appResourcesRootDir -> common/bin/ staging already used for
+         Linux/Windows - verify against the actual built .app layout. -->
+    <key>BundleProgram</key>
+    <string>Contents/MacOS/bin/__APP_FSNAME__-daemon</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>WG_TUNNEL_SERVICE</key>
+        <string>1</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+    <key>StandardOutPath</key>
+    <string>/Library/Application Support/__APP_FSNAME__/logs/daemon.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Library/Application Support/__APP_FSNAME__/logs/daemon.log</string>
+</dict>
+</plist>

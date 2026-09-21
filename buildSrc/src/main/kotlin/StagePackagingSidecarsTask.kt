@@ -21,6 +21,17 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
 
     @get:Input abstract val windows: Property<Boolean>
 
+    @get:Input abstract val macOS: Property<Boolean>
+
+    @get:Input
+    @get:Optional
+    abstract val macDaemonBundleId: Property<String>
+
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val macDaemonPlist: RegularFileProperty
+
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val linuxService: RegularFileProperty
@@ -110,6 +121,21 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
                     .replace("\${executable}", fsName)
                     .replace("\${sanitizedProductName}", fsName)
             )
+
+        if (macOS.get()) {
+            val macOut = root.resolve("macos").apply { mkdirs() }
+            macDaemonPlist.orNull?.asFile?.let { plist ->
+                macOut
+                    .resolve("${fsName}-daemon.plist")
+                    .writeText(
+                        replaceTokens(plist.readText(), fsName, display)
+                            .replace(
+                                "__DAEMON_BUNDLE_ID__",
+                                macDaemonBundleId.getOrElse("com.wgtunnel.$fsName.daemon"),
+                            )
+                    )
+            }
+        }
 
         if (!windows.get()) return
         windowsServiceXml.orNull?.asFile?.let { xml ->
