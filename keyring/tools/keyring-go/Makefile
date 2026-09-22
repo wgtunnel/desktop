@@ -11,7 +11,7 @@ else
     HOST_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 endif
 ifeq ($(wildcard $(JAVA_HOME)/include/jni.h),)
-  override JAVA_HOME := $(subst \,/,$(shell dirname $$(dirname $$(readlink -f $$(which java)))))
+  override JAVA_HOME := $(subst \,/,$(shell java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java\.home = //p'))
 endif
 
 # jni_md.h lives under include/<os>/; list all so native and cross builds work.
