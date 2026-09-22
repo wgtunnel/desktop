@@ -190,7 +190,7 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                                             )
                                         }
                                         if (
-                                            Platform.Current != Platform.Windows &&
+                                            Platform.Current == Platform.Linux &&
                                                 uiState.network.bssid.isNotBlank()
                                         ) {
                                             DescriptionText(

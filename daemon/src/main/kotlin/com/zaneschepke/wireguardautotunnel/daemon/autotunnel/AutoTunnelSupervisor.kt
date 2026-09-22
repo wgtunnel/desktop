@@ -46,8 +46,10 @@ class AutoTunnelSupervisor(
     private val planFlow = MutableStateFlow(AutoTunnelConfigDto())
     private val runningFlow = MutableStateFlow(false)
 
+    // BSSID is Linux only: Windows 11 24H2 gates it behind Location Services
+    // with no supported bypass and macOS gates it the same way
     private val ignoreBssid: Boolean =
-        System.getProperty("os.name").orEmpty().contains("windows", ignoreCase = true)
+        !System.getProperty("os.name").orEmpty().contains("linux", ignoreCase = true)
 
     @Volatile private var hasUserOverride = false
     private var lastNetworkKey: String? = null

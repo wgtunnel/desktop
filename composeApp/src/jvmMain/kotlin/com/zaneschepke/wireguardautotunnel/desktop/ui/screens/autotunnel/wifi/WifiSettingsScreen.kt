@@ -132,7 +132,7 @@ fun WifiSettingsScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                         }
                     },
                 )
-                if (Platform.Current != Platform.Windows) {
+                if (Platform.Current == Platform.Linux) {
                     NetworkRuleInput(
                         inputTitle = stringResource(Res.string.trusted_bssid),
                         placeholder = bssidHint,
