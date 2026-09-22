@@ -18,7 +18,7 @@ endif
 JDK_JNI_CFLAGS := -I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/win32" -I"$(JAVA_HOME)/include/linux" -I"$(JAVA_HOME)/include/darwin"
 
 ifeq ($(HOST_OS),darwin)
-    PLATFORMS := darwin-amd64 darwin-arm64 linux-amd64 windows-amd64 windows-arm64
+    PLATFORMS := darwin-amd64 darwin-arm64
 else ifeq ($(filter linux,$(HOST_OS)),linux)
     PLATFORMS := linux-amd64 windows-amd64
 else
