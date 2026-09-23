@@ -14,6 +14,9 @@ import java.nio.file.Paths
  */
 object IpcKeyFileValidator {
 
+    private val isWindows: Boolean
+        get() = System.getProperty("os.name").orEmpty().lowercase().contains("win")
+
     sealed interface Result {
         data class Trusted(val secret: String) : Result
 
@@ -32,10 +35,20 @@ object IpcKeyFileValidator {
 
         val keyFile = keyPath.toFile()
 
+        // NTFS is case-insensitive but case preserving. If a same name but differently cased
+        // directory already exists Java's canonical/real path resolves to whatever casing is
+        // actually on disk, which can differ from this string literal. String != is always
+        // case-sensitive regardless of platform, so match the OS's own filesystem semantics here
+        // instead of assuming Linux/macOS-style case sensitivity everywhere.
         if (
-            keyFile.name != IPC.KEY_FILE || keyFile.parentFile?.name != AppVariant.current.ipcFolder
+            !keyFile.name.equals(IPC.KEY_FILE, ignoreCase = isWindows) ||
+                !(keyFile.parentFile?.name).equals(AppVariant.current.ipcFolder, ignoreCase = isWindows)
         ) {
-            return Result.Rejected("Path does not match expected structure: $keyPath")
+            return Result.Rejected(
+                "Path does not match expected structure: $keyPath " +
+                    "(name=${keyFile.name}, expected=${IPC.KEY_FILE}; " +
+                    "parent=${keyFile.parentFile?.name}, expected=${AppVariant.current.ipcFolder})"
+            )
         }
         if (!keyFile.isFile) {
             return Result.Rejected("Key file does not exist: $keyPath")
