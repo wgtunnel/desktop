@@ -16,7 +16,7 @@ on:
         type: string
         required: true
       nucleus_ref:
-        description: "wgtunnel/Nucleus ref (includeBuild ../Nucleus)"
+        description: "NucleusFramework/Nucleus ref"
         type: string
         required: false
         default: main
@@ -38,7 +38,7 @@ on:
         type: string
         default: "0.0.0"
       nucleus_ref:
-        description: "wgtunnel/Nucleus ref (includeBuild ../Nucleus)"
+        description: "NucleusFramework/Nucleus ref"
         type: string
         default: main
 
@@ -59,7 +59,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          repository: wgtunnel/Nucleus
+          repository: NucleusFramework/Nucleus
           ref: ${{ inputs.nucleus_ref || 'main' }}
           path: Nucleus
 

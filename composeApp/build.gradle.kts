@@ -252,9 +252,6 @@ nucleus.application {
             packageName = appFsName
             appCategory = "Network"
             debMaintainer = "WG Tunnel <support@wgtunnel.com>"
-            debDepends = listOf("systemd")
-            rpmRequires = listOf("systemd")
-            pacmanDepends = listOf("systemd")
             iconFile.set(rootProject.file("packaging/linux/icon.png"))
             afterInstall.set(rootProject.file("packaging/linux/after-install.sh"))
             afterRemove.set(rootProject.file("packaging/linux/after-remove.sh"))

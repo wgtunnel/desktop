@@ -34,7 +34,7 @@ localina = "1.0.0-beta2"
 materialIcons = "1.7.3"
 navigation3 = "1.2.0-alpha02"
 reorderable = "3.1.0"
-nucleus = "2.5.16"
+nucleus = "2.5.17"
 
 # Logging
 kermit = "2.1.0"

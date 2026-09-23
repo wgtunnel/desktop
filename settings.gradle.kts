@@ -3,7 +3,6 @@ rootProject.name = "wgtunnel"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
-  includeBuild("../Nucleus/plugin-build")
   repositories {
     google()
     mavenCentral()
