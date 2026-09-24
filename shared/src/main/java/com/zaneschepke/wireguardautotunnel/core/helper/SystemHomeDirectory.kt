@@ -1,6 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.core.helper
 
 import co.touchlab.kermit.Logger
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
@@ -28,6 +29,29 @@ object SystemHomeDirectory {
             isMac -> macHomeDir(ownerAccount)
             else -> linuxHomeDir(ownerAccount)
         }
+
+    /**
+     * Base directory for user's IPC key folder using the per user XDG
+     * runtime dir on Linux and falls back to ~/.local/share if no session manager created one.
+     * On macOS and Windows, the registered home dir plus the platform's app data suffix.
+     */
+    fun expectedIpcBaseDir(keyPath: Path, ownerAccount: String): Path? =
+        when {
+            isWindows -> windowsProfilePath(keyPath)?.resolve("AppData")?.resolve("Roaming")
+            isMac -> macHomeDir(ownerAccount)?.resolve("Library")?.resolve("Application Support")
+            else ->
+                linuxRuntimeDir(ownerAccount)?.takeIf { Files.isDirectory(it) }
+                    ?: linuxHomeDir(ownerAccount)?.resolve(".local")?.resolve("share")
+        }
+
+    // Same NSS-backed lookup as linuxHomeDir and the uid is fields[2] of the passwd line.
+    private fun linuxRuntimeDir(username: String): Path? {
+        val line = runCommand("getent", "passwd", username) ?: return null
+        val fields = line.split(":")
+        if (fields.size < 6 || fields[0] != username) return null
+        val uid = fields[2].takeIf { it.isNotBlank() } ?: return null
+        return Paths.get("/run/user/$uid")
+    }
 
     private fun runCommand(vararg command: String): String? = runCatching {
         val process = ProcessBuilder(*command).redirectErrorStream(true).start()

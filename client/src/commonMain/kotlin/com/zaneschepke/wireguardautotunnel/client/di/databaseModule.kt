@@ -30,10 +30,10 @@ import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSett
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.MonitoringSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.ProxySettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
+import com.zaneschepke.wireguardautotunnel.client.data.ResilientSecretStore
 import com.zaneschepke.wireguardautotunnel.core.crypto.Crypto
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
-import com.zaneschepke.wireguardautotunnel.keyring.Keyring
 import java.io.File
 import javax.crypto.SecretKey
 import kotlinx.coroutines.Dispatchers
@@ -43,10 +43,18 @@ val databaseModule = module {
     single<RoomDatabase.Callback> { DatabaseCallback(lazy { get<AppDatabase>() }) }
     single<SecretKey> {
         val dbKey = AppDatabase.DB_SECRET_KEY
-        val keyring = Keyring(AppVariant.current.keyringService)
+        val keyring = ResilientSecretStore(AppVariant.current.keyringService)
+        val dbFile = File(FilePathsHelper.getDatabaseDir(), AppDatabase.DB_FILE_NAME)
         val encodedSecret =
             keyring.get(dbKey)
                 ?: run {
+                    // Only create a new key on a genuine fresh installation, otherwise failure
+                    check(!dbFile.exists()) {
+                        "Database exists but its secret key could not be retrieved from " +
+                            "either the OS keyring or the local fallback store. Check that " +
+                            "your keyring daemon (if any) is running, or that " +
+                            "${FilePathsHelper.getDatabaseDir()}/secrets is intact."
+                    }
                     val secret = Crypto.generateRandomBase64EncodedAesKey()
                     keyring.put(dbKey, secret)
                     secret

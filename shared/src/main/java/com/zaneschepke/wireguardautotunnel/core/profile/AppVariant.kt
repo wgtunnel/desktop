@@ -32,8 +32,8 @@ enum class AppVariant(val id: String) {
     val ipcFolder: String
         get() =
             when (this) {
-                RELEASE -> ".wgtunnel"
-                else -> ".wgtunnel-$id"
+                RELEASE -> "wgtunnel"
+                else -> "wgtunnel-$id"
             }
 
     val keyringService: String
