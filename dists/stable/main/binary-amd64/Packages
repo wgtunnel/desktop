@@ -1,20 +1,20 @@
 Package: wgtunnel
-Version: 2.1.0
+Version: 2.2.0
 License: unknown
 Vendor: WG Tunnel
 Architecture: amd64
 Maintainer: WG Tunnel <support@wgtunnel.com>
-Installed-Size: 302683
-Depends: systemd
+Installed-Size: 303067
+Depends: libgtk-3-0, libc6, libstdc++6, libfreetype6, libfontconfig1
 Recommends: libappindicator3-1
 Homepage: https://wgtunnel.com
 Priority: optional
 Section: default
-Filename: pool/main/w/wgtunnel/wgtunnel_2.1.0_amd64.deb
-Size: 102982148
-SHA256: e16113c71f12f6874dea7ddbdd55d51496e49667badd981632519c7cdfe38831
-SHA1: 5f0028452e5c62d7b4ff52ec19de15562da74286
-MD5sum: 46fd728209b5c8a8182956402491927a
+Filename: pool/main/w/wgtunnel/wgtunnel_2.2.0_amd64.deb
+Size: 103166148
+SHA256: 008f9576238e3f4a43d859d33f63cb86ed56f3fda73ebc62156ff3b54286ed28
+SHA1: 6453ba1f587a061b7e8da766230fcd576ec4b7c9
+MD5sum: 1f951f49fa0bb483624c59ca7c7e962d
 Description: 
   WG Tunnel: WireGuard and AmneziaWG VPN client with auto-tunneling, lockdown and proxying.
 
