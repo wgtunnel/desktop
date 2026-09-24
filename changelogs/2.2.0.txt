@@ -1,0 +1,8 @@
+What's new:
+- Bugfix for minimize behavior
+- Bugfix for theme changes losing tunnel state
+- Tray icon color manual override feature
+- Manual support for non-systemd distros (linux)
+- Bugfix(linux): move ipc key from home dir, keyring fallback
+- Bugfix(linux): systemd-resolved dns leak
+- Bugfix(linux): GUI crashes on older glibc version OSs

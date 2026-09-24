@@ -252,6 +252,11 @@ nucleus.application {
             packageName = appFsName
             appCategory = "Network"
             debMaintainer = "WG Tunnel <support@wgtunnel.com>"
+            // Leaving these empty makes electron-builder fall back to its own built-in default
+            // dependency list
+            pacmanDepends = listOf("gtk3", "gcc-libs", "freetype2", "fontconfig")
+            rpmRequires = listOf("gtk3", "glibc", "libstdc++", "freetype", "fontconfig")
+            debDepends = listOf("libgtk-3-0", "libc6", "libstdc++6", "libfreetype6", "libfontconfig1")
             iconFile.set(rootProject.file("packaging/linux/icon.png"))
             afterInstall.set(rootProject.file("packaging/linux/after-install.sh"))
             afterRemove.set(rootProject.file("packaging/linux/after-remove.sh"))

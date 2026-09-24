@@ -19,7 +19,7 @@ BuildRequires:  cpio
 BuildRequires:  rpm
 BuildRequires:  systemd-rpm-macros
 
-Requires:       systemd
+Recommends:     systemd
 Requires:       gtk3
 Requires(post): systemd
 Requires(preun): systemd
