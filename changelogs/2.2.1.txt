@@ -1,0 +1,4 @@
+What's new:
+- Bugfix(windows): elevated GUI to daemon communication
+- Bugfix(windows): non-ASCII user accounts IPC security checks
+- Bugfixes(windows): share drive IPC key issues

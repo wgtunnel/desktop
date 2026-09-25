@@ -1,5 +1,5 @@
 [versions]
-app = "2.2.0"
+app = "2.2.1"
 jvm = "25"
 androidx-lifecycle = "2.11.0"
 composeHotReload = "1.2.0"
