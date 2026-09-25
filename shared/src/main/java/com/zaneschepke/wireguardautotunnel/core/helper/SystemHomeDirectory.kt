@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 /**
@@ -22,22 +23,16 @@ object SystemHomeDirectory {
     private val isMac: Boolean
         get() = osName.contains("mac")
 
-    /** Returns [ownerAccount]'s registered home directory, or null if it can't be determined. */
-    fun forOwner(keyPath: Path, ownerAccount: String): Path? =
-        when {
-            isWindows -> windowsProfilePath(keyPath)
-            isMac -> macHomeDir(ownerAccount)
-            else -> linuxHomeDir(ownerAccount)
-        }
-
     /**
      * Base directory for user's IPC key folder using the per user XDG
      * runtime dir on Linux and falls back to ~/.local/share if no session manager created one.
-     * On macOS and Windows, the registered home dir plus the platform's app data suffix.
+     * On macOS, the registered home dir plus the platform's app data suffix.
+     *
+     * Not used on Windows (see [windowsProfiles]).
      */
-    fun expectedIpcBaseDir(keyPath: Path, ownerAccount: String): Path? =
+    fun expectedIpcBaseDir(ownerAccount: String): Path? =
         when {
-            isWindows -> windowsProfilePath(keyPath)?.resolve("AppData")?.resolve("Roaming")
+            isWindows -> null
             isMac -> macHomeDir(ownerAccount)?.resolve("Library")?.resolve("Application Support")
             else ->
                 linuxRuntimeDir(ownerAccount)?.takeIf { Files.isDirectory(it) }
@@ -55,12 +50,14 @@ object SystemHomeDirectory {
 
     private fun runCommand(vararg command: String): String? = runCatching {
         val process = ProcessBuilder(*command).redirectErrorStream(true).start()
+        // Drained while waiting as a full pipe buffer (~4 KB on Windows) blocks the child until timeout.
+        val output = CompletableFuture.supplyAsync { process.inputStream.bufferedReader().readText() }
         if (!process.waitFor(5, TimeUnit.SECONDS)) {
             process.destroyForcibly()
             return@runCatching null
         }
         if (process.exitValue() != 0) return@runCatching null
-        process.inputStream.bufferedReader().readText().trim()
+        output.get(5, TimeUnit.SECONDS).trim()
     }
         .onFailure { log.w(it) { "Command failed: ${command.joinToString(" ")}" } }
         .getOrNull()
@@ -80,20 +77,64 @@ object SystemHomeDirectory {
         return path?.takeIf { it.isNotBlank() }?.let { Paths.get(it) }
     }
 
-    private fun windowsProfilePath(keyPath: Path): Path? {
-        val sid = WindowsSid.ownerOf(keyPath) ?: return null
+    /**
+     * Every registered profile (SID to directory), or null if unreadable. Not looked up by file
+     * owner, which is a group (with no profile) for files made by an elevated process.
+     */
+    fun windowsProfiles(): Map<String, Path>? {
+        val queries =
+            listOf(
+                // chcp 65001: reg's default OEM output garbles non-ASCII names ("Ł" becomes "L").
+                // /s: cmd strips only the outer quotes.
+                arrayOf(
+                    "cmd",
+                    "/d",
+                    "/s",
+                    "/c",
+                    "\"chcp 65001 >nul & reg query \"$WINDOWS_PROFILE_LIST_KEY\" /s /v ProfileImagePath\"",
+                ),
+                // Fallback if cmd is unavailable (fine for ASCII paths).
+                arrayOf("reg", "query", WINDOWS_PROFILE_LIST_KEY, "/s", "/v", "ProfileImagePath"),
+            )
+        for (query in queries) {
+            val output = runCommand(*query) ?: continue
+            val profiles =
+                parseWindowsProfileList(output) { name ->
+                    System.getenv().entries
+                        .firstOrNull { it.key.equals(name, ignoreCase = true) }
+                        ?.value
+                }
+            if (profiles.isNotEmpty()) return profiles
+        }
+        return null
+    }
 
-        val output =
-            runCommand(
-                "reg",
-                "query",
-                "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\$sid",
-                "/v",
-                "ProfileImagePath",
-            ) ?: return null
+    private const val WINDOWS_PROFILE_LIST_KEY =
+        "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList"
 
-        val match =
-            Regex("ProfileImagePath\\s+REG(?:_EXPAND)?_SZ\\s+(.+)").find(output) ?: return null
-        return match.groupValues[1].trim().takeIf { it.isNotBlank() }?.let { Paths.get(it) }
+    private val PROFILE_SID_KEY = Regex("^S-1-\\d+(?:-\\d+)+$")
+    private val PROFILE_IMAGE_PATH = Regex("^ProfileImagePath\\s+REG_(?:EXPAND_)?SZ\\s+(.+)$")
+    private val ENV_VAR = Regex("%([^%]+)%")
+
+    /**
+     * Parses `reg query <ProfileList> /s /v ProfileImagePath`. [env] expands `%NAME%`, which reg
+     * prints unexpanded for REG_EXPAND_SZ.
+     */
+    internal fun parseWindowsProfileList(output: String, env: (String) -> String?): Map<String, Path> {
+        val profiles = mutableMapOf<String, Path>()
+        var currentSid: String? = null
+        for (raw in output.lines()) {
+            val line = raw.trim()
+            if (line.startsWith("HKEY_", ignoreCase = true)) {
+                // "<sid>.bak" keys are broken profiles.
+                currentSid = line.substringAfterLast('\\').takeIf { PROFILE_SID_KEY.matches(it) }
+                continue
+            }
+            val sid = currentSid ?: continue
+            val rawPath = PROFILE_IMAGE_PATH.find(line)?.groupValues?.get(1)?.trim() ?: continue
+            val expanded = ENV_VAR.replace(rawPath) { env(it.groupValues[1]) ?: it.value }
+            runCatching { Paths.get(expanded) }.getOrNull()?.let { profiles[sid] = it }
+        }
+        return profiles
     }
 }

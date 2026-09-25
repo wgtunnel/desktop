@@ -261,6 +261,7 @@ object PermissionsHelper {
         }
     }
 
+    /** Restricts [path] to the calling account. GUI only. */
     fun setOwnerOnly(path: Path) {
         try {
             if (isWindows) {
@@ -280,9 +281,12 @@ object PermissionsHelper {
     }
 
     private fun applyWindowsOwnerOnlyPermissions(path: Path) {
-        // Resolved by SID rather than by name to avoid non-ASCII account name
+        // By SID (not name) to avoid non-ASCII names. The token user, not the file owner as an
+        // elevated process's files are owned by Administrators.
         val ownerPrincipal =
-            WindowsSid.ownerOf(path)?.let { "*$it" } ?: System.getProperty("user.name")
+            WindowsSid.currentUserSid()?.let { "*$it" }
+                ?: WindowsSid.ownerOf(path)?.let { "*$it" }
+                ?: System.getProperty("user.name")
 
         try {
             val process =
@@ -338,6 +342,10 @@ object PermissionsHelper {
         }
     }
 
+    // TODO: parses icacls text, so it never checks WHO holds access, ignores read grants
+    //  ("Everyone:(R)" passes) and only matches English group names. Fix: check
+    //  AclFileAttributeView entries against an allow-list (owner, SYSTEM, Administrators). Held
+    //  back because it could reject setups that work today.
     private fun isOwnerOnlyWindows(path: Path): Boolean {
         return try {
             val process = ProcessBuilder(ICACLS, path.toString()).start()
