@@ -2,33 +2,33 @@
 Hash: SHA512
 
 Codename: stable
-Date: Fri, 25 Sep 2026 10:11:01 UTC
+Date: Sat, 26 Sep 2026 14:08:37 UTC
 Architectures: amd64
 Components: main
 Description: WG Tunnel for Debian/Ubuntu (wgtunnel and wgtunnel-beta packages)
 MD5Sum:
- f5516401ab170c7417ad631d67986e00 663 main/binary-amd64/Packages
- ee6e30cbad5971a713ee798c695cb1b0 464 main/binary-amd64/Packages.gz
+ d30c33a7f1df4eb977fc7a58a15b8dd7 663 main/binary-amd64/Packages
+ e45bb89ead1a575c17897e636171d641 462 main/binary-amd64/Packages.gz
  954648fd10d41eb17ed81a6bc258b721 115 main/binary-amd64/Release
 SHA1:
- 8189add26edcd20c330cb9f5d8dc09f5bde7c1d1 663 main/binary-amd64/Packages
- 99a50a6236685c430778445999f57c54e1355380 464 main/binary-amd64/Packages.gz
+ 56d84b18d50ddd6d2553e6cf026cb022baae40bc 663 main/binary-amd64/Packages
+ 9a639dd98b11de8499240b1fd0a5701c71579726 462 main/binary-amd64/Packages.gz
  a56a3584af10543e5e8747a28cc6a3a51779d7dc 115 main/binary-amd64/Release
 SHA256:
- 6184437597deebd479dd0e7878df86a4903f4eb9b97aee702cfe25acbdb4a9c9 663 main/binary-amd64/Packages
- be9b2dfb83330460bd14b825a56548d642b990e3f683b48b093d2e144b4a92b2 464 main/binary-amd64/Packages.gz
+ c602dffb51f1273f70ad34a31b30666306a1e53011ff0157155f765315c0da78 663 main/binary-amd64/Packages
+ 732bc4bb6082acf4dc6d7cd6434a05ce80060fb06d3707d1bf1feb2a2f2c78ef 462 main/binary-amd64/Packages.gz
  57d0ccb9f53ee3679001f420b078d6eea8a15914f54b43593698bcc2629b653e 115 main/binary-amd64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iQGzBAEBCgAdFiEEIadVdb+vkcMEpy2lgiF/BWb5tKUFAmq2SLYACgkQgiF/BWb5
-tKUohgv+IouRaqx1OJjTc/Z1NucvhbXOAJ9LQitUFEsQS2DkQMbLx9D2yWYpNXDa
-LOd23XF+YcnnEYcxkEsbScc3K/mA4AObEH9+RTN+2Rms3kllT1BdvMliDefZJpDI
-WaZAnZLTAbXrE0LwY6O4lHPTTYTQtM5smImGnVzVEtV6Q1fhoOj1gsVVxabrOZW5
-6x1UVMep+UwNqOIB/Oa2ycGBvDrPw5BTHIzKOn5gDmvMNYfQarJoxPXFtvMBR54A
-WQYAyWfBK8Fl9jgGcZYHvX7eMcOd5PmpAsZsl8ehCnC+trj/5Og/8B8v69AsU8fA
-qIOluWV0NXbbUxueQju1YS221Bf4ObFeHjj6QZs6VzLDs0ynFOiOxuBiKZpKXNm8
-o97fYINwwBQpYGi7HdqALbtj74VzcDHrRy6ulEVRjNpvthsB3szjRF6H88TRthYe
-I2GFREPmoI5lp767LjBuzRaRFQzKNLXq/8zjfYZJ32G8w6+u7qRrIX8PMKfihKa7
-ozpuY68I
-=aJRH
+iQGzBAEBCgAdFiEEIadVdb+vkcMEpy2lgiF/BWb5tKUFAmq30eYACgkQgiF/BWb5
+tKXZKgwAxTDHmwP5Noh1Ux4SSlqWFpM8JGIANTZv3GsYTJzHm+tVpol9+UoW8Yhi
+CYElHVI4MutkWToqToJaVNFw1EoVoO78ttoi7GGb1sLKDGDD56pIVsyPa9jA0Npv
+jQRq/OWN153ieTgLtk9kC3EYepeEKvvwPT012e7c9eO/gqr+lQSzy3MNvxLKcNud
+zdca1dNIpW4jf5JUEP/SZqt5j1V91YZif5T1JvIsDtSs/IPOKvmrvCZgB16Fm5dR
+ogDpksW/UhzSK/u9oMOrTfVyXSCbTrrJMYLgAPqZ8XMpoXoxUMhKZ9Sor7TMsBZS
+Rrq+Th4+nT11OekNE1eJQlaVu6eUn6qQrTowYADenp4STc5eiguWFd+2xWrG/YPO
+VDJj7W8y80COiRQTJ7zftMsA9wjINApvUfEoG4obb4gTkdsdunUsD4wlEEJ3lrSC
+m7zxC/NS//nM+ZAwVuK7abw/xJbBiu2Gf7uuxrJP+pVQcl/DqLxqgT5Bvjv1r7SJ
+xY9Fs18/
+=VEz4
 -----END PGP SIGNATURE-----
