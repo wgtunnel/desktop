@@ -2,13 +2,14 @@ package com.zaneschepke.wireguardautotunnel.daemon.autotunnel
 
 import co.touchlab.kermit.Logger
 import com.wgtunnel.backend.Backend
-import com.wgtunnel.backend.autotunnel.AutoTunnelDecision
-import com.wgtunnel.backend.autotunnel.AutoTunnelEngine
+import com.wgtunnel.backend.autotunnel.AutoTunnelHost
 import com.wgtunnel.backend.autotunnel.AutoTunnelNetwork
 import com.wgtunnel.backend.autotunnel.AutoTunnelNetworkType
 import com.wgtunnel.backend.autotunnel.AutoTunnelPolicy
+import com.wgtunnel.backend.autotunnel.AutoTunnelReconciler
 import com.wgtunnel.backend.autotunnel.AutoTunnelSnapshot
 import com.wgtunnel.backend.autotunnel.AutoTunnelTunnel
+import com.wgtunnel.backend.autotunnel.TunnelActions
 import com.wgtunnel.backend.network.NetworkInfoDto
 import com.wgtunnel.parser.Config
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelConfigDto
@@ -22,37 +23,34 @@ import com.zaneschepke.wireguardautotunnel.daemon.tunnel.RunningTunnel
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class AutoTunnelSupervisor(
     private val backend: Backend,
     private val networkMonitor: DesktopNetworkMonitor,
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
 ) {
     private val log = Logger.withTag("AutoTunnel")
-    private val engine = AutoTunnelEngine()
-    private val mutex = Mutex()
     private val planFlow = MutableStateFlow(AutoTunnelConfigDto())
     private val runningFlow = MutableStateFlow(false)
+
+    /**
+     * Held by every start/stop, user or auto. Auto tunnel decides and acts inside it, so a user
+     * action that got there first has already flagged its override.
+     */
+    val tunnelActionMutex = Mutex()
 
     private val ignoreBssid: Boolean =
         System.getProperty("os.name").orEmpty().contains("windows", ignoreCase = true)
 
-    @Volatile private var hasUserOverride = false
-    private var lastNetworkKey: String? = null
-    private var loopJob: Job? = null
-    private var noInternetStopJob: Job? = null
+    private val reconciler =
+        AutoTunnelReconciler(scope = scope, status = backend.status, host = DaemonHost())
 
     val statusFlow: Flow<AutoTunnelStatusDto> =
         combine(runningFlow, planFlow, networkMonitor.info) { running, plan, network ->
@@ -70,53 +68,28 @@ class AutoTunnelSupervisor(
         if (plan.enabled) start() else stop()
     }
 
-    fun notifyUserOverride() {
-        hasUserOverride = true
-        log.d { "User override on current network; pausing auto-tunnel decisions" }
-    }
+    fun notifyUserOverride() = reconciler.notifyUserOverride()
 
+    @OptIn(FlowPreview::class)
     fun start() {
         if (runningFlow.value) return
         runningFlow.value = true
-        hasUserOverride = false
-        lastNetworkKey = null
-        loopJob?.cancel()
-        loopJob = scope.launch { runLoop() }
+        reconciler.start(
+            combine(networkMonitor.info, planFlow) { network, plan -> snapshot(network, plan) }
+                .distinctUntilChanged()
+                .debounce(300.milliseconds)
+        )
         log.i { "Auto-tunnel started" }
     }
 
     fun stop() {
         val wasRunning = runningFlow.value
         runningFlow.value = false
-        loopJob?.cancel()
-        loopJob = null
-        cancelNoInternetStop()
-        hasUserOverride = false
+        reconciler.stop()
         if (wasRunning) log.i { "Auto-tunnel stopped" }
     }
 
-    @OptIn(FlowPreview::class)
-    private suspend fun runLoop() {
-        combine(
-                networkMonitor.info,
-                backend.status.map { it.activeTunnels.keys }.distinctUntilChanged(),
-                planFlow,
-            ) { network, activeIds, plan ->
-                Triple(network, activeIds, plan)
-            }
-            .distinctUntilChanged()
-            .debounce(300.milliseconds)
-            .collect { (network, _, plan) ->
-                if (!runningFlow.value || !plan.enabled) return@collect
-                mutex.withLock { applyDecision(network, plan) }
-            }
-    }
-
-    private fun snapshot(
-        network: NetworkInfoDto,
-        activeIds: Set<Int>,
-        plan: AutoTunnelConfigDto,
-    ): AutoTunnelSnapshot {
+    private fun snapshot(network: NetworkInfoDto, plan: AutoTunnelConfigDto): AutoTunnelSnapshot {
         val networkForEngine =
             if (ignoreBssid) network.toAutoTunnelNetwork().copy(bssid = "")
             else network.toAutoTunnelNetwork()
@@ -143,66 +116,26 @@ class AutoTunnelSupervisor(
                         tunnelBssids = if (ignoreBssid) emptyList() else it.tunnelBssids,
                     )
                 },
-            activeTunnelIds = activeIds.map { it.toLong() }.toSet(),
         )
     }
 
-    private fun updateFingerprint(snapshot: AutoTunnelSnapshot) {
-        val bssidAware =
-            !ignoreBssid &&
-                (snapshot.policy.trustedNetworkBssids.isNotEmpty() ||
-                    snapshot.tunnels.any { it.tunnelBssids.isNotEmpty() })
-        val key = snapshot.network.fingerprint(bssidAware)
-        if (lastNetworkKey != key) {
-            if (hasUserOverride) log.d { "Network changed, clearing user override" }
-            hasUserOverride = false
-            lastNetworkKey = key
-        }
-    }
+    private inner class DaemonHost : AutoTunnelHost {
+        private val actions =
+            object : TunnelActions {
+                override suspend fun start(id: Long) {
+                    val tunnelPlan = planFlow.value.tunnels.firstOrNull { it.id == id } ?: return
+                    log.i { "Starting tunnel ${tunnelPlan.name}" }
+                    startFromPlan(tunnelPlan)
+                }
 
-    private suspend fun applyDecision(network: NetworkInfoDto, plan: AutoTunnelConfigDto) {
-        val liveActive = backend.status.first().activeTunnels.keys
-        val snapshot = snapshot(network, liveActive, plan)
-        updateFingerprint(snapshot)
-        val event = if (hasUserOverride) AutoTunnelDecision.DoNothing else engine.evaluate(snapshot)
-        log.d {
-            "Decision=$event type=${snapshot.network.type} usable=${snapshot.network.hasUsableNetwork} active=${snapshot.activeTunnelIds}"
-        }
-        handle(event, plan)
-
-        val followNetwork = networkMonitor.info.value
-        val followActive = backend.status.first().activeTunnels.keys
-        val followPlan = planFlow.value
-        val followSnapshot = snapshot(followNetwork, followActive, followPlan)
-        val followUp =
-            if (hasUserOverride) AutoTunnelDecision.DoNothing else engine.evaluate(followSnapshot)
-        if (followUp != AutoTunnelDecision.DoNothing && followUp != event) {
-            log.d { "Follow-up decision=$followUp type=${followSnapshot.network.type}" }
-            handle(followUp, followPlan)
-        }
-    }
-
-    private suspend fun handle(event: AutoTunnelDecision, plan: AutoTunnelConfigDto) {
-        when (event) {
-            is AutoTunnelDecision.Sync -> {
-                cancelNoInternetStop()
-                event.stop.forEach { id ->
+                override suspend fun stop(id: Long) {
                     log.i { "Stopping tunnel $id" }
                     backend.stop(id.toInt()).onFailure { log.e(it) { "Failed to stop tunnel $id" } }
                 }
-                val stillActive =
-                    backend.status.first().activeTunnels.keys.map { it.toLong() }.toSet()
-                event.start
-                    .filterNot { it in stillActive }
-                    .forEach { id ->
-                        val tunnelPlan = plan.tunnels.firstOrNull { it.id == id } ?: return@forEach
-                        log.i { "Starting tunnel ${tunnelPlan.name}" }
-                        startFromPlan(tunnelPlan)
-                    }
             }
-            AutoTunnelDecision.StopAllDueToNoInternet -> scheduleNoInternetStop()
-            AutoTunnelDecision.DoNothing -> Unit
-        }
+
+        override suspend fun <T> exclusively(block: suspend (TunnelActions) -> T): T =
+            tunnelActionMutex.withLock { block(actions) }
     }
 
     private suspend fun startFromPlan(tunnelPlan: AutoTunnelTunnelConfigDto) {
@@ -212,40 +145,9 @@ class AutoTunnelSupervisor(
                 .onFailure { log.e(it) { "Invalid auto-tunnel config for ${tunnelPlan.name}" } }
                 .getOrNull() ?: return
         val tunnel = RunningTunnel.fromRequest(tunnelPlan.id.toInt(), request)
-        repeat(START_ATTEMPTS) { attempt ->
-            val result =
-                backend.start(tunnel, request.toBackendMode(config), request.tunnelDns?.toCore())
-            if (result.isSuccess) return
-            log.w(result.exceptionOrNull()) {
-                "Failed to start auto-tunnel ${tunnelPlan.name} (attempt ${attempt + 1}/$START_ATTEMPTS)"
-            }
-            if (attempt < START_ATTEMPTS - 1) delay(START_RETRY_DELAY)
-        }
-    }
-
-    private fun scheduleNoInternetStop() {
-        noInternetStopJob?.cancel()
-        noInternetStopJob = scope.launch {
-            delay(NO_INTERNET_GRACE_MS.milliseconds)
-            mutex.withLock {
-                val network = networkMonitor.info.value.toAutoTunnelNetwork()
-                val plan = planFlow.value
-                if (!network.hasUsableNetwork && plan.settings.isStopOnNoInternetEnabled) {
-                    val ids = backend.status.first().activeTunnels.keys
-                    if (ids.isNotEmpty()) {
-                        log.w { "No internet grace expired; stopping tunnels $ids" }
-                        ids.forEach { backend.stop(it) }
-                    }
-                } else {
-                    log.d { "No internet grace expired, but internet is back or setting disabled" }
-                }
-            }
-        }
-    }
-
-    private fun cancelNoInternetStop() {
-        noInternetStopJob?.cancel()
-        noInternetStopJob = null
+        backend
+            .start(tunnel, request.toBackendMode(config), request.tunnelDns?.toCore())
+            .onFailure { log.w(it) { "Failed to start auto-tunnel ${tunnelPlan.name}" } }
     }
 
     private fun statusOf(
@@ -263,12 +165,6 @@ class AutoTunnelSupervisor(
                     bssid = if (ignoreBssid) "" else network.bssid.uppercase(),
                 ),
         )
-    }
-
-    companion object {
-        private const val NO_INTERNET_GRACE_MS = 10_000L
-        private const val START_ATTEMPTS = 3
-        private val START_RETRY_DELAY = 400.milliseconds
     }
 }
 

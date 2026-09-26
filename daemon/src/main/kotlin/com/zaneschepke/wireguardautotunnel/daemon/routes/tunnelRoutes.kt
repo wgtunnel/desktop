@@ -14,16 +14,13 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 private val log = Logger.withTag("TunnelRoutes")
 
 fun Route.tunnelRoutes(backend: Backend, autoTunnelSupervisor: AutoTunnelSupervisor) {
-    val tunnelOperationMutex = Mutex()
-
     post(Routes.Tunnels.START_TEMPLATE) {
-        tunnelOperationMutex.withLock {
+        autoTunnelSupervisor.tunnelActionMutex.withLock {
             val id =
                 call.parameters["id"]?.toIntOrNull()
                     ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
@@ -70,7 +67,7 @@ fun Route.tunnelRoutes(backend: Backend, autoTunnelSupervisor: AutoTunnelSupervi
     }
 
     post(Routes.Tunnels.STOP_TEMPLATE) {
-        tunnelOperationMutex.withLock {
+        autoTunnelSupervisor.tunnelActionMutex.withLock {
             val id =
                 call.parameters["id"]?.toIntOrNull()
                     ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing or invalid id")
