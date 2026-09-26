@@ -1,0 +1,3 @@
+What's new:
+- Fix for Windows daemon communication bug
+- Fix for no tunnel import/encryption key creation bug
