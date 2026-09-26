@@ -6,6 +6,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.zaneschepke.wireguardautotunnel.client.data.AppDatabase
 import com.zaneschepke.wireguardautotunnel.client.data.AppDatabaseConstructor
 import com.zaneschepke.wireguardautotunnel.client.data.DatabaseCallback
+import com.zaneschepke.wireguardautotunnel.client.data.ResilientSecretStore
 import com.zaneschepke.wireguardautotunnel.client.data.converter.AppKeyringConverter
 import com.zaneschepke.wireguardautotunnel.client.data.dao.AutoTunnelSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.DnsSettingsDao
@@ -14,6 +15,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.dao.LockdownSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.MonitoringSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.ProxySettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.TunnelConfigDao
+import com.zaneschepke.wireguardautotunnel.client.data.databaseHasEncryptedData
 import com.zaneschepke.wireguardautotunnel.client.data.repository.PropertiesClientCacheRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomAutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomDnsSettingsRepository
@@ -30,7 +32,6 @@ import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSett
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.MonitoringSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.ProxySettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
-import com.zaneschepke.wireguardautotunnel.client.data.ResilientSecretStore
 import com.zaneschepke.wireguardautotunnel.core.crypto.Crypto
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
@@ -48,10 +49,12 @@ val databaseModule = module {
         val encodedSecret =
             keyring.get(dbKey)
                 ?: run {
-                    // Only create a new key on a genuine fresh installation, otherwise failure
-                    check(!dbFile.exists()) {
-                        "Database exists but its secret key could not be retrieved from " +
-                            "either the OS keyring or the local fallback store. Check that " +
+                    // A new key is only safe while nothing is encrypted with the old one. Not the
+                    // same as the database file existing, that is created on the first launch,
+                    // before the first tunnel is saved and the key is needed.
+                    check(!databaseHasEncryptedData(dbFile)) {
+                        "Database has encrypted data but its secret key could not be retrieved " +
+                            "from either the OS keyring or the local fallback store. Check that " +
                             "your keyring daemon (if any) is running, or that " +
                             "${FilePathsHelper.getDatabaseDir()}/secrets is intact."
                     }

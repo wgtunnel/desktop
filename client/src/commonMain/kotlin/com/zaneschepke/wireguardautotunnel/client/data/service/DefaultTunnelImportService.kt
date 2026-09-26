@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.client.data.service
 
+import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.extensions.saveTunnelsUniquely
@@ -11,10 +12,10 @@ import com.zaneschepke.wireguardautotunnel.client.service.TunnelName
 class DefaultTunnelImportService(private val tunnelRepository: TunnelRepository) :
     TunnelImportService {
 
+    private val log = Logger.withTag("TunnelImport")
+
     override suspend fun import(config: QuickString, name: TunnelName?): Result<Unit> =
-        runCatching {
-            import(mapOf(config to name))
-        }
+        import(mapOf(config to name))
 
     override suspend fun import(configs: QuickConfigMap): Result<Unit> = runCatching {
         val tunnelConfigs = configs.map { (config, name) ->
@@ -25,4 +26,5 @@ class DefaultTunnelImportService(private val tunnelRepository: TunnelRepository)
             tunnelRepository.saveTunnelsUniquely(tunnelConfigs, existingNames)
         }
     }
+        .onFailure { log.e(it) { "Tunnel import failed" } }
 }
