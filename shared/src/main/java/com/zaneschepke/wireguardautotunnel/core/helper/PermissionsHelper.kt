@@ -7,6 +7,7 @@ import com.github.michaelbull.retry.policy.stopAtAttempts
 import com.github.michaelbull.retry.retry
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -38,17 +39,18 @@ object PermissionsHelper {
     private const val SID_USERS = "*S-1-5-32-545"
 
     // windows permission flags
-    private const val WIN_DIR_MODIFY_INHERIT = ":(OI)(CI)(M)"
     private const val WIN_DIR_READ_EXECUTE_INHERIT = ":(OI)(CI)(RX)"
     private const val WIN_FULL_CONTROL_INHERIT = ":(OI)(CI)(F)"
     private const val WIN_READY_ONLY = ":(R)"
     private const val WIN_FULL_CONTROL = ":(F)"
+    private const val WIN_MODIFY = ":(M)"
 
     // windows icacls
     private const val ICACLS = "icacls"
     private const val WIN_GRANT = "/grant"
     private const val WIN_GRANT_REPLACE = "/grant:r"
     private const val WIN_INHERIT_REPLACE = "/inheritance:r"
+    private const val WIN_LINK = "/L"
 
     fun setupDirectoryPermissionsUnix(runtimeDirPath: String) {
         val path = Paths.get(runtimeDirPath)
@@ -161,29 +163,49 @@ object PermissionsHelper {
         }
     }
 
-    /** Grants any local user read/write access to the socket file itself, once it exists. */
-    fun setupSocketFilePermissionsWindows(socketPath: String) {
+    /**
+     * Grants any local user read/write access to the socket file itself, once it exists. The
+     * directory only gives Users read, and connecting to a socket needs write access.
+     *
+     * @return whether the socket now has the entry for Users
+     */
+    fun setupSocketFilePermissionsWindows(socketPath: String): Boolean {
         try {
             val process =
                 ProcessBuilder(
                         ICACLS,
                         socketPath,
+                        WIN_LINK,
                         WIN_GRANT,
-                        "$SID_USERS$WIN_DIR_MODIFY_INHERIT",
+                        "$SID_USERS$WIN_MODIFY",
                         WIN_GRANT,
-                        "$SID_SYSTEM$WIN_FULL_CONTROL_INHERIT",
+                        "$SID_SYSTEM$WIN_FULL_CONTROL",
                         WIN_GRANT,
-                        "$SID_ADMINISTRATORS$WIN_FULL_CONTROL_INHERIT",
+                        "$SID_ADMINISTRATORS$WIN_FULL_CONTROL",
                     )
+                    .redirectErrorStream(true)
                     .start()
 
+            val output = process.inputStream.bufferedReader().use { it.readText() }
             if (process.waitFor() != 0) {
-                val error = process.errorStream.bufferedReader().use { it.readText() }
-                log.e { "icacls socket file setup failed: $error" }
+                log.e { "icacls socket file setup failed: $output" }
+                return false
             }
         } catch (e: Exception) {
             log.e(e) { "Failed to set Windows socket file ACLs" }
+            return false
         }
+        // An entry of our own, not the inherited (I) read the directory gives. Only the flags
+        // are matched as group names are translated.
+        val acls = readWindowsAcls(socketPath)
+        val applied =
+            acls.lineSequence().any {
+                it.contains(WIN_MODIFY, ignoreCase = true) && !it.contains("(I)")
+            }
+        if (!applied) {
+            log.e { "Socket ACL was not applied, users cannot connect to the daemon: $acls" }
+        }
+        return applied
     }
 
     suspend fun setupSocketPermissionsWithPollUnix(socketPath: String) =
@@ -214,12 +236,14 @@ object PermissionsHelper {
             runCatching {
                 retry(socketRetryPolicy) {
                     if (!socketFile.exists()) throw FileNotFoundException("Socket not found yet")
-                    setupSocketFilePermissionsWindows(socketPath)
+                    if (!setupSocketFilePermissionsWindows(socketPath)) {
+                        throw IOException("Socket ACL not applied yet")
+                    }
                 }
                 logWindowsACLs(socketPath)
             }
                 .onFailure {
-                    log.e { "Socket $socketPath failed to appear on Windows: ${it.message}" }
+                    log.e { "Could not set up the socket $socketPath on Windows: ${it.message}" }
                 }
         }
 
@@ -404,10 +428,17 @@ object PermissionsHelper {
     }
 
     private fun logWindowsACLs(path: String) {
-        runCatching {
-            val output =
-                ProcessBuilder(ICACLS, path).start().inputStream.bufferedReader().readText()
-            log.d { "Final ACLs for $path: $output" }
-        }
+        log.i { "Final ACLs for $path: ${readWindowsAcls(path)}" }
     }
+
+    // /L, or icacls shows the target of a socket and not the socket itself
+    private fun readWindowsAcls(path: String): String = runCatching {
+        ProcessBuilder(ICACLS, path, WIN_LINK)
+            .redirectErrorStream(true)
+            .start()
+            .inputStream
+            .bufferedReader()
+            .use { it.readText() }
+    }
+        .getOrDefault("")
 }
