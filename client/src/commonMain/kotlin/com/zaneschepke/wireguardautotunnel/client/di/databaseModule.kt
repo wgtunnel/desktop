@@ -15,6 +15,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.dao.LockdownSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.MonitoringSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.ProxySettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.TunnelConfigDao
+import com.zaneschepke.wireguardautotunnel.client.data.dao.TunnelGroupDao
 import com.zaneschepke.wireguardautotunnel.client.data.databaseHasEncryptedData
 import com.zaneschepke.wireguardautotunnel.client.data.repository.PropertiesClientCacheRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomAutoTunnelSettingsRepository
@@ -23,6 +24,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomLockdownSe
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomMonitoringSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomProxySettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomTunnelGroupRepository
 import com.zaneschepke.wireguardautotunnel.client.data.repository.RoomTunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.ClientCacheRepository
@@ -31,6 +33,7 @@ import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSetti
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.MonitoringSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.ProxySettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelGroupRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.core.crypto.Crypto
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
@@ -82,6 +85,7 @@ val databaseModule = module {
     }
 
     single<TunnelConfigDao> { get<AppDatabase>().tunnelConfigDao() }
+    single<TunnelGroupDao> { get<AppDatabase>().tunnelGroupDao() }
     single<LockdownSettingsDao> { get<AppDatabase>().lockdownSettingsDao() }
     single<GeneralSettingsDao> { get<AppDatabase>().generalSettingsDao() }
     single<DnsSettingsDao> { get<AppDatabase>().dnsSettingsDao() }
@@ -90,6 +94,7 @@ val databaseModule = module {
     single<AutoTunnelSettingsDao> { get<AppDatabase>().autoTunnelSettingsDao() }
 
     single<TunnelRepository> { RoomTunnelRepository(get()) }
+    single<TunnelGroupRepository> { RoomTunnelGroupRepository(get()) }
     single<LockdownSettingsRepository> { RoomLockdownSettingsRepository(get()) }
     single<GeneralSettingRepository> { RoomSettingsRepository(get()) }
     single<DnsSettingsRepository> { RoomDnsSettingsRepository(get()) }

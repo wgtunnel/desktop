@@ -2,17 +2,27 @@ package com.zaneschepke.wireguardautotunnel.desktop.ui.state
 
 import androidx.compose.ui.graphics.Color
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
+import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelGroup
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.asColor
 
 data class TunnelsUiState(
     val tunnelItems: List<TunnelUiItem> = emptyList(),
+    val groups: List<TunnelGroup> = emptyList(),
     val selectedTunnels: List<TunnelConfig> = emptyList(),
     val isSelectionMode: Boolean = false,
     val isLoaded: Boolean = false,
     val hasBackendStatus: Boolean = false,
-)
+) {
+    val rows: List<TunnelListRow>
+        get() =
+            buildTunnelListRows(
+                groups = groups,
+                tunnels = tunnelItems.map { it.config },
+                activeTunnelIds = tunnelItems.filter { it.isRunning }.map { it.config.id }.toSet(),
+            )
+}
 
 data class TunnelUiItem(val config: TunnelConfig, val status: TunnelStatus? = null) {
     val isRunning: Boolean

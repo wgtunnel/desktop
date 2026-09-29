@@ -346,4 +346,25 @@
     <string name="wildcard_wifi_desc">Supports *, ?, and ! for blacklisting</string>
     <string name="wildcard_bssid_desc">Supports * and ! for blacklisting</string>
     <string name="amnezia_configuration">Amnezia configuration</string>
+    <string name="okay">Okay</string>
+    <string name="add_group">Add group</string>
+    <string name="group_name">Group name</string>
+    <string name="rename_group">Rename group</string>
+    <string name="delete_group">Delete group</string>
+    <string name="delete_group_message">Tunnels in this group will be ungrouped.</string>
+    <string name="delete_group_and_tunnels">Delete group and tunnels</string>
+    <string name="delete_group_and_tunnels_message">This will delete the group and all tunnels inside it.</string>
+    <string name="export_group">Export group</string>
+    <string name="move_to_group">Move to group</string>
+    <string name="ungroup">Ungroup</string>
+    <string name="import_from_file">Import from file</string>
+    <string name="no_tunnels_in_group">This group has no tunnels to export</string>
+    <plurals name="group_tunnel_count">
+        <item quantity="one">%1$d tunnel</item>
+        <item quantity="other">%1$d tunnels</item>
+    </plurals>
+    <string name="group_active_count">%1$d active</string>
+    <string name="add_group_ellipsis">Add group…</string>
+    <string name="expand_group">Expand group</string>
+    <string name="collapse_group">Collapse group</string>
 </resources>

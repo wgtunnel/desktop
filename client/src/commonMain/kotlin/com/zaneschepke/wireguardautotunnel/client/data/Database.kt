@@ -19,6 +19,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.dao.LockdownSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.MonitoringSettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.ProxySettingsDao
 import com.zaneschepke.wireguardautotunnel.client.data.dao.TunnelConfigDao
+import com.zaneschepke.wireguardautotunnel.client.data.dao.TunnelGroupDao
 import com.zaneschepke.wireguardautotunnel.client.data.entity.AutoTunnelSettings
 import com.zaneschepke.wireguardautotunnel.client.data.entity.DnsSettings
 import com.zaneschepke.wireguardautotunnel.client.data.entity.GeneralSettings
@@ -26,11 +27,13 @@ import com.zaneschepke.wireguardautotunnel.client.data.entity.LockdownSettings
 import com.zaneschepke.wireguardautotunnel.client.data.entity.MonitoringSettings
 import com.zaneschepke.wireguardautotunnel.client.data.entity.ProxySettings
 import com.zaneschepke.wireguardautotunnel.client.data.entity.TunnelConfig
+import com.zaneschepke.wireguardautotunnel.client.data.entity.TunnelGroup
 
 @Database(
     entities =
         [
             TunnelConfig::class,
+            TunnelGroup::class,
             LockdownSettings::class,
             GeneralSettings::class,
             DnsSettings::class,
@@ -38,7 +41,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.entity.TunnelConfig
             ProxySettings::class,
             AutoTunnelSettings::class,
         ],
-    version = 5,
+    version = 6,
     exportSchema = true,
     autoMigrations =
         [
@@ -46,12 +49,15 @@ import com.zaneschepke.wireguardautotunnel.client.data.entity.TunnelConfig
             AutoMigration(from = 2, to = 3, spec = AppDatabase.Migrate2To3::class),
             AutoMigration(from = 3, to = 4),
             AutoMigration(from = 4, to = 5),
+            AutoMigration(from = 5, to = 6),
         ],
 )
 @ColumnTypeConverters(AppKeyringConverter::class, StringListConverter::class)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun tunnelConfigDao(): TunnelConfigDao
+
+    abstract fun tunnelGroupDao(): TunnelGroupDao
 
     abstract fun generalSettingsDao(): GeneralSettingsDao
 

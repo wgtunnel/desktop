@@ -19,6 +19,7 @@ data class TunnelConfig(
     val tunnelNetworks: List<String> = emptyList(),
     val isEthernetTunnel: Boolean = false,
     val tunnelBssids: List<String> = emptyList(),
+    val groupId: Long? = null,
 ) {
 
     fun asConfig(): Config {

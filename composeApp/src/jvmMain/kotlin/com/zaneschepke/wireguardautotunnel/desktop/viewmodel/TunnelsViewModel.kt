@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
+import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelGroup
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelGroupRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
@@ -12,6 +14,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_cancelled
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_failed
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.exported_to_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_tunnels_in_group
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_tunnels_selected
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel_not_found
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.unknown_error
@@ -20,6 +23,11 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.ExportInte
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TunnelUiItem
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TunnelsUiState
+import com.zaneschepke.wireguardautotunnel.desktop.ui.state.moveDisplayedRows
+import com.zaneschepke.wireguardautotunnel.desktop.ui.state.nextChildPosition
+import com.zaneschepke.wireguardautotunnel.desktop.ui.state.nextRootPosition
+import com.zaneschepke.wireguardautotunnel.desktop.ui.state.ungroupKeepingOrder
+import com.zaneschepke.wireguardautotunnel.desktop.ui.state.uniqueDisplayName
 import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
 import com.zaneschepke.wireguardautotunnel.desktop.util.asUserMessage
 import com.zaneschepke.wireguardautotunnel.desktop.util.toConfigErrorMessage
@@ -34,6 +42,7 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 
 class TunnelsViewModel(
     private val tunnelRepository: TunnelRepository,
+    private val tunnelGroupRepository: TunnelGroupRepository,
     private val tunnelCoordinator: TunnelCoordinator,
     private val tunnelImportService: TunnelImportService,
     private val backendService: BackendService,
@@ -56,6 +65,12 @@ class TunnelsViewModel(
             }
 
             intent {
+                tunnelGroupRepository.flow.collect { groups ->
+                    reduce { state.copy(groups = groups) }
+                }
+            }
+
+            intent {
                 backendService.statusFlow().collect { backendStatus ->
                     reduce {
                         val updatedItems =
@@ -73,16 +88,27 @@ class TunnelsViewModel(
         }
 
     fun onItemsReordered(fromIndex: Int, toIndex: Int) = intent {
-        val list = state.tunnelItems.toMutableList()
-        val item = list.removeAt(fromIndex)
-        list.add(toIndex, item)
-        reduce { state.copy(tunnelItems = list) }
+        val result =
+            moveDisplayedRows(
+                state.groups,
+                state.tunnelItems.map { it.config },
+                fromIndex,
+                toIndex,
+                state.rows,
+            ) ?: return@intent
+        val (groups, tunnels) = result
+        val statusById = state.tunnelItems.associate { it.config.id to it.status }
+        reduce {
+            state.copy(
+                groups = groups,
+                tunnelItems = tunnels.map { config -> TunnelUiItem(config, statusById[config.id]) },
+            )
+        }
     }
 
     fun onPersistReorder() = intent {
-        val updatedTunnels =
-            state.tunnelItems.mapIndexed { index, item -> item.config.copy(position = index) }
-        tunnelRepository.updateAll(updatedTunnels)
+        tunnelRepository.updateAll(state.tunnelItems.map { it.config })
+        tunnelGroupRepository.saveAll(state.groups)
     }
 
     fun onStartTunnel(id: Long) = intent {
@@ -164,6 +190,28 @@ class TunnelsViewModel(
                         dialogSettings = FileKitDialogSettings.createDefault(),
                     ) to intent.tunnel.quickConfig.toByteArray()
                 }
+                is ExportIntent.Group -> {
+                    val children =
+                        state.tunnelItems.map { it.config }.filter { it.groupId == intent.group.id }
+                    if (children.isEmpty()) {
+                        postSideEffect(
+                            AppSideEffect.Toast(
+                                getString(Res.string.no_tunnels_in_group),
+                                ToastType.Warning,
+                            )
+                        )
+                        return@intent
+                    }
+                    FileKit.openFileSaver(
+                        suggestedName = intent.group.name,
+                        defaultExtension = FileUtils.ZIP_FILE_EXTENSION,
+                        directory = null,
+                        dialogSettings = FileKitDialogSettings.createDefault(),
+                    ) to
+                        FileUtils.createZipArchive(
+                            children.associate { it.name to it.quickConfig }
+                        )
+                }
             }
 
         try {
@@ -207,11 +255,101 @@ class TunnelsViewModel(
         when (intent) {
             DeleteIntent.Selected -> {
                 tunnelRepository.delete(state.selectedTunnels.map { it.id })
-                reduce { state.copy(isSelectionMode = false) }
+                reduce { state.copy(selectedTunnels = emptyList(), isSelectionMode = false) }
             }
             is DeleteIntent.Tunnel -> {
                 tunnelRepository.delete(intent.tunnel.id)
             }
+            is DeleteIntent.Group -> {
+                val tunnels = state.tunnelItems.map { it.config }
+                val (groups, updated) = ungroupKeepingOrder(state.groups, tunnels, intent.group.id)
+                tunnelRepository.updateAll(updated)
+                tunnelGroupRepository.saveAll(groups)
+                tunnelGroupRepository.delete(intent.group.id)
+            }
+            is DeleteIntent.GroupAndTunnels -> {
+                val childIds =
+                    state.tunnelItems
+                        .map { it.config }
+                        .filter { it.groupId == intent.group.id }
+                        .map { it.id }
+                if (childIds.isNotEmpty()) tunnelRepository.delete(childIds)
+                tunnelGroupRepository.delete(intent.group.id)
+                val remaining = state.selectedTunnels.filter { it.id !in childIds }
+                reduce {
+                    state.copy(selectedTunnels = remaining, isSelectionMode = remaining.isNotEmpty())
+                }
+            }
         }
+    }
+
+    fun onCreateGroup(name: String) = intent {
+        val unique = uniqueDisplayName(name, state.groups.map { it.name }, "Group")
+        tunnelGroupRepository.save(
+            TunnelGroup(
+                name = unique,
+                position = nextRootPosition(state.groups, state.tunnelItems.map { it.config }),
+                expanded = true,
+            )
+        )
+    }
+
+    fun onRenameGroup(group: TunnelGroup, name: String) = intent {
+        val unique =
+            uniqueDisplayName(
+                name,
+                state.groups.filter { it.id != group.id }.map { it.name },
+                "Group",
+            )
+        tunnelGroupRepository.save(group.copy(name = unique))
+    }
+
+    fun onToggleGroupExpanded(group: TunnelGroup) = intent {
+        tunnelGroupRepository.setExpanded(group.id, !group.expanded)
+    }
+
+    fun onCreateGroupAndMove(name: String, tunnels: List<TunnelConfig>) = intent {
+        if (tunnels.isEmpty()) return@intent
+        val unique = uniqueDisplayName(name, state.groups.map { it.name }, "Group")
+        val groupId =
+            tunnelGroupRepository.save(
+                TunnelGroup(
+                    name = unique,
+                    position = nextRootPosition(state.groups, state.tunnelItems.map { it.config }),
+                    expanded = true,
+                )
+            )
+        onMoveToGroup(groupId, tunnels)
+    }
+
+    fun onSelectTunnels(tunnels: List<TunnelConfig>) = intent {
+        reduce { state.copy(selectedTunnels = tunnels, isSelectionMode = tunnels.isNotEmpty()) }
+    }
+
+    fun onMoveToGroup(groupId: Long, tunnels: List<TunnelConfig>) = intent {
+        if (tunnels.isEmpty()) return@intent
+        val all = state.tunnelItems.map { it.config }
+        var next = nextChildPosition(all, groupId)
+        val ids = tunnels.map { it.id }.toSet()
+        tunnelRepository.updateAll(
+            all.map { tunnel ->
+                if (tunnel.id in ids) tunnel.copy(groupId = groupId, position = next++) else tunnel
+            }
+        )
+        reduce { state.copy(selectedTunnels = emptyList(), isSelectionMode = false) }
+    }
+
+    fun onUngroupTunnels(tunnels: List<TunnelConfig>) = intent {
+        val grouped = tunnels.filter { it.groupId != null }
+        if (grouped.isEmpty()) return@intent
+        val all = state.tunnelItems.map { it.config }
+        var next = nextRootPosition(state.groups, all)
+        val ids = grouped.map { it.id }.toSet()
+        tunnelRepository.updateAll(
+            all.map { tunnel ->
+                if (tunnel.id in ids) tunnel.copy(groupId = null, position = next++) else tunnel
+            }
+        )
+        reduce { state.copy(selectedTunnels = emptyList(), isSelectionMode = false) }
     }
 }

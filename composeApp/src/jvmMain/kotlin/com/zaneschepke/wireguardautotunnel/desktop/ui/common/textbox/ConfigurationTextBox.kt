@@ -20,6 +20,8 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.VisualTransformation
@@ -43,6 +45,7 @@ fun ConfigurationTextBox(
     supportingText: @Composable (() -> Unit)? = null,
     singleLine: Boolean = true,
     containerColor: Color = MaterialTheme.colorScheme.background,
+    focusRequester: FocusRequester? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val (textFieldValue, onTextFieldValueChange) =
@@ -62,7 +65,13 @@ fun ConfigurationTextBox(
             singleLine = singleLine,
             visualTransformation = visualTransformation,
             interactionSource = interactionSource,
-            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .defaultMinSize(minHeight = 48.dp)
+                    .then(
+                        if (focusRequester != null) Modifier.focusRequester(focusRequester)
+                        else Modifier
+                    ),
         ) { innerTextField ->
             OutlinedTextFieldDefaults.DecorationBox(
                 value = textFieldValue.text,

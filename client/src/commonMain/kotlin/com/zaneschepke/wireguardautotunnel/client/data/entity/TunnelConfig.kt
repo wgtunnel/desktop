@@ -9,7 +9,10 @@ import com.zaneschepke.wireguardautotunnel.client.data.converter.AppKeyringConve
 import com.zaneschepke.wireguardautotunnel.client.data.converter.StringListConverter
 import com.zaneschepke.wireguardautotunnel.client.data.model.EncryptedField
 
-@Entity(tableName = "tunnel_config", indices = [Index(value = ["name"], unique = true)])
+@Entity(
+    tableName = "tunnel_config",
+    indices = [Index(value = ["name"], unique = true), Index(value = ["group_id"])],
+)
 data class TunnelConfig(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "name") val name: String,
@@ -31,4 +34,5 @@ data class TunnelConfig(
     @field:ColumnTypeConverters(StringListConverter::class)
     @ColumnInfo(name = "tunnel_bssids", defaultValue = "[]")
     val tunnelBssids: List<String> = emptyList(),
+    @ColumnInfo(name = "group_id", defaultValue = "NULL") val groupId: Long? = null,
 )
