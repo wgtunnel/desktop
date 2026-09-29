@@ -5,9 +5,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_READONLY
 import java.io.File
 
-/**
- * Whether the database holds anything encrypted with the secret key.
- */
+/** Whether the database holds anything encrypted with the secret key. */
 internal fun databaseHasEncryptedData(dbFile: File): Boolean {
     if (!dbFile.exists()) return false
     return runCatching {

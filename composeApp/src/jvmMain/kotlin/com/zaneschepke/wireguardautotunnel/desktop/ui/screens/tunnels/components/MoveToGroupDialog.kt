@@ -20,9 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelGroup
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.add_group_ellipsis
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.cancel
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.move_to_group
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.add_group_ellipsis
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import org.jetbrains.compose.resources.stringResource
 
@@ -44,10 +44,14 @@ fun MoveToGroupDialog(
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = { Text(stringResource(Res.string.move_to_group)) },
                 text = {
-                    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                    ) {
                         SurfaceRow(
                             title = stringResource(Res.string.add_group_ellipsis),
-                            leading = { Icon(Icons.Outlined.CreateNewFolder, contentDescription = null) },
+                            leading = {
+                                Icon(Icons.Outlined.CreateNewFolder, contentDescription = null)
+                            },
                             onClick = onNewGroup,
                         )
                         if (groups.isNotEmpty()) HorizontalDivider()

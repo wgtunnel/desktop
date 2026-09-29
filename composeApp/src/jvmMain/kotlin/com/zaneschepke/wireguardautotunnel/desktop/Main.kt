@@ -44,7 +44,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
@@ -59,8 +62,10 @@ import com.wgtunnel.backend.LogLevel
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
+import com.zaneschepke.wireguardautotunnel.client.data.repository.PropertiesClientCacheRepository
 import com.zaneschepke.wireguardautotunnel.client.di.databaseModule
 import com.zaneschepke.wireguardautotunnel.client.di.serviceModule
+import com.zaneschepke.wireguardautotunnel.client.domain.model.WindowBounds
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.ClientCacheRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
@@ -105,8 +110,12 @@ import dev.nucleusframework.energymanager.EnergyManager
 import dev.nucleusframework.window.material.MaterialDecoratedWindow
 import dev.nucleusframework.window.material.MaterialTitleBar
 import dev.nucleusframework.window.newFullscreenControls
+import java.awt.GraphicsEnvironment
+import java.awt.Rectangle
 import java.nio.file.Paths
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -115,6 +124,42 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
 import org.orbitmvi.orbit.compose.collectAsState
+import kotlin.time.Duration.Companion.milliseconds
+
+private val DEFAULT_WINDOW_SIZE = DpSize(900.dp, 650.dp)
+
+private data class InitialWindowState(
+    val size: DpSize,
+    val position: WindowPosition,
+    val placement: WindowPlacement,
+)
+
+private fun loadInitialWindowState(): InitialWindowState {
+    val default =
+        InitialWindowState(
+            DEFAULT_WINDOW_SIZE,
+            WindowPosition.PlatformDefault,
+            WindowPlacement.Floating,
+        )
+    val bounds =
+        runCatching { runBlocking { PropertiesClientCacheRepository().getWindowBounds() } }
+            .getOrNull() ?: return default
+    val savedRect =
+        Rectangle(bounds.x.toInt(), bounds.y.toInt(), bounds.width.toInt(), bounds.height.toInt())
+    // If the saved position doesn't land on any currently connected screen, fallback to default
+    val onScreen = runCatching {
+        GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.any {
+            it.defaultConfiguration.bounds.intersects(savedRect)
+        }
+    }
+        .getOrDefault(true)
+    if (!onScreen) return default
+    return InitialWindowState(
+        size = DpSize(bounds.width.dp, bounds.height.dp),
+        position = WindowPosition(bounds.x.dp, bounds.y.dp),
+        placement = if (bounds.isMaximized) WindowPlacement.Maximized else WindowPlacement.Floating,
+    )
+}
 
 fun main(args: Array<String>) {
     Logger.setLogWriters(CommonWriter())
@@ -149,7 +194,13 @@ fun main(args: Array<String>) {
         var accentStyle by remember { mutableStateOf(AccentStyle.TONAL_SPOT) }
         var trayIconAppearance by remember { mutableStateOf(TrayIconAppearance.AUTOMATIC) }
 
-        val windowState = rememberWindowState(size = DpSize(1000.dp, 700.dp))
+        val initialWindowState = remember { loadInitialWindowState() }
+        val windowState =
+            rememberWindowState(
+                size = initialWindowState.size,
+                position = initialWindowState.position,
+                placement = initialWindowState.placement,
+            )
 
         fun bringToFront() {
             val win = nucleusWindowRef ?: return
@@ -301,6 +352,37 @@ fun main(args: Array<String>) {
                     val viewModel: AppViewModel = koinViewModel()
                     val uiState by viewModel.collectAsState()
                     val autoLaunchFailedLabel = stringResource(Res.string.autolaunch_update_failed)
+
+                    // Persist window bounds so the app reopens where the user left it
+                    val windowCacheRepository = koinInject<ClientCacheRepository>()
+                    var lastFloatingSize by remember { mutableStateOf(windowState.size) }
+                    var lastFloatingPosition by remember { mutableStateOf(windowState.position) }
+
+                    LaunchedEffect(windowState.placement, windowState.size, windowState.position) {
+                        if (windowState.placement == WindowPlacement.Floating) {
+                            lastFloatingSize = windowState.size
+                            lastFloatingPosition = windowState.position
+                        }
+                    }
+
+                    LaunchedEffect(lastFloatingSize, lastFloatingPosition, windowState.placement) {
+                        val size = lastFloatingSize
+                        val position = lastFloatingPosition
+                        if (!size.width.isSpecified || !size.height.isSpecified)
+                            return@LaunchedEffect
+                        if (position !is WindowPosition.Absolute) return@LaunchedEffect
+                        // Debounce so dragging/resizing doesn't hit disk on every pixel.
+                        delay(500.milliseconds)
+                        windowCacheRepository.updateWindowBounds(
+                            WindowBounds(
+                                width = size.width.value,
+                                height = size.height.value,
+                                x = position.x.value,
+                                y = position.y.value,
+                                isMaximized = windowState.placement == WindowPlacement.Maximized,
+                            )
+                        )
+                    }
 
                     LaunchedEffect(
                         uiState.theme,

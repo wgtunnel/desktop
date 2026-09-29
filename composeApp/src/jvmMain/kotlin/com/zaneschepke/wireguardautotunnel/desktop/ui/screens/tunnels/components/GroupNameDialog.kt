@@ -14,15 +14,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.group_name
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.add_group
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.group_name
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.okay
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.InfoDialog
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.textbox.ConfigurationTextBox

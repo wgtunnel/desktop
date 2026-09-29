@@ -146,7 +146,8 @@ val stagePackagingSidecars =
 // (nested under common/bin/) into one tree, fed to nativeDistributions.appResourcesRootDir.
 val stageAppResources =
     tasks.register<Sync>("stageAppResources") {
-        description = "Combine packaging sidecars and the compiled daemon binary for appResourcesRootDir"
+        description =
+            "Combine packaging sidecars and the compiled daemon binary for appResourcesRootDir"
         into(layout.buildDirectory.dir("app-resources-root"))
         from(stagePackagingSidecars.map { it.outputDir })
         into("common/bin") {
@@ -256,26 +257,44 @@ nucleus.application {
             // dependency list
             pacmanDepends = listOf("gtk3", "gcc-libs", "freetype2", "fontconfig")
             rpmRequires = listOf("gtk3", "glibc", "libstdc++", "freetype", "fontconfig")
-            debDepends = listOf("libgtk-3-0", "libc6", "libstdc++6", "libfreetype6", "libfontconfig1")
+            debDepends =
+                listOf("libgtk-3-0", "libc6", "libstdc++6", "libfreetype6", "libfontconfig1")
             iconFile.set(rootProject.file("packaging/linux/icon.png"))
             afterInstall.set(rootProject.file("packaging/linux/after-install.sh"))
             afterRemove.set(rootProject.file("packaging/linux/after-remove.sh"))
             // electron-builder doesn't substitute template variables in before hooks, so these
-            // point at stagePackagingSidecars's pre-substituted copies instead of the raw templates.
+            // point at stagePackagingSidecars's pre-substituted copies instead of the raw
+            // templates.
             beforeInstall.set(
-                layout.file(stagePackagingSidecars.map { it.hooksOutputDir.get().asFile.resolve("before-install.sh") })
+                layout.file(
+                    stagePackagingSidecars.map {
+                        it.hooksOutputDir.get().asFile.resolve("before-install.sh")
+                    }
+                )
             )
             beforeRemove.set(
-                layout.file(stagePackagingSidecars.map { it.hooksOutputDir.get().asFile.resolve("before-remove.sh") })
+                layout.file(
+                    stagePackagingSidecars.map {
+                        it.hooksOutputDir.get().asFile.resolve("before-remove.sh")
+                    }
+                )
             )
             // Pacman only runs afterUpgrade/beforeUpgrade (never afterInstall/beforeInstall) when
             // replacing an already-installed package, so the same registration/stop logic needs to
             // be reachable from both
             afterUpgrade.set(
-                layout.file(stagePackagingSidecars.map { it.hooksOutputDir.get().asFile.resolve("after-upgrade.sh") })
+                layout.file(
+                    stagePackagingSidecars.map {
+                        it.hooksOutputDir.get().asFile.resolve("after-upgrade.sh")
+                    }
+                )
             )
             beforeUpgrade.set(
-                layout.file(stagePackagingSidecars.map { it.hooksOutputDir.get().asFile.resolve("before-install.sh") })
+                layout.file(
+                    stagePackagingSidecars.map {
+                        it.hooksOutputDir.get().asFile.resolve("before-install.sh")
+                    }
+                )
             )
             appImage.desktopEntries =
                 mapOf(
@@ -351,7 +370,8 @@ val wintunDllFile = rootProject.file("packaging/windows/wintun/win32-$windowsNat
 val graalvmSidecarTaskNames = mutableListOf<String>()
 
 // Windows-only: WinSW needs the daemon exe and wintun.dll sitting next to the GUI binary at the
-// app root, not under bin/ so this copy stays. On Linux/other platforms the daemon binary already reaches bin/ via
+// app root, not under bin/ so this copy stays. On Linux/other platforms the daemon binary already
+// reaches bin/ via
 // stageAppResources -> appResourcesRootDir, so no equivalent task is needed there.
 if (isWindows) {
     tasks.register<Copy>("copyGraalvmExtraLaunchersToRoot") {

@@ -135,7 +135,9 @@ class AutoTunnelSupervisor(
             }
 
         override suspend fun <T> exclusively(block: suspend (TunnelActions) -> T): T =
-            tunnelActionMutex.withLock { block(actions) }
+            tunnelActionMutex.withLock {
+                block(actions)
+            }
     }
 
     private suspend fun startFromPlan(tunnelPlan: AutoTunnelTunnelConfigDto) {

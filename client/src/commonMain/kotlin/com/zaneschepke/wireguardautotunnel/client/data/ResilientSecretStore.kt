@@ -18,7 +18,9 @@ class ResilientSecretStore(private val service: String) {
     }
 
     fun get(name: String): String? {
-        FileSecretStore.get(service, name)?.let { return it }
+        FileSecretStore.get(service, name)?.let {
+            return it
+        }
         return keyring?.let { k -> runCatching { k.get(name) }.getOrNull() }
     }
 

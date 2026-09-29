@@ -124,7 +124,8 @@ class AppViewModel(
                                         id = DAEMON_NOT_RUNNING_TOAST_ID,
                                         message = message,
                                         copyText = daemonStartCommand(),
-                                        copyLabel = getString(Res.string.daemon_start_command_label),
+                                        copyLabel =
+                                            getString(Res.string.daemon_start_command_label),
                                     )
                                 } else {
                                     AppSideEffect.Toast(message = message, type = ToastType.Warning)

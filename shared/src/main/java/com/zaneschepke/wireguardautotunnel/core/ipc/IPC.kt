@@ -77,8 +77,7 @@ object IPC {
             isWindows -> windowsIpcBaseDir(home)
             isMac -> File("$home/Library/Application Support")
             else -> {
-                val runtimeDir =
-                    File(System.getenv("XDG_RUNTIME_DIR") ?: "/run/user/${unixUid()}")
+                val runtimeDir = File(System.getenv("XDG_RUNTIME_DIR") ?: "/run/user/${unixUid()}")
                 if (runtimeDir.isDirectory) runtimeDir else File("$home/.local/share")
             }
         }
@@ -89,20 +88,20 @@ object IPC {
     private fun windowsIpcBaseDir(home: String): File {
         val roaming = File(System.getenv("APPDATA") ?: "$home\\AppData\\Roaming")
         val profile = System.getenv("USERPROFILE") ?: home
-        val roamingIsLocal =
-            runCatching { roaming.toPath().normalize().startsWith(Paths.get(profile).normalize()) }
-                .getOrDefault(false)
+        val roamingIsLocal = runCatching {
+            roaming.toPath().normalize().startsWith(Paths.get(profile).normalize())
+        }
+            .getOrDefault(false)
         return if (roamingIsLocal) roaming
         else File(System.getenv("LOCALAPPDATA") ?: "$home\\AppData\\Local")
     }
 
-    private fun unixUid(): String =
-        runCatching {
-                val process = ProcessBuilder("id", "-u").start()
-                process.waitFor()
-                process.inputStream.bufferedReader().readText().trim()
-            }
-            .getOrDefault("0")
+    private fun unixUid(): String = runCatching {
+        val process = ProcessBuilder("id", "-u").start()
+        process.waitFor()
+        process.inputStream.bufferedReader().readText().trim()
+    }
+        .getOrDefault("0")
 
     private fun ipcKeyFile(): File {
         val dir = File(ipcBaseDir(), AppVariant.current.ipcFolder)

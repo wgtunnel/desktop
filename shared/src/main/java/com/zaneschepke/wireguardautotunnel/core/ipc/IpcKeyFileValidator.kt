@@ -9,10 +9,10 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
- * Resolves and validates the IPC key file a client claims to be using, without trusting
- * the claimed path itself. The check that matters is [Result.Trusted] requiring the file to sit
- * exactly at the owning account's expected IPC directory (see
- * [SystemHomeDirectory.expectedIpcBaseDir]), derived from the OS's user database.
+ * Resolves and validates the IPC key file a client claims to be using, without trusting the claimed
+ * path itself. The check that matters is [Result.Trusted] requiring the file to sit exactly at the
+ * owning account's expected IPC directory (see [SystemHomeDirectory.expectedIpcBaseDir]), derived
+ * from the OS's user database.
  */
 object IpcKeyFileValidator {
 
@@ -50,7 +50,10 @@ object IpcKeyFileValidator {
         // instead of assuming Linux/macOS-style case sensitivity everywhere.
         if (
             !keyFile.name.equals(IPC.KEY_FILE, ignoreCase = isWindows) ||
-                !(keyFile.parentFile?.name).equals(AppVariant.current.ipcFolder, ignoreCase = isWindows)
+                !(keyFile.parentFile?.name).equals(
+                    AppVariant.current.ipcFolder,
+                    ignoreCase = isWindows,
+                )
         ) {
             return Result.Rejected(
                 "Path does not match expected structure: $keyPath " +
@@ -155,9 +158,10 @@ object IpcKeyFileValidator {
         ownerSid.equals(profileSid, ignoreCase = true) ||
             ownerSid.equals(WindowsSid.ADMINISTRATORS, ignoreCase = true)
 
-    private fun expectedKeyPathUnder(base: Path): Path =
-        runCatching { base.toRealPath() }
-            .getOrElse { base.normalize() }
-            .resolve(AppVariant.current.ipcFolder)
-            .resolve(IPC.KEY_FILE)
+    private fun expectedKeyPathUnder(base: Path): Path = runCatching {
+        base.toRealPath()
+    }
+        .getOrElse { base.normalize() }
+        .resolve(AppVariant.current.ipcFolder)
+        .resolve(IPC.KEY_FILE)
 }

@@ -7,7 +7,8 @@ import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelGroup as Do
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelGroupRepository
 import kotlinx.coroutines.flow.map
 
-class RoomTunnelGroupRepository(private val tunnelGroupDao: TunnelGroupDao) : TunnelGroupRepository {
+class RoomTunnelGroupRepository(private val tunnelGroupDao: TunnelGroupDao) :
+    TunnelGroupRepository {
 
     override val flow = tunnelGroupDao.getAllFlow().map { groups -> groups.map { it.toDomain() } }
 

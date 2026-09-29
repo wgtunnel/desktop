@@ -117,7 +117,13 @@ fun moveDisplayedRows(
     val fromRow = rows[fromIndex]
     val toRow = rows[toIndex]
     if (fromRow.scopeKey != toRow.scopeKey) {
-        return moveTunnelAcrossScopes(groups, tunnels, fromRow, toRow, movingDown = fromIndex < toIndex)
+        return moveTunnelAcrossScopes(
+            groups,
+            tunnels,
+            fromRow,
+            toRow,
+            movingDown = fromIndex < toIndex,
+        )
     }
     val scopeGroupId =
         when (fromRow) {
@@ -126,8 +132,12 @@ fun moveDisplayedRows(
         }
     if (scopeGroupId != null) {
         val children = tunnels.filter { it.groupId == scopeGroupId }.sortedBy { it.position }
-        val fromChild = children.indexOfFirst { it.id == (fromRow as TunnelListRow.TunnelRow).tunnel.id }
-        val toChild = children.indexOfFirst { it.id == (toRow as TunnelListRow.TunnelRow).tunnel.id }
+        val fromChild = children.indexOfFirst {
+            it.id == (fromRow as TunnelListRow.TunnelRow).tunnel.id
+        }
+        val toChild = children.indexOfFirst {
+            it.id == (toRow as TunnelListRow.TunnelRow).tunnel.id
+        }
         if (fromChild < 0 || toChild < 0) return null
         return groups to moveGroupChildren(tunnels, scopeGroupId, fromChild, toChild)
     }
@@ -140,10 +150,6 @@ fun moveDisplayedRows(
     return reindexRoot(root, tunnels)
 }
 
-/**
- * Dragging a tunnel over a row of a different scope moves it there: onto a group's child row joins
- * that group, onto a top level row leaves its group. Groups never nest, so a header stays put.
- */
 private fun moveTunnelAcrossScopes(
     groups: List<TunnelGroup>,
     tunnels: List<TunnelConfig>,
@@ -202,9 +208,9 @@ private fun normalizeChildren(
             .groupBy { it.groupId }
             .values
             .flatMap { list ->
-                list.sortedBy { it.position }.mapIndexed { index, tunnel ->
-                    tunnel.copy(position = index)
-                }
+                list
+                    .sortedBy { it.position }
+                    .mapIndexed { index, tunnel -> tunnel.copy(position = index) }
             }
     return groups to (tunnels.filter { it.groupId == null } + children)
 }

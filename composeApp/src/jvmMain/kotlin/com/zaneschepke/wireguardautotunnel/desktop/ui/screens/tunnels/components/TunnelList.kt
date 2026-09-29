@@ -27,19 +27,18 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelGroup
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.group_active_count
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.collapse_group
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_group
@@ -51,6 +50,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.expand
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_group
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_selected
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.group_active_count
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.group_tunnel_count
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.move_to_group
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_tunnels_click_add
@@ -189,7 +189,9 @@ fun TunnelList(
                                         if (row.childCount > 0) {
                                             add(
                                                 NucleusContextMenuItem(deleteGroupAndTunnelsLabel) {
-                                                    onDelete(DeleteIntent.GroupAndTunnels(row.group))
+                                                    onDelete(
+                                                        DeleteIntent.GroupAndTunnels(row.group)
+                                                    )
                                                 }
                                             )
                                         }
@@ -212,12 +214,16 @@ fun TunnelList(
                                                     true
                                                 } else false
                                             }
-                                            .then(if (isDragging) Modifier.zIndex(1f) else Modifier),
+                                            .then(
+                                                if (isDragging) Modifier.zIndex(1f) else Modifier
+                                            ),
                                     onClick = { onToggleGroup(row.group) },
                                     description =
                                         if (row.childCount > 0) {
                                             {
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
                                                     Text(
                                                         pluralStringResource(
                                                             Res.plurals.group_tunnel_count,
@@ -233,8 +239,10 @@ fun TunnelList(
                                                                     Res.string.group_active_count,
                                                                     row.activeCount,
                                                                 ),
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.primary,
+                                                            style =
+                                                                MaterialTheme.typography.bodySmall,
+                                                            color =
+                                                                MaterialTheme.colorScheme.primary,
                                                         )
                                                     }
                                                 }
@@ -264,8 +272,7 @@ fun TunnelList(
                             }
                         }
                         is TunnelListRow.TunnelRow -> {
-                            val item =
-                                uiState.tunnelItems.first { it.config.id == row.tunnel.id }
+                            val item = uiState.tunnelItems.first { it.config.id == row.tunnel.id }
                             val isSelected = uiState.selectedTunnels.contains(item.config)
                             ContextMenuArea(
                                 items = {
@@ -343,7 +350,9 @@ fun TunnelList(
                                                 else Modifier
                                             )
                                             .pointerHoverIcon(PointerIcon.Hand)
-                                            .then(if (isDragging) Modifier.zIndex(1f) else Modifier),
+                                            .then(
+                                                if (isDragging) Modifier.zIndex(1f) else Modifier
+                                            ),
                                     onClick = {
                                         val keys = windowInfo.keyboardModifiers
                                         val additive = keys.isCtrlPressed || keys.isMetaPressed

@@ -24,9 +24,9 @@ object SystemHomeDirectory {
         get() = osName.contains("mac")
 
     /**
-     * Base directory for user's IPC key folder using the per user XDG
-     * runtime dir on Linux and falls back to ~/.local/share if no session manager created one.
-     * On macOS, the registered home dir plus the platform's app data suffix.
+     * Base directory for user's IPC key folder using the per user XDG runtime dir on Linux and
+     * falls back to ~/.local/share if no session manager created one. On macOS, the registered home
+     * dir plus the platform's app data suffix.
      *
      * Not used on Windows (see [windowsProfiles]).
      */
@@ -50,8 +50,11 @@ object SystemHomeDirectory {
 
     private fun runCommand(vararg command: String): String? = runCatching {
         val process = ProcessBuilder(*command).redirectErrorStream(true).start()
-        // Drained while waiting as a full pipe buffer (~4 KB on Windows) blocks the child until timeout.
-        val output = CompletableFuture.supplyAsync { process.inputStream.bufferedReader().readText() }
+        // Drained while waiting as a full pipe buffer (~4 KB on Windows) blocks the child until
+        // timeout.
+        val output = CompletableFuture.supplyAsync {
+            process.inputStream.bufferedReader().readText()
+        }
         if (!process.waitFor(5, TimeUnit.SECONDS)) {
             process.destroyForcibly()
             return@runCatching null
@@ -100,7 +103,8 @@ object SystemHomeDirectory {
             val output = runCommand(*query) ?: continue
             val profiles =
                 parseWindowsProfileList(output) { name ->
-                    System.getenv().entries
+                    System.getenv()
+                        .entries
                         .firstOrNull { it.key.equals(name, ignoreCase = true) }
                         ?.value
                 }
@@ -120,7 +124,10 @@ object SystemHomeDirectory {
      * Parses `reg query <ProfileList> /s /v ProfileImagePath`. [env] expands `%NAME%`, which reg
      * prints unexpanded for REG_EXPAND_SZ.
      */
-    internal fun parseWindowsProfileList(output: String, env: (String) -> String?): Map<String, Path> {
+    internal fun parseWindowsProfileList(
+        output: String,
+        env: (String) -> String?,
+    ): Map<String, Path> {
         val profiles = mutableMapOf<String, Path>()
         var currentSid: String? = null
         for (raw in output.lines()) {

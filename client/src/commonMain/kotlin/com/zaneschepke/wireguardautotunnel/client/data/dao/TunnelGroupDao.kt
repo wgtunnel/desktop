@@ -17,8 +17,7 @@ interface TunnelGroupDao {
     @Query("SELECT * FROM tunnel_group ORDER BY position ASC")
     suspend fun getAll(): List<TunnelGroup>
 
-    @Query("SELECT * FROM tunnel_group WHERE id = :id")
-    suspend fun getById(id: Long): TunnelGroup?
+    @Query("SELECT * FROM tunnel_group WHERE id = :id") suspend fun getById(id: Long): TunnelGroup?
 
     @Query("DELETE FROM tunnel_group WHERE id = :id") suspend fun deleteById(id: Long)
 

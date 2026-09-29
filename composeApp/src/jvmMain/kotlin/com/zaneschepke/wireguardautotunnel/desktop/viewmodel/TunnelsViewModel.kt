@@ -208,9 +208,7 @@ class TunnelsViewModel(
                         directory = null,
                         dialogSettings = FileKitDialogSettings.createDefault(),
                     ) to
-                        FileUtils.createZipArchive(
-                            children.associate { it.name to it.quickConfig }
-                        )
+                        FileUtils.createZipArchive(children.associate { it.name to it.quickConfig })
                 }
             }
 
@@ -277,7 +275,10 @@ class TunnelsViewModel(
                 tunnelGroupRepository.delete(intent.group.id)
                 val remaining = state.selectedTunnels.filter { it.id !in childIds }
                 reduce {
-                    state.copy(selectedTunnels = remaining, isSelectionMode = remaining.isNotEmpty())
+                    state.copy(
+                        selectedTunnels = remaining,
+                        isSelectionMode = remaining.isNotEmpty(),
+                    )
                 }
             }
         }

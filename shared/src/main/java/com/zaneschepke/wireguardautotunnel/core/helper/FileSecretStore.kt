@@ -2,9 +2,7 @@ package com.zaneschepke.wireguardautotunnel.core.helper
 
 import java.io.File
 
-/**
- * Raw file secret storage for environments where no OS keyring daemon is available
- */
+/** Raw file secret storage for environments where no OS keyring daemon is available */
 object FileSecretStore {
     private fun secretsDir(): File = File(FilePathsHelper.getDatabaseDir(), "secrets")
 

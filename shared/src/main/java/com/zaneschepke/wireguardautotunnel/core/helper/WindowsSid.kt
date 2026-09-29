@@ -19,8 +19,8 @@ object WindowsSid {
     private val SID_EXACT = Regex("^S-1-\\d+(?:-\\d+)+$")
 
     /**
-     * SID of the account this process runs as. From the token, so it's the user's own SID even
-     * when elevated (unlike a file owner). Uses `whoami`, not PowerShell. GUI only.
+     * SID of the account this process runs as. From the token, so it's the user's own SID even when
+     * elevated (unlike a file owner). Uses `whoami`, not PowerShell. GUI only.
      */
     fun currentUserSid(): String? = runCatching {
         val process =
@@ -42,11 +42,16 @@ object WindowsSid {
         // Owner via .Sddl, not .GetOwner(): Constrained Language Mode blocks method calls but not
         // property reads.
         val script = "(Get-Acl -LiteralPath \$env:WGT_SID_PATH).Sddl"
-        val encoded =
-            Base64.getEncoder().encodeToString(script.toByteArray(Charsets.UTF_16LE))
+        val encoded = Base64.getEncoder().encodeToString(script.toByteArray(Charsets.UTF_16LE))
 
         val builder =
-            ProcessBuilder("powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded)
+            ProcessBuilder(
+                    "powershell",
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-EncodedCommand",
+                    encoded,
+                )
                 // stderr not merged: PowerShell's error text must never be mistaken for a SID.
                 .redirectError(ProcessBuilder.Redirect.DISCARD)
         builder.environment()["WGT_SID_PATH"] = path.toString()
