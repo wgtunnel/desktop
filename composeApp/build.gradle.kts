@@ -212,16 +212,19 @@ nucleus.application {
             "WG Tunnel: WireGuard and AmneziaWG VPN client with auto-tunneling, lockdown and proxying."
         homepage = "https://wgtunnel.com"
         copyright = "MIT"
-        fileAssociation(
-            mimeType = "application/zip",
-            extension = "zip",
-            description = "ZIP Archive",
-        )
-        fileAssociation(
-            mimeType = "text/plain",
-            extension = "conf",
-            description = "Configuration File",
-        )
+        // Disabling fileAssociations for electron-builder's NSIS target as it registers WG Tunnel as
+        // the system default for these extensions and overrides users configured defaults instead of just
+        // registering the app as an option for these files. This is a known quirk.
+//        fileAssociation(
+//            mimeType = "application/zip",
+//            extension = "zip",
+//            description = "ZIP Archive",
+//        )
+//        fileAssociation(
+//            mimeType = "text/plain",
+//            extension = "conf",
+//            description = "Configuration File",
+//        )
 
         compressionLevel = CompressionLevel.Maximum
 
