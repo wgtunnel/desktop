@@ -11,14 +11,14 @@ else
     HOST_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 endif
 ifeq ($(wildcard $(JAVA_HOME)/include/jni.h),)
-  override JAVA_HOME := $(subst \,/,$(shell dirname $$(dirname $$(readlink -f $$(which java)))))
+  override JAVA_HOME := $(subst \,/,$(shell java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java\.home = //p'))
 endif
 
 # jni_md.h lives under include/<os>/; list all so native and cross builds work.
 JDK_JNI_CFLAGS := -I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/win32" -I"$(JAVA_HOME)/include/linux" -I"$(JAVA_HOME)/include/darwin"
 
 ifeq ($(HOST_OS),darwin)
-    PLATFORMS := darwin-amd64 darwin-arm64 linux-amd64 windows-amd64 windows-arm64
+    PLATFORMS := darwin-amd64 darwin-arm64
 else ifeq ($(filter linux,$(HOST_OS)),linux)
     PLATFORMS := linux-amd64 windows-amd64
 else

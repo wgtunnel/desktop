@@ -80,21 +80,27 @@ class DaemonLogService(
     }
 
     /**
-     * OS captured native go stderr. Windows WinSW already writes rotate files next to us. Linux
-     * journal is exported on demand into a snapshot file so it can ride along in the zip.
+     * OS captured native go stderr. Windows WinSW already writes rotate files next to us. macOS
+     * launchd does the same into a single combined file (see MAC_DAEMON_LOG_NAME). Linux journal is
+     * exported on demand into a snapshot file so it can ride along in the zip.
      */
     private fun nativeCaptureFiles(): List<File> {
         val extras = mutableListOf<File>()
-        val windows =
-            System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
-        if (windows) {
-            // Always <configBaseName>.{out,err,wrapper}.log - see WINSW_CONFIG_BASE_NAME.
-            listOf("out", "err", "wrapper")
-                .map { File(logDir, "$WINSW_CONFIG_BASE_NAME.$it.log") }
-                .filter { it.isFile }
-                .let { extras.addAll(it) }
-        } else {
-            snapshotJournal()?.let { extras += it }
+        val osName = System.getProperty("os.name").orEmpty()
+        val windows = osName.startsWith("Windows", ignoreCase = true)
+        val mac = osName.startsWith("Mac", ignoreCase = true)
+        when {
+            windows -> {
+                // Always <configBaseName>.{out,err,wrapper}.log
+                listOf("out", "err", "wrapper")
+                    .map { File(logDir, "$WINSW_CONFIG_BASE_NAME.$it.log") }
+                    .filter { it.isFile }
+                    .let { extras.addAll(it) }
+            }
+            mac -> {
+                File(logDir, MAC_DAEMON_LOG_NAME).takeIf { it.isFile }?.let { extras += it }
+            }
+            else -> snapshotJournal()?.let { extras += it }
         }
         return extras
     }
@@ -137,6 +143,8 @@ class DaemonLogService(
         // The literal filename StagePackagingSidecarsTask stages the WinSW config as - WinSW
         // derives its own log file base name from the config file's name.
         const val WINSW_CONFIG_BASE_NAME = "service-wrapper"
+        // Must match the filename in packaging/macos/com.wgtunnel.daemon.plist
+        const val MAC_DAEMON_LOG_NAME = "daemon.log"
         private val journalJson = Json { ignoreUnknownKeys = true }
         private val OWN_LOG_PREFIX = Regex("^(Verbose|Debug|Info|Warn|Error|Assert): \\(")
     }

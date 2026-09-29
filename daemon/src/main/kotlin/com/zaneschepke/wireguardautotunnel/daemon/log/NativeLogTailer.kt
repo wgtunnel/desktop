@@ -35,11 +35,18 @@ class NativeLogTailer(private val logDir: File) {
 
     fun start(scope: CoroutineScope) {
         stop()
-        val windows =
-            System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
+        val osName = System.getProperty("os.name").orEmpty()
+        val windows = osName.startsWith("Windows", ignoreCase = true)
+        val mac = osName.startsWith("Mac", ignoreCase = true)
         job =
             scope.launch(Dispatchers.IO) {
-                runCatching { if (windows) tailWindows() else tailLinux() }
+                runCatching {
+                    when {
+                        windows -> tailWindows()
+                        mac -> tailMacOS()
+                        else -> tailLinux()
+                    }
+                }
                     .onFailure { log.w(it) { "Native log tail ended" } }
             }
     }
@@ -61,14 +68,21 @@ class NativeLogTailer(private val logDir: File) {
         proc.inputStream.bufferedReader().useLines { lines -> lines.forEach(::forwardIfNative) }
     }
 
-    private suspend fun tailWindows() {
-        // WinSW may not have created the .err file yet the moment we look so we loop
+    private suspend fun tailWindows() = tailPolledFile(::findWinSwLogFile, "Windows")
+
+    private suspend fun tailMacOS() = tailPolledFile(::findMacDaemonLogFile, "macOS")
+
+    // Shared by Windows (WinSW's .err.log) and macOS (launchd's daemon.log, per
+    // packaging/macos/com.wgtunnel.daemon.plist). Both  capture theprocess's stdout/stderr into
+    // a plain file we can only poll and seek, unlike Linux's journalctl -f.
+    private suspend fun tailPolledFile(findFile: () -> File?, platformLabel: String) {
+        // The file may not exist yet the moment we look (daemon just started) so we loop
         // until we find it
         var file: File? = null
         var position = 0L
         while (currentCoroutineContext().isActive) {
             if (file?.exists() != true) {
-                file = findWinSwLogFile()
+                file = findFile()
                 if (file == null) {
                     delay(POLL_INTERVAL_MS.milliseconds)
                     continue
@@ -89,7 +103,7 @@ class NativeLogTailer(private val logDir: File) {
                     }
                 }
             } catch (e: java.io.IOException) {
-                log.d(e) { "Windows native log read failed, will retry" }
+                log.d(e) { "$platformLabel native log read failed, will retry" }
             }
             delay(POLL_INTERVAL_MS.milliseconds)
         }
@@ -97,6 +111,9 @@ class NativeLogTailer(private val logDir: File) {
 
     private fun findWinSwLogFile(): File? =
         File(logDir, "${DaemonLogService.WINSW_CONFIG_BASE_NAME}.err.log").takeIf { it.isFile }
+
+    private fun findMacDaemonLogFile(): File? =
+        File(logDir, DaemonLogService.MAC_DAEMON_LOG_NAME).takeIf { it.isFile }
 
     private fun forwardIfNative(line: String) {
         val (level, rest) =

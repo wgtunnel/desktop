@@ -116,7 +116,7 @@ fun PreferredTunnelScreen(
                                         currentSsidText = ""
                                     },
                                 )
-                                if (Platform.Current != Platform.Windows) {
+                                if (Platform.Current == Platform.Linux) {
                                     NetworkRuleInput(
                                         inputTitle = stringResource(Res.string.trusted_bssid),
                                         placeholder = viewModel.bssidHints.firstOrNull().orEmpty(),

@@ -1,4 +1,5 @@
 import dev.nucleusframework.desktop.application.dsl.CompressionLevel
+import dev.nucleusframework.desktop.application.dsl.DmgFormat
 import dev.nucleusframework.desktop.application.dsl.GarbageCollector
 import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
 import dev.nucleusframework.desktop.application.dsl.ReleaseChannel
@@ -91,6 +92,7 @@ kotlin {
             implementation(libs.nucleus.graalvm.runtime)
             implementation(libs.nucleus.updater.runtime)
             implementation(libs.nucleus.autolaunch)
+            implementation(libs.nucleus.service.management.macos)
             implementation(project(":daemon"))
         }
     }
@@ -104,6 +106,8 @@ kotlin {
 buildConfig { buildConfigField("APP_VERSION", provider { "${project.version}" }) }
 
 val isWindows = System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
+val isMacOS = System.getProperty("os.name").orEmpty().startsWith("Mac", ignoreCase = true)
+val macDaemonBundleIdValue = "com.wgtunnel.$appFsName.daemon"
 val packagedJvmArgs =
     listOf(
         "-Dapp.variant=$packagingVariant",
@@ -122,6 +126,9 @@ val stagePackagingSidecars =
         appFsName.set(packagingAppFsName)
         appDisplayName.set(packagingAppDisplayName)
         windows.set(isWindows)
+        macOS.set(isMacOS)
+        macDaemonBundleId.set(macDaemonBundleIdValue)
+        macDaemonPlist.set(rootProject.file("packaging/macos/com.wgtunnel.daemon.plist"))
         linuxService.set(rootProject.file("packaging/linux/wgtunnel-daemon.service"))
         linuxInstallScript.set(rootProject.file("packaging/linux/tar-install.sh"))
         linuxUninstallScript.set(rootProject.file("packaging/linux/tar-uninstall.sh"))
@@ -203,6 +210,7 @@ nucleus.application {
             TargetFormat.Rpm,
             TargetFormat.Pacman,
             TargetFormat.Tar,
+            // TargetFormat.Dmg, // TODO when signing is ready
         )
         appName = appDisplayName
         packageName = appFsName
@@ -346,6 +354,48 @@ nucleus.application {
                 }
             }
         }
+
+        // TODO when macOS signing is ready
+        //
+        //        macOS {
+        //            packageName = appFsName
+        //            bundleID = "com.wgtunnel.$appFsName"
+        //            dockName = appDisplayName
+        //            appCategory = "public.app-category.utilities"
+        //            // SMAppService's .daemon type (used to register the privileged
+        //            // LaunchDaemon - see AppServiceManager in the GUI code) requires macOS
+        //            // 13.0 (Ventura)+.
+        //            minimumSystemVersion = "13.0"
+        //            iconFile.set(rootProject.file("packaging/macos/icon.icns"))
+        //
+        //            dmg { format = DmgFormat.ULFO }
+        //
+        //            signing {
+        //                val identity = System.getenv("APPLE_SIGNING_IDENTITY")
+        //                if (!identity.isNullOrBlank()) {
+        //                    sign.set(true)
+        //                    this.identity.set(identity)
+        //                    System.getenv("APPLE_SIGNING_KEYCHAIN")?.let { keychain.set(it) }
+        //                }
+        //            }
+        //
+        //            notarization {
+        //                val teamId = System.getenv("APPLE_TEAM_ID")
+        //                if (!teamId.isNullOrBlank()) {
+        //                    this.teamID.set(teamId)
+        //                    val keychainProfileEnv =
+        //                        System.getenv("APPLE_NOTARIZATION_KEYCHAIN_PROFILE")
+        //                    if (!keychainProfileEnv.isNullOrBlank()) {
+        //                        keychainProfile.set(keychainProfileEnv)
+        //                    } else {
+        //                        System.getenv("APPLE_ID")?.let { appleID.set(it) }
+        //                        System.getenv("APPLE_APP_SPECIFIC_PASSWORD")?.let {
+        //                            password.set(it)
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
     }
 }
 
@@ -389,6 +439,33 @@ if (isWindows) {
         into(graalvmLaunchersDir)
     }
     graalvmSidecarTaskNames += "copyGraalvmExtraLaunchersToRoot"
+}
+
+// SMAppService's .daemon type requires the LaunchDaemon plist embedded at
+// Contents/Library/LaunchDaemons/ inside the .app bundle
+if (isMacOS) {
+    val stageMacDaemonPlist =
+        tasks.register<Copy>("stageMacDaemonPlist") {
+            group = "nucleus"
+            description = "Embed the daemon LaunchDaemon plist into the built .app bundle for SMAppService."
+            dependsOn(copyGraalvmSidecarDepends, stagePackagingSidecars)
+            doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
+            from(stagePackagingSidecars.map { it.outputDir.get().asFile.resolve("macos") }) {
+                include("*.plist")
+            }
+            into(
+                provider {
+                    val appDir = graalvmLaunchersDir.get().asFile
+                    val contentsDir =
+                        appDir
+                            .walkTopDown()
+                            .firstOrNull { it.isDirectory && it.name == "Contents" }
+                            ?: appDir.resolve("Contents")
+                    contentsDir.resolve("Library/LaunchDaemons")
+                }
+            )
+        }
+    graalvmSidecarTaskNames += "stageMacDaemonPlist"
 }
 
 tasks.withType<Copy>().configureEach {

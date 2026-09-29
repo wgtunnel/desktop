@@ -46,8 +46,10 @@ class AutoTunnelSupervisor(
      */
     val tunnelActionMutex = Mutex()
 
+    // BSSID is Linux only. Windows 11 24H2 gates it behind Location Services
+    // with no supported bypass and macOS gates it the same way
     private val ignoreBssid: Boolean =
-        System.getProperty("os.name").orEmpty().contains("windows", ignoreCase = true)
+        !System.getProperty("os.name").orEmpty().contains("linux", ignoreCase = true)
 
     private val reconciler =
         AutoTunnelReconciler(scope = scope, status = backend.status, host = DaemonHost())
@@ -61,7 +63,7 @@ class AutoTunnelSupervisor(
     val status: AutoTunnelStatusDto
         get() = statusOf(runningFlow.value, planFlow.value, networkMonitor.info.value)
 
-    suspend fun updatePlan(plan: AutoTunnelConfigDto) {
+    fun updatePlan(plan: AutoTunnelConfigDto) {
         if (planFlow.value != plan) {
             planFlow.value = plan
         }

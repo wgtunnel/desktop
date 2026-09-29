@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>__DAEMON_BUNDLE_ID__</string>
+    <key>BundleProgram</key>
+    <string>Contents/MacOS/bin/__APP_FSNAME__-daemon</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>WG_TUNNEL_SERVICE</key>
+        <string>1</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+    <key>StandardOutPath</key>
+    <string>/Library/Application Support/__APP_FSNAME__/logs/daemon.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Library/Application Support/__APP_FSNAME__/logs/daemon.log</string>
+</dict>
+</plist>
