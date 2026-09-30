@@ -3,6 +3,7 @@ package com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Web
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -44,11 +46,14 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.copied
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.docs_description
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.docs_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.donate
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.download_update
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.downloading_update
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.downloading_update_delta
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.email_description
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.email_subject
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.github
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.github_url
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.install_update
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.installing_update
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.join_matrix
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.join_telegram
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.licenses
@@ -58,7 +63,9 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.my_ema
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.open_issue
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.privacy_policy
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.privacy_policy_url
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ready_to_install_version
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.resources
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.restart_and_install
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.support
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.system_information
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.system_information_copied
@@ -66,6 +73,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.telegr
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.telegram_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.thank_you
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_available_version
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_progress_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website_url
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
@@ -76,8 +84,10 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
+import com.zaneschepke.wireguardautotunnel.desktop.update.UpdateState
 import com.zaneschepke.wireguardautotunnel.desktop.util.DesktopUtils
 import com.zaneschepke.wireguardautotunnel.desktop.util.buildSystemInfoReport
+import com.zaneschepke.wireguardautotunnel.desktop.util.formatFileSize
 import com.zaneschepke.wireguardautotunnel.desktop.util.toClipEntry
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.SupportViewModel
 import kotlinx.coroutines.launch
@@ -241,21 +251,68 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                     },
                 )
                 if (uiState.updateSupported) {
+                    val state = uiState.updateState
                     val updateTitle =
-                        if (uiState.pendingUpdateVersion != null) {
-                            stringResource(Res.string.install_update)
-                        } else {
-                            stringResource(Res.string.check_for_update)
-                        }
-                    val updateDescription =
-                        when {
-                            uiState.updateBusy && uiState.pendingUpdateVersion == null ->
-                                stringResource(Res.string.checking_for_updates)
-                            uiState.pendingUpdateVersion != null ->
+                        when (state) {
+                            is UpdateState.Available -> stringResource(Res.string.download_update)
+                            is UpdateState.Downloading ->
                                 stringResource(
-                                    Res.string.update_available_version,
-                                    uiState.pendingUpdateVersion!!,
+                                    if (state.isDifferential) Res.string.downloading_update_delta
+                                    else Res.string.downloading_update
                                 )
+                            is UpdateState.ReadyToInstall ->
+                                stringResource(Res.string.restart_and_install)
+                            UpdateState.Installing -> stringResource(Res.string.installing_update)
+                            else -> stringResource(Res.string.check_for_update)
+                        }
+                    val updateDescription: (@Composable () -> Unit)? =
+                        when (state) {
+                            UpdateState.Checking -> {
+                                { DescriptionText(stringResource(Res.string.checking_for_updates)) }
+                            }
+                            is UpdateState.Available -> {
+                                {
+                                    DescriptionText(
+                                        stringResource(
+                                            Res.string.update_available_version,
+                                            state.info.version,
+                                        )
+                                    )
+                                }
+                            }
+                            is UpdateState.Downloading -> {
+                                {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        LinearProgressIndicator(
+                                            progress = {
+                                                (state.percent / 100.0).toFloat().coerceIn(0f, 1f)
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
+                                        DescriptionText(
+                                            stringResource(
+                                                Res.string.update_progress_template,
+                                                state.bytesDownloaded.formatFileSize(),
+                                                state.totalBytes.formatFileSize(),
+                                                state.percent.toInt(),
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            is UpdateState.ReadyToInstall -> {
+                                {
+                                    DescriptionText(
+                                        stringResource(
+                                            Res.string.ready_to_install_version,
+                                            state.version,
+                                        )
+                                    )
+                                }
+                            }
+                            is UpdateState.Failed -> {
+                                { DescriptionText(state.message) }
+                            }
                             else -> null
                         }
                     SurfaceRow(
@@ -263,9 +320,19 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                             Icon(Icons.Outlined.InstallDesktop, contentDescription = null)
                         },
                         title = updateTitle,
-                        description = updateDescription?.let { { DescriptionText(it) } },
-                        enabled = !uiState.updateBusy,
-                        onClick = { viewModel.onUpdateAction() },
+                        description = updateDescription,
+                        enabled =
+                            state !is UpdateState.Checking &&
+                                state !is UpdateState.Downloading &&
+                                state !is UpdateState.Installing,
+                        onClick = {
+                            when (state) {
+                                is UpdateState.Available -> viewModel.onDownloadUpdate(state.info)
+                                is UpdateState.ReadyToInstall ->
+                                    viewModel.onInstallUpdate(state.file)
+                                else -> viewModel.onCheckForUpdate()
+                            }
+                        },
                     )
                 }
             }

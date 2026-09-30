@@ -23,9 +23,7 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
 
     @get:Input abstract val macOS: Property<Boolean>
 
-    @get:Input
-    @get:Optional
-    abstract val macDaemonBundleId: Property<String>
+    @get:Input @get:Optional abstract val macDaemonBundleId: Property<String>
 
     @get:InputFile
     @get:Optional

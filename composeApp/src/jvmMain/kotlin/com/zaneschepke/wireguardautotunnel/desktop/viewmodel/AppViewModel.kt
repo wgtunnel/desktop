@@ -24,7 +24,6 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_restart_command_label
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_start_command_label
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.theme_from_image_failed
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_available_in_support_template
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
@@ -167,32 +166,8 @@ class AppViewModel(
             }
 
             intent {
-                if (!appUpdater.isSupported()) return@intent
-                when (val result = appUpdater.check()) {
-                    is UpdateResult.Available -> {
-                        val alreadyNotified =
-                            settingsRepository.get().lastNotifiedUpdateVersion ==
-                                result.info.version
-                        if (!alreadyNotified) {
-                            // Recorded before showing, not after any install so a fresh, newer
-                            // release always overwrites this and notifies again regardless of
-                            // whether the user ever acted on the last one.
-                            settingsRepository.updateLastNotifiedUpdateVersion(result.info.version)
-                            postSideEffect(
-                                AppSideEffect.UpdateAvailableToast(
-                                    id = UPDATE_AVAILABLE_TOAST_ID,
-                                    message =
-                                        getString(
-                                            Res.string.update_available_in_support_template,
-                                            result.info.version,
-                                        ),
-                                )
-                            )
-                        }
-                    }
-                    is UpdateResult.Error -> log.w(result.exception) { "Update check failed" }
-                    UpdateResult.NotAvailable -> Unit
-                }
+                val result = appUpdater.check(silent = true)
+                if (result is UpdateResult.Error) log.w(result.exception) { "Update check failed" }
             }
         }
 
@@ -247,7 +222,6 @@ class AppViewModel(
     companion object {
         private const val DAEMON_NOT_RUNNING_TOAST_ID = "daemon_not_running"
         private const val DAEMON_OUTDATED_TOAST_ID = "daemon_outdated"
-        private const val UPDATE_AVAILABLE_TOAST_ID = "update_available"
         private val DISCONNECT_GRACE_PERIOD = 5.seconds
 
         private val isWindows = Platform.Current == Platform.Windows

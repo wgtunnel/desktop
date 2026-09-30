@@ -1,5 +1,4 @@
 import dev.nucleusframework.desktop.application.dsl.CompressionLevel
-import dev.nucleusframework.desktop.application.dsl.DmgFormat
 import dev.nucleusframework.desktop.application.dsl.GarbageCollector
 import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
 import dev.nucleusframework.desktop.application.dsl.ReleaseChannel
@@ -220,19 +219,6 @@ nucleus.application {
             "WG Tunnel: WireGuard and AmneziaWG VPN client with auto-tunneling, lockdown and proxying."
         homepage = "https://wgtunnel.com"
         copyright = "MIT"
-        // Disabling fileAssociations for electron-builder's NSIS target as it registers WG Tunnel as
-        // the system default for these extensions and overrides users configured defaults instead of just
-        // registering the app as an option for these files. This is a known quirk.
-//        fileAssociation(
-//            mimeType = "application/zip",
-//            extension = "zip",
-//            description = "ZIP Archive",
-//        )
-//        fileAssociation(
-//            mimeType = "text/plain",
-//            extension = "conf",
-//            description = "Configuration File",
-//        )
 
         compressionLevel = CompressionLevel.Maximum
 
@@ -447,7 +433,8 @@ if (isMacOS) {
     val stageMacDaemonPlist =
         tasks.register<Copy>("stageMacDaemonPlist") {
             group = "nucleus"
-            description = "Embed the daemon LaunchDaemon plist into the built .app bundle for SMAppService."
+            description =
+                "Embed the daemon LaunchDaemon plist into the built .app bundle for SMAppService."
             dependsOn(copyGraalvmSidecarDepends, stagePackagingSidecars)
             doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
             from(stagePackagingSidecars.map { it.outputDir.get().asFile.resolve("macos") }) {
@@ -457,9 +444,7 @@ if (isMacOS) {
                 provider {
                     val appDir = graalvmLaunchersDir.get().asFile
                     val contentsDir =
-                        appDir
-                            .walkTopDown()
-                            .firstOrNull { it.isDirectory && it.name == "Contents" }
+                        appDir.walkTopDown().firstOrNull { it.isDirectory && it.name == "Contents" }
                             ?: appDir.resolve("Contents")
                     contentsDir.resolve("Library/LaunchDaemons")
                 }

@@ -113,6 +113,7 @@ import dev.nucleusframework.window.newFullscreenControls
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import java.nio.file.Paths
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -124,7 +125,6 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
 import org.orbitmvi.orbit.compose.collectAsState
-import kotlin.time.Duration.Companion.milliseconds
 
 private val DEFAULT_WINDOW_SIZE = DpSize(900.dp, 650.dp)
 

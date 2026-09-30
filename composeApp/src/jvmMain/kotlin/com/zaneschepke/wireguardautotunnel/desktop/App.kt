@@ -29,12 +29,10 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.dokar.sonner.Toast
-import com.dokar.sonner.ToastType
 import com.dokar.sonner.ToasterState
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.auto_tunnel_active
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.check_for_update
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.collapse_rail
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.connecting_to_daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_connected
@@ -46,7 +44,6 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.animation.PulsingStatusLed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.CommandToastMessage
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.CopyCommandAction
-import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.NavigateAction
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.CustomTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Tab
@@ -80,6 +77,8 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.state.DaemonConnectionStat
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.HealthyGreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WarningAmber
+import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
+import com.zaneschepke.wireguardautotunnel.desktop.update.UpdateState
 import com.zaneschepke.wireguardautotunnel.desktop.util.asTitleString
 import com.zaneschepke.wireguardautotunnel.desktop.util.toClipEntry
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
@@ -89,6 +88,7 @@ import kotlin.collections.listOf
 import kotlin.time.Duration
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectSideEffect
@@ -110,7 +110,8 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
     val railState = rememberWideNavigationRailState(WideNavigationRailValue.Collapsed)
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboard.current
-    val checkForUpdateLabel = stringResource(Res.string.check_for_update)
+    val appUpdater = koinInject<AppUpdater>()
+    val updateState by appUpdater.state.collectAsState()
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -131,19 +132,6 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                                 }
                             },
                         type = sideEffect.type,
-                        duration = Duration.INFINITE,
-                    )
-                )
-            is AppSideEffect.UpdateAvailableToast ->
-                toaster.show(
-                    Toast(
-                        message = sideEffect.message,
-                        id = sideEffect.id,
-                        action =
-                            NavigateAction(checkForUpdateLabel) {
-                                navController.push(Route.Support)
-                            },
-                        type = ToastType.Info,
                         duration = Duration.INFINITE,
                     )
                 )
@@ -228,7 +216,19 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                                         railState.targetValue == WideNavigationRailValue.Expanded,
                                     selected = currentTab == tab,
                                     onClick = { navController.popUpTo(tab.startRoute) },
-                                    icon = { Icon(tab.activeIcon, null) },
+                                    icon = {
+                                        if (
+                                            tab == Tab.SUPPORT &&
+                                                updateState !is UpdateState.Idle &&
+                                                updateState !is UpdateState.Checking
+                                        ) {
+                                            BadgedBox(badge = { Badge() }) {
+                                                Icon(tab.activeIcon, null)
+                                            }
+                                        } else {
+                                            Icon(tab.activeIcon, null)
+                                        }
+                                    },
                                     label = { Text(stringResource(tab.titleRes)) },
                                 )
                             }

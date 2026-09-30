@@ -264,7 +264,6 @@
     <string name="network_pattern_in_use">This network name or pattern is already in use</string>
     <string name="tunnel_not_found">Tunnel not found</string>
     <string name="no_tunnels_selected">No tunnels selected</string>
-    <string name="update_available_in_support_template">Update %1$s is available in Support</string>
     <string name="syncing_with_daemon">Syncing with daemon…</string>
     <string name="daemon_not_running">The WG Tunnel daemon is not running.</string>
     <string name="daemon_start_command_label">Copy Start Command</string>
@@ -285,8 +284,16 @@
     <string name="details">Details</string>
     <string name="install_update">Install update</string>
     <string name="checking_for_updates">Checking for updates…</string>
-    <string name="update_available_version">Update %1$s is available. Click to install.</string>
+    <string name="update_available_version">Update %1$s is available.</string>
     <string name="up_to_date">You're up to date</string>
+    <string name="download_update">Download update</string>
+    <string name="downloading_update">Downloading update…</string>
+    <string name="downloading_update_delta">Downloading update (delta)…</string>
+    <string name="update_progress_template">%1$s / %2$s · %3$d%%</string>
+    <string name="restart_and_install">Restart &amp; Install</string>
+    <string name="ready_to_install_version">Update %1$s is ready. Restart to install.</string>
+    <string name="installing_update">Installing…</string>
+    <string name="update_install_failed">Update install failed.</string>
     <string name="socks5_proxy">SOCKS5 proxy</string>
     <string name="socks5_bind_address">SOCKS5 bind address</string>
     <string name="http_proxy">HTTP proxy</string>

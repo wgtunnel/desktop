@@ -86,7 +86,14 @@
   Pop $0
   DetailPrint "WinSW start exit code: $0"
   ${If} $0 != 0
+    DetailPrint "WG Tunnel daemon service failed to start (exit code $0)"
+    ; A silent run (in-app updater, /S) has nobody watching for this MessageBox - an
+    ; undismissed dialog here would hang the installer indefinitely, which in turn hangs
+    ; the updater's `-Wait`ed PowerShell script, so the app never relaunches. Log and move
+    ; on instead; the app's own daemon-connection state will surface the problem afterward.
+    IfSilent skip_daemon_start_failure_msgbox
     MessageBox MB_ICONEXCLAMATION|MB_OK "WG Tunnel daemon service failed to start (exit code $0). You may need to start it manually from services.msc, or reboot."
+    skip_daemon_start_failure_msgbox:
   ${EndIf}
   Goto done
 
