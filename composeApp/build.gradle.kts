@@ -444,7 +444,8 @@ if (isMacOS) {
             group = "nucleus"
             description =
                 "Embed the daemon LaunchDaemon plist into the built .app bundle for SMAppService."
-            dependsOn(copyGraalvmSidecarDepends, stagePackagingSidecars)
+            // THe copy copyGraalvmSidecarDepends equivalent for macOS
+            dependsOn("copyGraalvmBinaryToApp", stagePackagingSidecars)
             doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
             from(stagePackagingSidecars.map { it.outputDir.get().asFile.resolve("macos") }) {
                 include("*.plist")
