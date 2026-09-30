@@ -1,4 +1,5 @@
 import dev.nucleusframework.desktop.application.dsl.CompressionLevel
+import dev.nucleusframework.desktop.application.dsl.DmgFormat
 import dev.nucleusframework.desktop.application.dsl.GarbageCollector
 import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
 import dev.nucleusframework.desktop.application.dsl.ReleaseChannel
@@ -209,14 +210,14 @@ nucleus.application {
             TargetFormat.Rpm,
             TargetFormat.Pacman,
             TargetFormat.Tar,
-            // TargetFormat.Dmg, // TODO when signing is ready
+            TargetFormat.Dmg,
         )
         appName = appDisplayName
         packageName = appFsName
         packageVersion = packageSemver
         vendor = "WG Tunnel"
         description =
-            "WG Tunnel: WireGuard and AmneziaWG VPN client with auto-tunneling, lockdown and proxying."
+            "WG Tunnel: An advanced, open-source client for WireGuard and AmneziaWG."
         homepage = "https://wgtunnel.com"
         copyright = "MIT"
 
@@ -341,47 +342,55 @@ nucleus.application {
             }
         }
 
-        // TODO when macOS signing is ready
-        //
-        //        macOS {
-        //            packageName = appFsName
-        //            bundleID = "com.wgtunnel.$appFsName"
-        //            dockName = appDisplayName
-        //            appCategory = "public.app-category.utilities"
-        //            // SMAppService's .daemon type (used to register the privileged
-        //            // LaunchDaemon - see AppServiceManager in the GUI code) requires macOS
-        //            // 13.0 (Ventura)+.
-        //            minimumSystemVersion = "13.0"
-        //            iconFile.set(rootProject.file("packaging/macos/icon.icns"))
-        //
-        //            dmg { format = DmgFormat.ULFO }
-        //
-        //            signing {
-        //                val identity = System.getenv("APPLE_SIGNING_IDENTITY")
-        //                if (!identity.isNullOrBlank()) {
-        //                    sign.set(true)
-        //                    this.identity.set(identity)
-        //                    System.getenv("APPLE_SIGNING_KEYCHAIN")?.let { keychain.set(it) }
-        //                }
-        //            }
-        //
-        //            notarization {
-        //                val teamId = System.getenv("APPLE_TEAM_ID")
-        //                if (!teamId.isNullOrBlank()) {
-        //                    this.teamID.set(teamId)
-        //                    val keychainProfileEnv =
-        //                        System.getenv("APPLE_NOTARIZATION_KEYCHAIN_PROFILE")
-        //                    if (!keychainProfileEnv.isNullOrBlank()) {
-        //                        keychainProfile.set(keychainProfileEnv)
-        //                    } else {
-        //                        System.getenv("APPLE_ID")?.let { appleID.set(it) }
-        //                        System.getenv("APPLE_APP_SPECIFIC_PASSWORD")?.let {
-        //                            password.set(it)
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
+        macOS {
+            packageName = appFsName
+            bundleID = "com.wgtunnel.$appFsName"
+            dockName = appDisplayName
+            appCategory = "public.app-category.utilities"
+            // SMAppService's .daemon type (used to register the privileged
+            // LaunchDaemon) requires macOS 13.0 (Ventura)+.
+            minimumSystemVersion = "13.0"
+            iconFile.set(rootProject.file("packaging/macos/icon.icns"))
+
+            dmg { format = DmgFormat.ULFO }
+
+            signing {
+                val identity = System.getenv("APPLE_SIGNING_IDENTITY")
+                if (!identity.isNullOrBlank()) {
+                    sign.set(true)
+                    this.identity.set(identity)
+                    System.getenv("APPLE_SIGNING_KEYCHAIN")?.let { keychain.set(it) }
+                }
+            }
+
+            notarization {
+                val teamId = System.getenv("APPLE_TEAM_ID")
+                if (!teamId.isNullOrBlank()) {
+                    this.teamID.set(teamId)
+                    val apiKeyPath = System.getenv("APPLE_NOTARIZATION_API_KEY_PATH")
+                    val apiKeyId = System.getenv("APPLE_NOTARIZATION_API_KEY_ID")
+                    val apiIssuer = System.getenv("APPLE_NOTARIZATION_API_ISSUER")
+                    val keychainProfileEnv = System.getenv("APPLE_NOTARIZATION_KEYCHAIN_PROFILE")
+                    when {
+                        !apiKeyPath.isNullOrBlank() &&
+                            !apiKeyId.isNullOrBlank() &&
+                            !apiIssuer.isNullOrBlank() -> {
+                            apiKey.set(apiKeyPath)
+                            this.apiKeyId.set(apiKeyId)
+                            this.apiIssuer.set(apiIssuer)
+                        }
+                        // Local dev fallback
+                        !keychainProfileEnv.isNullOrBlank() ->
+                            keychainProfile.set(keychainProfileEnv)
+                        // Local dev fallback
+                        else -> {
+                            System.getenv("APPLE_ID")?.let { appleID.set(it) }
+                            System.getenv("APPLE_APP_SPECIFIC_PASSWORD")?.let { password.set(it) }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
