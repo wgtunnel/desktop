@@ -351,6 +351,9 @@ nucleus.application {
             // LaunchDaemon) requires macOS 13.0 (Ventura)+.
             minimumSystemVersion = "13.0"
             iconFile.set(rootProject.file("packaging/macos/icon.icns"))
+            // core's native WireGuard backend is JNI-loaded at runtime and signed
+            // independently of our Developer ID
+            entitlementsFile.set(rootProject.file("packaging/macos/entitlements.plist"))
 
             dmg { format = DmgFormat.ULFO }
 
