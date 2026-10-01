@@ -4,7 +4,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
   repositories {
-    mavenLocal()
     google()
     mavenCentral()
     gradlePluginPortal()

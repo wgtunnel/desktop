@@ -16,10 +16,10 @@ on:
         type: string
         required: true
       nucleus_ref:
-        description: "wgtunnel/Nucleus ref (TEMPORARY use fork)"
+        description: "NucleusFramework/Nucleus ref"
         type: string
         required: false
-        default: fix/apple-notary-recheck
+        default: main
   workflow_dispatch:
     inputs:
       variant:
@@ -38,9 +38,9 @@ on:
         type: string
         default: "0.0.0"
       nucleus_ref:
-        description: "wgtunnel/Nucleus ref (TEMPORARY use fork)"
+        description: "NucleusFramework/Nucleus ref"
         type: string
-        default: fix/apple-notary-recheck
+        default: main
 
 permissions:
   contents: read
@@ -57,11 +57,10 @@ jobs:
           path: desktop
           submodules: recursive
 
-      # TEMPORARY use fork
       - uses: actions/checkout@v4
         with:
-          repository: wgtunnel/Nucleus
-          ref: ${{ inputs.nucleus_ref || 'fix/apple-notary-recheck' }}
+          repository: NucleusFramework/Nucleus
+          ref: ${{ inputs.nucleus_ref || 'main' }}
           path: Nucleus
 
       - uses: ./Nucleus/.github/actions/setup-nucleus
@@ -70,21 +69,6 @@ jobs:
           setup-gradle: "true"
           setup-node: "true"
           graalvm: "true"
-
-      # TEMPORARY for fork build
-      - name: Set up JDK 21 (for Nucleus plugin-build script compilation)
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-
-      # TEMP
-      - name: Publish Nucleus plugin fork fix to mavenLocal
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME_21_X64 }}
-        run: |
-          $env:GITHUB_REF = "refs/tags/v2.5.18-notary-fix"
-          ./Nucleus/plugin-build/gradlew -p Nucleus/plugin-build :plugin:publishToMavenLocal --no-configuration-cache --no-daemon
 
       - uses: actions/setup-go@v5
         with:

@@ -35,8 +35,6 @@ materialIcons = "1.7.3"
 navigation3 = "1.2.0-alpha02"
 reorderable = "3.1.0"
 nucleus = "2.5.18"
-# TEMPORARY use maven local fork
-nucleusPlugin = "2.5.18-notary-fix"
 
 # Logging
 kermit = "2.1.0"
@@ -185,4 +183,4 @@ buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
 licensee = { id = "app.cash.licensee", version.ref = "licensee" }
 aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
-nucleus = { id = "dev.nucleusframework", version.ref = "nucleusPlugin" }
+nucleus = { id = "dev.nucleusframework", version.ref = "nucleus" }
