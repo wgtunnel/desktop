@@ -16,10 +16,10 @@ on:
         type: string
         required: true
       nucleus_ref:
-        description: "NucleusFramework/Nucleus ref"
+        description: "wgtunnel/Nucleus ref (TEMPORARY use fork)"
         type: string
         required: false
-        default: main
+        default: fix/apple-notary-recheck
   workflow_dispatch:
     inputs:
       variant:
@@ -38,9 +38,9 @@ on:
         type: string
         default: "0.0.0"
       nucleus_ref:
-        description: "NucleusFramework/Nucleus ref"
+        description: "wgtunnel/Nucleus ref (TEMPORARY use fork)"
         type: string
-        default: main
+        default: fix/apple-notary-recheck
 
 permissions:
   contents: read
@@ -57,10 +57,11 @@ jobs:
           path: desktop
           submodules: recursive
 
+      # TEMPORARY ue fork for macOS build
       - uses: actions/checkout@v4
         with:
-          repository: NucleusFramework/Nucleus
-          ref: ${{ inputs.nucleus_ref || 'main' }}
+          repository: wgtunnel/Nucleus
+          ref: ${{ inputs.nucleus_ref || 'fix/apple-notary-recheck' }}
           path: Nucleus
 
       - uses: ./Nucleus/.github/actions/setup-nucleus
@@ -69,6 +70,22 @@ jobs:
           setup-gradle: "true"
           setup-node: "true"
           graalvm: "true"
+
+      # TEMPORARY
+      - name: Set up JDK 21 (for Nucleus plugin-build script compilation)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Publish Nucleus plugin fork fix to mavenLocal
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_21_ARM64 }}
+          GITHUB_REF: refs/tags/v2.5.18-notary-fix
+        run: |
+          chmod +x Nucleus/plugin-build/gradlew
+          ./Nucleus/plugin-build/gradlew -p Nucleus/plugin-build :plugin:publishToMavenLocal \
+            --no-configuration-cache --no-daemon
 
       - uses: actions/setup-go@v5
         with:
@@ -131,6 +148,15 @@ jobs:
         run: |
           security delete-keychain "$APPLE_SIGNING_KEYCHAIN" 2>/dev/null || true
           rm -f "$APPLE_NOTARIZATION_API_KEY_PATH"
+
+      # Captures codesign/notarytool/stapler stdout+stderr
+      - name: Upload codesign/notarization tool logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-notarization-logs
+          if-no-files-found: ignore
+          path: desktop/composeApp/build/compose/logs/**
 
       - uses: actions/upload-artifact@v4
         with:

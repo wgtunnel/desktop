@@ -1,6 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.client.domain.model
 
 import com.wgtunnel.backend.model.ProxyConfig
+import com.wgtunnel.backend.model.parseProxyBindAddress
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.ProxyConfigDto
 import kotlinx.serialization.Serializable
 
@@ -56,13 +57,7 @@ data class ProxySettings(
         )
     }
 
-    private fun parseAddress(address: String): Pair<String, Int>? {
-        val parts = address.split(":")
-        if (parts.size != 2) return null
-        val host = parts[0]
-        val port = parts[1].toIntOrNull() ?: return null
-        return host to port
-    }
+    private fun parseAddress(address: String): Pair<String, Int>? = address.parseProxyBindAddress()
 
     companion object {
         const val DEFAULT_SOCKS_BIND_ADDRESS = "127.0.0.1:25344"
