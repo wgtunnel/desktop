@@ -78,12 +78,13 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      # TEMP
       - name: Publish Nucleus plugin fork fix to mavenLocal
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_21_X64 }}
-          GITHUB_REF: refs/tags/v2.5.18-notary-fix
         run: |
           chmod +x Nucleus/plugin-build/gradlew
+          export GITHUB_REF=refs/tags/v2.5.18-notary-fix
           ./Nucleus/plugin-build/gradlew -p Nucleus/plugin-build :plugin:publishToMavenLocal \
             --no-configuration-cache --no-daemon
 
