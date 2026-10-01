@@ -6,6 +6,7 @@ plugins {
 dependencies {
     api(libs.wgtunnel.parser)
     implementation(libs.kotlinx.serialization)
+    implementation(libs.nucleus.core.runtime)
 
     // Logging
     implementation(libs.kermit)

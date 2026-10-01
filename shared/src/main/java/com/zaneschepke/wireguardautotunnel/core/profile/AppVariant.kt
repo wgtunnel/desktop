@@ -1,5 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.core.profile
 
+import dev.nucleusframework.core.runtime.ExecutableRuntime
+
 // `-Dapp.variant=` or `WGTUNNEL_VARIANT` env var for specifying variant
 enum class AppVariant(val id: String) {
     DEBUG("debug"),
@@ -106,24 +108,8 @@ enum class AppVariant(val id: String) {
                 return true
             }
 
-            if (System.getProperty("org.graalvm.nativeimage.imagecode") != null) {
-                val exePath = ProcessHandle.current().info().command().orElse(null) ?: return false
-                val exeDir = java.nio.file.Path.of(exePath).parent ?: return false
-                // main binary sits at <root>/wgtunnel while daemon sits one level down at
-                // <root>/bin/daemon
-                val candidates =
-                    listOf(
-                        exeDir.resolve(".nucleus-executable-type"),
-                        exeDir.parent?.resolve(".nucleus-executable-type"),
-                    )
-                val marker =
-                    candidates.firstNotNullOfOrNull { path ->
-                        path?.takeIf { java.nio.file.Files.isRegularFile(it) }
-                    } ?: return false
-                val packageType =
-                    java.nio.file.Files.readAllLines(marker).firstOrNull()?.lowercase().orEmpty()
-                return packageType.isNotEmpty() &&
-                    packageType !in setOf("dev", "development", "app-image")
+            if (ExecutableRuntime.isGraalVmNativeImage) {
+                return !ExecutableRuntime.isDev()
             }
 
             return false
