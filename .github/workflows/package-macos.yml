@@ -110,7 +110,7 @@ jobs:
           echo -n "$APPLE_NOTARIZATION_API_KEY_BASE64" | base64 --decode -o "$KEY_PATH"
           echo "APPLE_NOTARIZATION_API_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
-      - name: Package DMG (GraalVM)
+      - name: Package, sign, and notarize DMG (GraalVM)
         working-directory: desktop
         env:
           WGTUNNEL_VARIANT: ${{ inputs.variant }}
@@ -121,7 +121,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           chmod +x gradlew
-          ./gradlew :composeApp:packageGraalvmDmg --no-daemon --stacktrace \
+          ./gradlew :composeApp:notarizeGraalvmDmg --no-daemon --stacktrace \
             -Papp.variant=${{ inputs.variant }} \
             -Papp.version=${{ inputs.version }} \
             -Papp.packageVersion=${{ inputs.package_version }}
