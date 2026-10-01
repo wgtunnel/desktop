@@ -452,11 +452,15 @@ if (isMacOS) {
             }
             into(
                 provider {
-                    val appDir = graalvmLaunchersDir.get().asFile
-                    val contentsDir =
-                        appDir.walkTopDown().firstOrNull { it.isDirectory && it.name == "Contents" }
-                            ?: appDir.resolve("Contents")
-                    contentsDir.resolve("Library/LaunchDaemons")
+                    val graalvmAppRoot = graalvmLaunchersDir.get().asFile.parentFile
+                    val appBundle =
+                        graalvmAppRoot
+                            .listFiles()
+                            ?.firstOrNull { it.isDirectory && it.name.endsWith(".app") }
+                            ?: error(
+                                "stageMacDaemonPlist: could not locate the .app bundle under $graalvmAppRoot"
+                            )
+                    appBundle.resolve("Contents/Library/LaunchDaemons")
                 }
             )
         }
