@@ -216,8 +216,7 @@ nucleus.application {
         packageName = appFsName
         packageVersion = packageSemver
         vendor = "WG Tunnel"
-        description =
-            "WG Tunnel: An advanced, open-source client for WireGuard and AmneziaWG."
+        description = "WG Tunnel: An advanced, open-source client for WireGuard and AmneziaWG."
         homepage = "https://wgtunnel.com"
         copyright = "MIT"
 
@@ -367,30 +366,28 @@ nucleus.application {
             }
 
             notarization {
+                val apiKeyPath = System.getenv("APPLE_NOTARIZATION_API_KEY_PATH")
+                val apiKeyId = System.getenv("APPLE_NOTARIZATION_API_KEY_ID")
+                val apiIssuer = System.getenv("APPLE_NOTARIZATION_API_ISSUER")
+                val keychainProfileEnv = System.getenv("APPLE_NOTARIZATION_KEYCHAIN_PROFILE")
                 val teamId = System.getenv("APPLE_TEAM_ID")
-                if (!teamId.isNullOrBlank()) {
-                    this.teamID.set(teamId)
-                    val apiKeyPath = System.getenv("APPLE_NOTARIZATION_API_KEY_PATH")
-                    val apiKeyId = System.getenv("APPLE_NOTARIZATION_API_KEY_ID")
-                    val apiIssuer = System.getenv("APPLE_NOTARIZATION_API_ISSUER")
-                    val keychainProfileEnv = System.getenv("APPLE_NOTARIZATION_KEYCHAIN_PROFILE")
-                    when {
-                        !apiKeyPath.isNullOrBlank() &&
-                            !apiKeyId.isNullOrBlank() &&
-                            !apiIssuer.isNullOrBlank() -> {
-                            apiKey.set(apiKeyPath)
-                            this.apiKeyId.set(apiKeyId)
-                            this.apiIssuer.set(apiIssuer)
-                        }
-                        // Local dev fallback
-                        !keychainProfileEnv.isNullOrBlank() ->
-                            keychainProfile.set(keychainProfileEnv)
-                        // Local dev fallback
-                        else -> {
-                            System.getenv("APPLE_ID")?.let { appleID.set(it) }
-                            System.getenv("APPLE_APP_SPECIFIC_PASSWORD")?.let { password.set(it) }
-                        }
+                when {
+                    !apiKeyPath.isNullOrBlank() &&
+                        !apiKeyId.isNullOrBlank() &&
+                        !apiIssuer.isNullOrBlank() -> {
+                        apiKey.set(apiKeyPath)
+                        this.apiKeyId.set(apiKeyId)
+                        this.apiIssuer.set(apiIssuer)
                     }
+                    // Local dev fallback
+                    !keychainProfileEnv.isNullOrBlank() -> keychainProfile.set(keychainProfileEnv)
+                    // Local dev fallback
+                    !teamId.isNullOrBlank() -> {
+                        this.teamID.set(teamId)
+                        System.getenv("APPLE_ID")?.let { appleID.set(it) }
+                        System.getenv("APPLE_APP_SPECIFIC_PASSWORD")?.let { password.set(it) }
+                    }
+                    else -> Unit
                 }
             }
         }
