@@ -13,5 +13,13 @@ sealed class AppSideEffect {
         val type: ToastType = ToastType.Warning,
     ) : AppSideEffect()
 
+    data class NavigableToast(
+        val id: String,
+        val message: String,
+        val actionLabel: String,
+        val onAction: () -> Unit,
+        val type: ToastType = ToastType.Warning,
+    ) : AppSideEffect()
+
     data class DismissToast(val id: String) : AppSideEffect()
 }

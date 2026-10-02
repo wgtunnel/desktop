@@ -21,8 +21,10 @@ import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_not_running
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_outdated_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_requires_approval
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_restart_command_label
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_start_command_label
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.open_system_settings
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.theme_from_image_failed
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
@@ -31,6 +33,9 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.state.DaemonConnectionStat
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Aqua
 import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
 import dev.nucleusframework.core.runtime.Platform
+import dev.nucleusframework.servicemanagement.AppService
+import dev.nucleusframework.servicemanagement.AppServiceManager
+import dev.nucleusframework.servicemanagement.AppServiceStatus
 import dev.nucleusframework.updater.UpdateResult
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import java.io.File
@@ -165,6 +170,32 @@ class AppViewModel(
                 }
             }
 
+            // SMAppService requires an explicit register() call before macOS will ever
+            // load it. Safe to call on every launch as it no-ops if already registered/approved.
+            if (isMacOS) {
+                intent {
+                    val service = AppService.Daemon(daemonServiceName)
+                    AppServiceManager.register(service)
+                        .onFailure {
+                            log.w(it) {
+                                "Failed to register macOS daemon service '$daemonServiceName'"
+                            }
+                        }
+                    val status = AppServiceManager.status(service)
+                    log.i { "macOS daemon service '$daemonServiceName' status: $status" }
+                    if (status == AppServiceStatus.REQUIRES_APPROVAL) {
+                        postSideEffect(
+                            AppSideEffect.NavigableToast(
+                                id = DAEMON_APPROVAL_TOAST_ID,
+                                message = getString(Res.string.daemon_requires_approval),
+                                actionLabel = getString(Res.string.open_system_settings),
+                                onAction = { AppServiceManager.openSystemSettingsLoginItems() },
+                            )
+                        )
+                    }
+                }
+            }
+
             intent {
                 val result = appUpdater.check(silent = true)
                 if (result is UpdateResult.Error) log.w(result.exception) { "Update check failed" }
@@ -222,9 +253,11 @@ class AppViewModel(
     companion object {
         private const val DAEMON_NOT_RUNNING_TOAST_ID = "daemon_not_running"
         private const val DAEMON_OUTDATED_TOAST_ID = "daemon_outdated"
+        private const val DAEMON_APPROVAL_TOAST_ID = "daemon_requires_approval"
         private val DISCONNECT_GRACE_PERIOD = 5.seconds
 
         private val isWindows = Platform.Current == Platform.Windows
+        private val isMacOS = Platform.Current == Platform.MacOS
         private val daemonServiceName = "${AppVariant.current.linuxFsName}-daemon"
         private val isSystemdActive = File("/run/systemd/system").isDirectory
     }

@@ -44,6 +44,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.animation.PulsingStatusLed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.CommandToastMessage
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.CopyCommandAction
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.toast.NavigateAction
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.CustomTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Tab
@@ -131,6 +132,16 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                                     clipboard.setClipEntry(sideEffect.copyText.toClipEntry())
                                 }
                             },
+                        type = sideEffect.type,
+                        duration = Duration.INFINITE,
+                    )
+                )
+            is AppSideEffect.NavigableToast ->
+                toaster.show(
+                    Toast(
+                        message = sideEffect.message,
+                        id = sideEffect.id,
+                        action = NavigateAction(sideEffect.actionLabel, sideEffect.onAction),
                         type = sideEffect.type,
                         duration = Duration.INFINITE,
                     )

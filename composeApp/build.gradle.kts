@@ -452,14 +452,28 @@ if (isMacOS) {
             }
             into(
                 provider {
-                    val graalvmAppRoot = graalvmLaunchersDir.get().asFile.parentFile
+                    val binariesRoot = layout.buildDirectory.dir("compose/binaries").get().asFile
                     val appBundle =
-                        graalvmAppRoot
-                            .listFiles()
-                            ?.firstOrNull { it.isDirectory && it.name.endsWith(".app") }
-                            ?: error(
-                                "stageMacDaemonPlist: could not locate the .app bundle under $graalvmAppRoot"
-                            )
+                        binariesRoot
+                            .walkTopDown()
+                            .maxDepth(5)
+                            .firstOrNull { it.isDirectory && it.name.endsWith(".app") }
+                            ?: run {
+                                // Diagnostic
+                                val listing =
+                                    if (binariesRoot.isDirectory) {
+                                        binariesRoot
+                                            .walkTopDown()
+                                            .maxDepth(5)
+                                            .joinToString("\n") { "  ${it.relativeTo(binariesRoot)}" }
+                                    } else {
+                                        "<does not exist>"
+                                    }
+                                error(
+                                    "stageMacDaemonPlist: could not locate any .app bundle under " +
+                                        "$binariesRoot\nContents (depth 5):\n$listing"
+                                )
+                            }
                     appBundle.resolve("Contents/Library/LaunchDaemons")
                 }
             )
