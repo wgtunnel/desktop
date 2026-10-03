@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Launch
 import androidx.compose.material.icons.outlined.Balance
 import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.InstallDesktop
 import androidx.compose.material.icons.outlined.Mail
@@ -26,8 +27,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
@@ -64,6 +68,9 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.open_i
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.privacy_policy
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.privacy_policy_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ready_to_install_version
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.remove_background_service
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.remove_background_service_desc
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.remove_background_service_message
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.resources
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.restart_and_install
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.support
@@ -76,10 +83,12 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_progress_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.website_url
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.yes
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.InfoDialog
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
@@ -90,6 +99,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.util.buildSystemInfoReport
 import com.zaneschepke.wireguardautotunnel.desktop.util.formatFileSize
 import com.zaneschepke.wireguardautotunnel.desktop.util.toClipEntry
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.SupportViewModel
+import dev.nucleusframework.core.runtime.Platform
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -106,6 +116,7 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
     val uiState by viewModel.collectAsState()
+    var showRemoveServiceDialog by rememberSaveable { mutableStateOf(false) }
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -113,6 +124,19 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                 toaster.show(Toast(sideEffect.message, sideEffect.type))
             else -> Unit
         }
+    }
+
+    if (showRemoveServiceDialog) {
+        InfoDialog(
+            onAttest = {
+                viewModel.onRemoveBackgroundService()
+                showRemoveServiceDialog = false
+            },
+            onDismiss = { showRemoveServiceDialog = false },
+            title = stringResource(Res.string.remove_background_service),
+            confirmText = stringResource(Res.string.yes),
+            body = { Text(stringResource(Res.string.remove_background_service_message)) },
+        )
     }
 
     val appVersion =
@@ -333,6 +357,18 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                                 else -> viewModel.onCheckForUpdate()
                             }
                         },
+                    )
+                }
+                if (Platform.Current == Platform.MacOS) {
+                    SurfaceRow(
+                        leading = { Icon(Icons.Outlined.DeleteOutline, contentDescription = null) },
+                        title = stringResource(Res.string.remove_background_service),
+                        description = {
+                            DescriptionText(
+                                stringResource(Res.string.remove_background_service_desc)
+                            )
+                        },
+                        onClick = { showRemoveServiceDialog = true },
                     )
                 }
             }

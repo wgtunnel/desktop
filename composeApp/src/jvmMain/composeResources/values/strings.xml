@@ -271,6 +271,11 @@
     <string name="daemon_restart_command_label">Copy Restart Command</string>
     <string name="daemon_requires_approval">WG Tunnel needs your approval to run its background service.</string>
     <string name="open_system_settings">Open Settings</string>
+    <string name="remove_background_service">Remove background service</string>
+    <string name="remove_background_service_desc">Stops and unregisters the daemon before you uninstall the app</string>
+    <string name="remove_background_service_message">This disconnects any active tunnel and stops the background service. You can still reopen the app afterward to register it again. Continue?</string>
+    <string name="background_service_removed">Background service removed</string>
+    <string name="background_service_remove_failed">Failed to remove the background service</string>
     <string name="startup">At Login</string>
     <string name="startup_desc">What launches automatically when you log in</string>
     <string name="protect_on_startup">Protect on system startup</string>

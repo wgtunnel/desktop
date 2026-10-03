@@ -39,12 +39,14 @@ import dev.nucleusframework.servicemanagement.AppServiceStatus
 import dev.nucleusframework.updater.UpdateResult
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import java.io.File
+import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -140,28 +142,32 @@ class AppViewModel(
             }
             intent {
                 daemonService.remoteVersion.filterNotNull().collect { remoteVersion ->
-                    if (remoteVersion != BuildConfig.APP_VERSION) {
-                        val message =
-                            getString(
-                                Res.string.daemon_outdated_template,
-                                remoteVersion,
-                                BuildConfig.APP_VERSION,
-                            )
-                        postSideEffect(
-                            if (isWindows || isSystemdActive) {
-                                AppSideEffect.ActionableToast(
-                                    id = DAEMON_OUTDATED_TOAST_ID,
-                                    message = message,
-                                    copyText = daemonRestartCommand(),
-                                    copyLabel = getString(Res.string.daemon_restart_command_label),
-                                )
-                            } else {
-                                AppSideEffect.Toast(message = message, type = ToastType.Warning)
-                            }
-                        )
-                    } else {
+                    if (remoteVersion == BuildConfig.APP_VERSION) {
                         postSideEffect(AppSideEffect.DismissToast(DAEMON_OUTDATED_TOAST_ID))
+                        return@collect
                     }
+                    // Unlike a Windows service or Linux systemd, SMAppService doesn't need a
+                    // privileged shell command to restart. The app can just do it itself, the
+                    // same way register() is already called unconditionally on every launch.
+                    if (isMacOS && restartMacDaemon()) return@collect
+                    val message =
+                        getString(
+                            Res.string.daemon_outdated_template,
+                            remoteVersion,
+                            BuildConfig.APP_VERSION,
+                        )
+                    postSideEffect(
+                        if (isWindows || isSystemdActive) {
+                            AppSideEffect.ActionableToast(
+                                id = DAEMON_OUTDATED_TOAST_ID,
+                                message = message,
+                                copyText = daemonRestartCommand(),
+                                copyLabel = getString(Res.string.daemon_restart_command_label),
+                            )
+                        } else {
+                            AppSideEffect.Toast(message = message, type = ToastType.Warning)
+                        }
+                    )
                 }
             }
             intent {
@@ -175,12 +181,9 @@ class AppViewModel(
             if (isMacOS) {
                 intent {
                     val service = AppService.Daemon(daemonServiceName)
-                    AppServiceManager.register(service)
-                        .onFailure {
-                            log.w(it) {
-                                "Failed to register macOS daemon service '$daemonServiceName'"
-                            }
-                        }
+                    AppServiceManager.register(service).onFailure {
+                        log.w(it) { "Failed to register macOS daemon service '$daemonServiceName'" }
+                    }
                     val status = AppServiceManager.status(service)
                     log.i { "macOS daemon service '$daemonServiceName' status: $status" }
                     if (status == AppServiceStatus.REQUIRES_APPROVAL) {
@@ -249,6 +252,29 @@ class AppViewModel(
     private fun daemonRestartCommand(): String =
         if (isWindows) "net stop $daemonServiceName && net start $daemonServiceName"
         else "sudo systemctl restart $daemonServiceName.service"
+
+    /**
+     * Forces launchd to reload the daemon binary. Returns true once it's back and re-registered.
+     */
+    private suspend fun restartMacDaemon(): Boolean {
+        val service = AppService.Daemon(daemonServiceName)
+        val unregisterError = suspendCancellableCoroutine { cont ->
+            AppServiceManager.unregister(service) { error -> cont.resume(error) }
+        }
+        if (unregisterError != null) {
+            log.w {
+                "Failed to unregister outdated macOS daemon service '$daemonServiceName': $unregisterError"
+            }
+            return false
+        }
+        return AppServiceManager.register(service)
+            .onFailure {
+                log.w(it) {
+                    "Failed to re-register macOS daemon service '$daemonServiceName' after update"
+                }
+            }
+            .isSuccess
+    }
 
     companion object {
         private const val DAEMON_NOT_RUNNING_TOAST_ID = "daemon_not_running"

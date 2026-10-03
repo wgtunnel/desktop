@@ -3,15 +3,22 @@ package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.background_service_remove_failed
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.background_service_removed
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.up_to_date
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_check_failed
+import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.SupportUiState
 import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
 import com.zaneschepke.wireguardautotunnel.desktop.update.UpdateState
+import dev.nucleusframework.servicemanagement.AppService
+import dev.nucleusframework.servicemanagement.AppServiceManager
 import dev.nucleusframework.updater.UpdateInfo
 import dev.nucleusframework.updater.UpdateResult
 import java.io.File
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -54,4 +61,29 @@ class SupportViewModel(private val appUpdater: AppUpdater) :
     fun onDownloadUpdate(info: UpdateInfo) = intent { appUpdater.download(info) }
 
     fun onInstallUpdate(file: File) = intent { appUpdater.install(file) }
+
+    /** macOS only: unregisters the LaunchDaemon so it stops before the app itself is removed. */
+    fun onRemoveBackgroundService() = intent {
+        val service = AppService.Daemon(daemonServiceName)
+        val error = suspendCancellableCoroutine { cont ->
+            AppServiceManager.unregister(service) { cont.resume(it) }
+        }
+        postSideEffect(
+            if (error == null) {
+                AppSideEffect.Toast(
+                    message = getString(Res.string.background_service_removed),
+                    type = ToastType.Success,
+                )
+            } else {
+                AppSideEffect.Toast(
+                    message = getString(Res.string.background_service_remove_failed),
+                    type = ToastType.Error,
+                )
+            }
+        )
+    }
+
+    companion object {
+        private val daemonServiceName = "${AppVariant.current.linuxFsName}-daemon"
+    }
 }
