@@ -21,6 +21,9 @@ abstract class BuildKeyringGoLibsTask @Inject constructor(private val execOps: E
 
     @get:Input abstract val windows: Property<Boolean>
 
+    // "x64" or "arm64"
+    @get:Input abstract val windowsArch: Property<String>
+
     @get:Internal abstract val goDir: DirectoryProperty
 
     @get:InputFiles
@@ -34,9 +37,13 @@ abstract class BuildKeyringGoLibsTask @Inject constructor(private val execOps: E
         val jdk = jdkHome.get()
         val go = goDir.get().asFile
         if (windows.get()) {
+            val goArch = if (windowsArch.get() == "arm64") "arm64" else "amd64"
+            val cc = if (goArch == "arm64") "aarch64-w64-mingw32-gcc" else "gcc"
+            val resourceSubdir = if (goArch == "arm64") "win32-aarch64" else "win32-x64"
+
             val outDir = go.resolve("out")
             outDir.mkdirs()
-            val outDll = outDir.resolve("libkeyring-windows-amd64.dll")
+            val outDll = outDir.resolve("libkeyring-windows-$goArch.dll")
 
             // Fix for space-containing path in CGO_CFLAGS is unreliable when go build runs
             // natively on Windows.
@@ -50,8 +57,8 @@ abstract class BuildKeyringGoLibsTask @Inject constructor(private val execOps: E
                 workingDir = go
                 environment("CGO_ENABLED", "1")
                 environment("GOOS", "windows")
-                environment("GOARCH", "amd64")
-                environment("CC", "gcc")
+                environment("GOARCH", goArch)
+                environment("CC", cc)
                 environment("CGO_CFLAGS", "-I${jdkIncludeStage.absolutePath.replace('\\', '/')}")
                 commandLine(
                     "go",
@@ -65,7 +72,7 @@ abstract class BuildKeyringGoLibsTask @Inject constructor(private val execOps: E
                     ".",
                 )
             }
-            val dest = nativeOut.get().asFile.resolve("win32-x64/keyring.dll")
+            val dest = nativeOut.get().asFile.resolve("$resourceSubdir/keyring.dll")
             dest.parentFile.mkdirs()
             outDll.copyTo(dest, overwrite = true)
         } else {

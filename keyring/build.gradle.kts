@@ -21,6 +21,7 @@ tasks.register<BuildKeyringGoLibsTask>("buildGoLibs") {
     description = "Builds keyring JNI shared libs"
     jdkHome.set(keyringJdkHome)
     windows.set(isWindows)
+    windowsArch.set((findProperty("windows.arch") as String?) ?: "x64")
     goDir.set(layout.projectDirectory.dir("tools/keyring-go"))
     goSources.from(
         fileTree("tools/keyring-go") {
