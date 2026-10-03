@@ -109,10 +109,27 @@ enum class AppVariant(val id: String) {
             }
 
             if (ExecutableRuntime.isGraalVmNativeImage) {
-                return !ExecutableRuntime.isDev()
+                if (!ExecutableRuntime.isDev()) return true
+                return readMacOsExecutableTypeMarker()?.let {
+                    it.isNotEmpty() && it !in setOf("dev", "development", "app-image")
+                } ?: false
             }
 
             return false
+        }
+
+        private fun readMacOsExecutableTypeMarker(): String? {
+            val exePath = ProcessHandle.current().info().command().orElse(null) ?: return null
+            var dir: java.io.File? = java.io.File(exePath).parentFile
+            while (dir != null) {
+                if (dir.name == "MacOS" && dir.parentFile?.name == "Contents") {
+                    val marker = dir.parentFile.resolve("Resources/.nucleus-executable-type")
+                    if (!marker.isFile) return null
+                    return marker.readLines().firstOrNull()?.trim()?.lowercase()
+                }
+                dir = dir.parentFile
+            }
+            return null
         }
 
         /**

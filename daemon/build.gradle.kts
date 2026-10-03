@@ -92,6 +92,10 @@ tasks.named<Delete>("clean") {
     delete(file("winsw/artifacts"))
 }
 
+// -Pwindows.arch=x64|arm64 picks the .NET RID
+val windowsArch = (findProperty("windows.arch") as String?) ?: "x64"
+val windowsPlatform = if (windowsArch == "arm64") "ARM64" else windowsArch
+
 tasks.register<Exec>("buildWinSW") {
     val winSwDir = "winsw/src/WinSW"
     group = "build"
@@ -109,7 +113,11 @@ tasks.register<Exec>("buildWinSW") {
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
     outputs
-        .dir(file("winsw/artifacts/bin/WinSW/x64/Release/net7.0-windows/win-x64/publish"))
+        .dir(
+            file(
+                "winsw/artifacts/bin/WinSW/$windowsPlatform/Release/net7.0-windows/win-$windowsArch/publish"
+            )
+        )
         .withPropertyName("winSwPublishDir")
 
     commandLine(
@@ -121,7 +129,8 @@ tasks.register<Exec>("buildWinSW") {
         "-c",
         "Release",
         "-r",
-        "win-x64",
+        "win-$windowsArch",
+        "-p:Platform=$windowsPlatform",
         "--self-contained",
         "true",
         "-p:PublishSingleFile=true",

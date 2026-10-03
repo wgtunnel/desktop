@@ -38,20 +38,31 @@ jobs:
             -replace 'PLACEHOLDER_TAG', "${{ env.TAG }}" | `
             Set-Content packaging\chocolatey\wgtunnel.nuspec
 
-      - name: Pin installer URL and checksum
+      # NOTE: the arm64 filename is assumed to follow the same "-win-<arch>-nsis.exe" pattern
+      # the x64 release already uses - unverified until the windows-arm64 packaging leg has
+      # actually produced and published a real release asset to check this against.
+      - name: Pin installer URLs and checksums (amd64 + arm64)
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $url = "https://github.com/wgtunnel/desktop/releases/download/${{ env.TAG }}/wgtunnel-${{ env.VERSION }}-win-x64-nsis.exe"
-          $tempFile = Join-Path $env:RUNNER_TEMP "wgtunnel-installer.exe"
-          Invoke-WebRequest -Uri $url -OutFile $tempFile
-          $checksum = (Get-FileHash -Path $tempFile -Algorithm SHA256).Hash.ToLower()
-
           $installScript = 'packaging\chocolatey\tools\chocolateyInstall.ps1'
-          (Get-Content $installScript) `
-            -replace 'PLACEHOLDER_URL', $url `
-            -replace 'PLACEHOLDER_CHECKSUM', $checksum | `
-            Set-Content $installScript
+          $content = Get-Content $installScript
+
+          foreach ($pair in @(
+            @{ Arch = 'x64';   Placeholder = 'AMD64' },
+            @{ Arch = 'arm64'; Placeholder = 'ARM64' }
+          )) {
+            $url = "https://github.com/wgtunnel/desktop/releases/download/${{ env.TAG }}/wgtunnel-${{ env.VERSION }}-win-$($pair.Arch)-nsis.exe"
+            $tempFile = Join-Path $env:RUNNER_TEMP "wgtunnel-installer-$($pair.Arch).exe"
+            Invoke-WebRequest -Uri $url -OutFile $tempFile
+            $checksum = (Get-FileHash -Path $tempFile -Algorithm SHA256).Hash.ToLower()
+
+            $content = $content `
+              -replace "PLACEHOLDER_URL_$($pair.Placeholder)", $url `
+              -replace "PLACEHOLDER_CHECKSUM_$($pair.Placeholder)", $checksum
+          }
+
+          Set-Content -Path $installScript -Value $content
 
       - name: Pack and push to Chocolatey
         env:

@@ -46,10 +46,23 @@ permissions:
   contents: read
   id-token: write
 
+env:
+  LLVM_MINGW_VERSION: "20260922"
+
 jobs:
   package:
-    name: package-windows
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            windows_arch: x64
+            runner: windows-latest
+          - arch: arm64
+            windows_arch: arm64
+            runner: windows-11-arm
+    name: package-windows-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
@@ -79,9 +92,21 @@ jobs:
           dotnet-version: "7.0.x"
 
       - name: Set up MinGW
+        if: matrix.arch == 'amd64'
         uses: egor-tensin/setup-mingw@v3
         with:
           platform: x64
+
+      - name: Install llvm-mingw (aarch64 Windows cross-compiler)
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/$env:LLVM_MINGW_VERSION/llvm-mingw-$env:LLVM_MINGW_VERSION-ucrt-aarch64.zip"
+          Invoke-WebRequest -Uri $url -OutFile llvm-mingw.zip
+          Expand-Archive -Path llvm-mingw.zip -DestinationPath .
+          $binDir = "$PWD\llvm-mingw-$env:LLVM_MINGW_VERSION-ucrt-aarch64\bin"
+          echo $binDir >> $env:GITHUB_PATH
 
       - name: Verify Tools
         run: |
@@ -99,11 +124,11 @@ jobs:
           WGTUNNEL_VARIANT: ${{ inputs.variant }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: ./gradlew :composeApp:packageGraalvmNsis --no-daemon --stacktrace "-Papp.variant=${{ inputs.variant || 'release' }}" "-Papp.version=${{ inputs.version || github.ref_name }}" "-Papp.packageVersion=${{ inputs.package_version || '0.0.0' }}"
+        run: ./gradlew :composeApp:packageGraalvmNsis --no-daemon --stacktrace "-Papp.variant=${{ inputs.variant || 'release' }}" "-Papp.version=${{ inputs.version || github.ref_name }}" "-Papp.packageVersion=${{ inputs.package_version || '0.0.0' }}" "-Pwindows.arch=${{ matrix.windows_arch }}"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: release-assets-Windows-amd64
+          name: release-assets-Windows-${{ matrix.arch }}
           if-no-files-found: error
           path: |
             desktop/composeApp/build/compose/binaries/**/*.exe

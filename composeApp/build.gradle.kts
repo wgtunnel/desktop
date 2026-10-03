@@ -140,11 +140,15 @@ val stagePackagingSidecars =
         if (isWindows) {
             dependsOn(":daemon:buildWinSW")
             windowsServiceXml.set(rootProject.file("packaging/windows/service-wrapper.xml"))
+            val windowsArch = (findProperty("windows.arch") as String?) ?: "x64"
+            val windowsPlatform = if (windowsArch == "arm64") "ARM64" else windowsArch
             winSwPublishDir.set(
                 project(":daemon")
                     .layout
                     .projectDirectory
-                    .dir("winsw/artifacts/bin/WinSW/x64/Release/net7.0-windows/win-x64/publish")
+                    .dir(
+                        "winsw/artifacts/bin/WinSW/$windowsPlatform/Release/net7.0-windows/win-$windowsArch/publish"
+                    )
             )
         }
     }
@@ -405,10 +409,13 @@ val copyGraalvmSidecarDepends =
     )
 
 val windowsNativeArch =
-    if (System.getProperty("os.arch").orEmpty() in setOf("aarch64", "arm64")) {
-        "aarch64"
-    } else {
-        "x64"
+    when (
+        (findProperty("windows.arch") as String?)?.lowercase()
+            ?: System.getProperty("os.arch").orEmpty()
+    ) {
+        "arm64",
+        "aarch64" -> "aarch64"
+        else -> "x64"
     }
 
 val wintunDllFile = rootProject.file("packaging/windows/wintun/win32-$windowsNativeArch/wintun.dll")

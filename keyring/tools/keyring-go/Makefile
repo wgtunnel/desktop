@@ -22,7 +22,7 @@ ifeq ($(HOST_OS),darwin)
 else ifeq ($(filter linux,$(HOST_OS)),linux)
     PLATFORMS := linux-amd64 windows-amd64
 else
-    PLATFORMS := windows-amd64
+    PLATFORMS := windows-amd64 windows-arm64
 endif
 
 export CGO_ENABLED := 1
@@ -42,6 +42,8 @@ else
     WIN_CC := x86_64-w64-mingw32-gcc
 endif
 
+WIN_ARM64_CC := aarch64-w64-mingw32-gcc
+
 $(DESTDIR)/libkeyring-windows-amd64.dll: $(wildcard *.go)
 	@mkdir -p "$(DESTDIR)"
 	@test -f "$(JAVA_HOME)/include/jni.h" || (echo "jni.h not found; JAVA_HOME=$(JAVA_HOME)"; exit 1)
@@ -51,7 +53,7 @@ $(DESTDIR)/libkeyring-windows-amd64.dll: $(wildcard *.go)
 $(DESTDIR)/libkeyring-windows-arm64.dll: $(wildcard *.go)
 	@mkdir -p "$(DESTDIR)"
 	CGO_CFLAGS="$(JDK_JNI_CFLAGS)" GOOS=windows GOARCH=arm64 \
-		CC=aarch64-w64-mingw32-gcc $(GOBUILD) -o "$@" .
+		CC=$(WIN_ARM64_CC) $(GOBUILD) -o "$@" .
 
 $(DESTDIR)/libkeyring-darwin-amd64.dylib: $(wildcard *.go)
 	@mkdir -p "$(DESTDIR)"
