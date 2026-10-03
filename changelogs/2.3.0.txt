@@ -1,0 +1,8 @@
+What's new:
+- macOS support
+- IPv6 bugfixes for local proxy, tunnel endpoints
+- Windows multiple adapters bugfix
+- Persisted window size and placement
+- App updater improvements
+- Remove file associations bugfix
+- Tunnel groups
