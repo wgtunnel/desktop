@@ -137,15 +137,11 @@ choco install wgtunnel
 
 #### Debian / Ubuntu
 
-Preferred method - via our [apt repository](https://apt.wgtunnel.com) (for package manager updates):
+Preferred method - via our [apt repository](https://apt.wgtunnel.com) (for package manager updates). Review the
+script at [apt.wgtunnel.com/install.sh](https://apt.wgtunnel.com/install.sh) before running it:
 
 ```bash
-curl -fsSL https://apt.wgtunnel.com/wgtunnel-archive-keyring.asc | \
-  sudo gpg --dearmor -o /usr/share/keyrings/wgtunnel-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/wgtunnel-archive-keyring.gpg] https://apt.wgtunnel.com stable main" | \
-  sudo tee /etc/apt/sources.list.d/wgtunnel.list
-sudo apt update
-sudo apt install wgtunnel
+wget -qO- https://apt.wgtunnel.com/install.sh | sh
 ```
 
 Or, download the `.deb` directly from the latest GitHub release:

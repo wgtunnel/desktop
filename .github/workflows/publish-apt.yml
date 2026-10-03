@@ -11,6 +11,16 @@ on:
         description: "Version being published (0.0.0 or 0.0.0-beta.1)"
         type: string
         required: true
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Only used in the commit message when set"
+        type: string
+        required: false
+      version:
+        description: "Only used in the commit message when set"
+        type: string
+        required: false
 
 permissions:
   contents: write
@@ -29,6 +39,7 @@ jobs:
           path: desktop
 
       - uses: actions/download-artifact@v4
+        if: github.event_name != 'workflow_dispatch'
         with:
           name: release-assets-Linux-amd64
           path: artifacts
@@ -62,6 +73,7 @@ jobs:
           EOF
 
       - name: Add .deb to repo
+        if: github.event_name != 'workflow_dispatch'
         run: |
           set -euo pipefail
           DEB_FILE=$(find artifacts -name '*.deb' | head -n1)
@@ -78,6 +90,7 @@ jobs:
         run: |
           cp desktop/packaging/apt/index.html gh-pages/index.html
           cp desktop/packaging/apt/site.css gh-pages/site.css
+          cp desktop/packaging/apt/install.sh gh-pages/install.sh
 
       - name: Commit and push
         run: |
@@ -85,10 +98,14 @@ jobs:
           cd gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add conf dists pool wgtunnel-archive-keyring.asc index.html site.css
+          git add conf dists pool wgtunnel-archive-keyring.asc index.html site.css install.sh
           if git diff --cached --quiet; then
             echo "No apt repo changes to publish"
             exit 0
           fi
-          git commit -m "apt: publish ${{ inputs.version }} (${{ inputs.channel }})"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            git commit -m "apt: refresh landing page"
+          else
+            git commit -m "apt: publish ${{ inputs.version }} (${{ inputs.channel }})"
+          fi
           git push origin gh-pages
