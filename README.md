@@ -56,7 +56,7 @@ WG Tunnel is an alternative desktop client for WireGuard and AmneziaWG that brin
 
 - Windows
 - Linux
-- macOS - **not yet supported**, but planned for a future release.
+- macOS (Apple Silicon)
 
 ## Features
 
@@ -138,7 +138,7 @@ choco install wgtunnel
 #### Debian / Ubuntu
 
 Preferred method - via our [apt repository](https://apt.wgtunnel.com) (for package manager updates). Review the
-script at [apt.wgtunnel.com/install.sh](https://apt.wgtunnel.com/install.sh) before running it:
+script [here](https://apt.wgtunnel.com/install.sh) before running it:
 
 ```bash
 wget -qO- https://apt.wgtunnel.com/install.sh | sh
@@ -227,6 +227,32 @@ remove that yourself with your keyring manager.
 > [!Note]
 > Snap, Flatpak, and AppImages are not shipped and there is no plan currently to add them. They
 > simply are not a good fit for the app due to their sandboxing limitations.
+
+### macOS
+
+> [!NOTE]
+> Requires macOS 13 (Ventura) or later, on Apple Silicon. Intel Macs are not currently supported.
+
+1. Download the `.dmg` from the latest release.
+2. Open it and drag **WG Tunnel** into Applications.
+3. Launch the app.
+4. On first launch, macOS will ask you to approve the background service. The app prompts you
+   with a button straight to **System Settings → General → Login Items & Extensions**.
+
+To fully remove the background service before uninstalling, use **Settings → General → Remove
+background service** in the app first, then drag the app to Trash. Simply deleting the app
+without doing that leaves the daemon running until you reboot. Apple doesn't provide the ability
+to automatically remove a daemon on app uninstall.
+
+To wipe saved tunnels/settings/logs after uninstalling:
+
+```bash
+rm -rf ~/Library/Application\ Support/wgtunnel
+sudo rm -rf "/Library/Application Support/wgtunnel"
+```
+
+This does not clear the saved secret in Keychain (service `wg_tunnel`). You will need to remove that 
+yourself via Keychain Access if desired.
 
 ## Development
 

@@ -113,7 +113,7 @@ h2 {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  margin: 0.5rem 0;
+  margin: 1.25rem 0;
 }
 
 .repo-code {
