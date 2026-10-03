@@ -19,6 +19,12 @@ object IpcKeyFileValidator {
     private val isWindows: Boolean
         get() = System.getProperty("os.name").orEmpty().lowercase().contains("win")
 
+    // macOS's default filesystem (APFS) is case-insensitive-but-preserving, same as NTFS.
+    // desktopAppName creates the real on-disk directory as "WGTunnel" while ipcFolder is lowercase
+    // "wgtunnel". On Windows/macOS the  filesystem itself treats those as the same name.
+    private val isCaseInsensitiveFs: Boolean
+        get() = isWindows || System.getProperty("os.name").orEmpty().lowercase().contains("mac")
+
     sealed interface Result {
         data class Trusted(val secret: String) : Result
 
@@ -47,12 +53,12 @@ object IpcKeyFileValidator {
         // directory already exists Java's canonical/real path resolves to whatever casing is
         // actually on disk, which can differ from this string literal. String != is always
         // case-sensitive regardless of platform, so match the OS's own filesystem semantics here
-        // instead of assuming Linux/macOS-style case sensitivity everywhere.
+        // instead of assuming Linux-style case sensitivity everywhere.
         if (
-            !keyFile.name.equals(IPC.KEY_FILE, ignoreCase = isWindows) ||
+            !keyFile.name.equals(IPC.KEY_FILE, ignoreCase = isCaseInsensitiveFs) ||
                 !(keyFile.parentFile?.name).equals(
                     AppVariant.current.ipcFolder,
-                    ignoreCase = isWindows,
+                    ignoreCase = isCaseInsensitiveFs,
                 )
         ) {
             return Result.Rejected(
@@ -94,7 +100,13 @@ object IpcKeyFileValidator {
 
         val expectedKeyPath = expectedKeyPathUnder(expectedBase)
 
-        if (keyPath != expectedKeyPath) {
+        val pathsMatch =
+            if (isCaseInsensitiveFs) {
+                keyPath.toString().equals(expectedKeyPath.toString(), ignoreCase = true)
+            } else {
+                keyPath == expectedKeyPath
+            }
+        if (!pathsMatch) {
             return Result.Rejected(
                 "Key file is not under owner '$ownerAccount''s expected IPC directory: " +
                     "$keyPath (expected $expectedKeyPath)"
