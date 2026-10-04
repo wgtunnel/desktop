@@ -189,6 +189,8 @@ nucleus.application {
         maxHeapSize = "96m"
         buildArgs.add("-Dapp.variant=$packagingVariant")
         buildArgs.addAll(GraalvmNativeArgs.gui(System.getProperty("os.name").orEmpty()))
+        // Match nativeDistributions version
+        macOS { minimumSystemVersion = "13.0" }
     }
 
     additionalLaunchers {
