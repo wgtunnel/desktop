@@ -117,6 +117,7 @@ This has significant benefits:
 
 <details open>
 <summary><b>Package Manager</b></summary>
+</br>
 
 Via [Chocolatey](https://community.chocolatey.org/packages/wgtunnel):
 
@@ -128,6 +129,7 @@ choco install wgtunnel
 
 <details open>
 <summary><b>Direct</b></summary>
+</br>
 
 1. Download the Windows installer (`.exe`) from the latest release.
 2. Run the installer. Accept the Admin rights prompt (UAC) so the daemon can be installed as a system service.
@@ -150,6 +152,7 @@ choco install wgtunnel
 
 <details open>
 <summary><b>Package Manager</b></summary>
+</br>
 
 Via our [apt repository](https://apt.wgtunnel.com). Review the
 script [here](https://apt.wgtunnel.com/install.sh) before running it:
@@ -162,6 +165,7 @@ wget -qO- https://apt.wgtunnel.com/install.sh | sh
 
 <details open>
 <summary><b>Direct</b></summary>
+</br>
 
 1. Download the `.deb` directly from the latest GitHub release.
 
@@ -175,6 +179,7 @@ sudo apt install ./wgtunnel*.deb
 
 <details open>
 <summary><b>Package Manager</b></summary>
+</br>
 
 Via [COPR](https://copr.fedorainfracloud.org/coprs/zaneschepke/wgtunnel/):
 
@@ -187,6 +192,7 @@ sudo dnf install wgtunnel
 
 <details open>
 <summary><b>Direct</b></summary>
+</br>
 
 1. Download the `.rpm` directly from the latest GitHub release.
 
@@ -204,6 +210,7 @@ sudo rpm -Uvh wgtunnel*.rpm
 
 <details open>
 <summary><b>Package Manager</b></summary>
+</br>
 
 Via the [AUR](https://aur.archlinux.org/packages/wgtunnel-bin):
 
@@ -215,6 +222,7 @@ yay -S wgtunnel-bin
 
 <details open>
 <summary><b>Direct</b></summary>
+</br>
 
 1. Download the `.pacman` directly from the latest GitHub release.
 
@@ -276,6 +284,7 @@ remove that yourself with your keyring manager.
 
 <details open>
 <summary><b>Package Manager</b></summary>
+</br>
 
 Via our [Homebrew tap](https://github.com/wgtunnel/homebrew-wgtunnel):
 
@@ -289,6 +298,7 @@ brew install --cask wg-tunnel
 
 <details open>
 <summary><b>Direct</b></summary>
+</br>
 
 1. Download the `.dmg` directly from the latest release.
 2. Open the `.dmg` and drag **WG Tunnel** into Applications.
