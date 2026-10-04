@@ -115,14 +115,25 @@ This has significant benefits:
 > Requires Windows 10 version 1803 (build 17134) or later for UDS support. The installer checks this and will refuse
 > to install on an older build.
 
+<details open>
+<summary><b>Package Manager</b></summary>
+
+Via [Chocolatey](https://community.chocolatey.org/packages/wgtunnel):
+
+```powershell
+choco install wgtunnel
+```
+
+</details>
+
+<details open>
+<summary><b>Direct</b></summary>
+
 1. Download the Windows installer (`.exe`) from the latest release.
 2. Run the installer. Accept the Admin rights prompt (UAC) so the daemon can be installed as a system service.
 3. Launch the app.
 
-Also available on [Chocolatey](https://community.chocolatey.org/packages/wgtunnel):
-```powershell
-choco install wgtunnel
-```
+</details>
 
 ### Linux
 
@@ -137,47 +148,75 @@ choco install wgtunnel
 
 #### Debian / Ubuntu
 
-Preferred method - via our [apt repository](https://apt.wgtunnel.com) (for package manager updates). Review the
+<details open>
+<summary><b>Package Manager</b></summary>
+
+Via our [apt repository](https://apt.wgtunnel.com). Review the
 script [here](https://apt.wgtunnel.com/install.sh) before running it:
 
 ```bash
 wget -qO- https://apt.wgtunnel.com/install.sh | sh
 ```
 
-Or, download the `.deb` directly from the latest GitHub release:
+</details>
+
+<details open>
+<summary><b>Direct</b></summary>
+
+1. Download the `.deb` directly from the latest GitHub release.
 
 ```bash
 sudo apt install ./wgtunnel*.deb
 ```
 
+</details>
+
 #### Fedora / RHEL
 
-Preferred method - via [COPR](https://copr.fedorainfracloud.org/coprs/zaneschepke/wgtunnel/) (for package manager updates):
+<details open>
+<summary><b>Package Manager</b></summary>
+
+Via [COPR](https://copr.fedorainfracloud.org/coprs/zaneschepke/wgtunnel/):
 
 ```bash
 sudo dnf copr enable zaneschepke/wgtunnel
 sudo dnf install wgtunnel
 ```
 
-Or, download the `.rpm` directly from the latest GitHub release:
+</details>
+
+<details open>
+<summary><b>Direct</b></summary>
+
+1. Download the `.rpm` directly from the latest GitHub release.
 
 ```bash
 sudo rpm -Uvh wgtunnel*.rpm
 ```
 
-#### Arch Linux
+</details>
 
-Preferred method - via [AUR](https://aur.archlinux.org/packages/wgtunnel-bin) (for package manager updates):
+#### Arch Linux
 
 > [!Note]
 > Per Arch packaging guidelines, the installation does not enable or start the daemon for you. You will
 > need to start the daemon yourself after install.
 
+<details open>
+<summary><b>Package Manager</b></summary>
+
+Via the [AUR](https://aur.archlinux.org/packages/wgtunnel-bin):
+
 ```bash
 yay -S wgtunnel-bin
 ```
 
-Or, download the `.pacman` directly from the latest GitHub release:
+</details>
+
+<details open>
+<summary><b>Direct</b></summary>
+
+1. Download the `.pacman` directly from the latest GitHub release.
 
 ```bash
 sudo pacman -U wgtunnel*.pacman
@@ -188,6 +227,8 @@ Then, enable and start the daemon:
 ```bash
 sudo systemctl enable --now wgtunnel-daemon.service
 ```
+
+</details>
 
 #### Other distros (`.tar.gz`)
 
@@ -233,16 +274,32 @@ remove that yourself with your keyring manager.
 > [!NOTE]
 > Requires macOS 13 (Ventura) or later, on Apple Silicon. Intel Macs are not currently supported.
 
-1. Download the `.dmg` from the latest release.
-2. Open it and drag **WG Tunnel** into Applications.
+<details open>
+<summary><b>Package Manager</b></summary>
+
+Via our [Homebrew tap](https://github.com/wgtunnel/homebrew-wgtunnel):
+
+```bash
+brew tap wgtunnel/wgtunnel
+brew trust wgtunnel/wgtunnel
+brew install --cask wg-tunnel
+```
+
+</details>
+
+<details open>
+<summary><b>Direct</b></summary>
+
+1. Download the `.dmg` directly from the latest release.
+2. Open the `.dmg` and drag **WG Tunnel** into Applications.
 3. Launch the app.
 4. On first launch, macOS will ask you to approve the background service. The app prompts you
    with a button straight to **System Settings → General → Login Items & Extensions**.
 
+</details>
+
 To fully remove the background service before uninstalling, use **Settings → General → Remove
-background service** in the app first, then drag the app to Trash. Simply deleting the app
-without doing that leaves the daemon running until you reboot. Apple doesn't provide the ability
-to automatically remove a daemon on app uninstall.
+background service** in the app first. Apple doesn't provide the ability to automatically remove a daemon on app uninstall.
 
 To wipe saved tunnels/settings/logs after uninstalling:
 
