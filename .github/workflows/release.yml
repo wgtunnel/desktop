@@ -126,3 +126,15 @@ jobs:
     with:
       tag: ${{ needs.meta.outputs.tag }}
       version: ${{ needs.meta.outputs.version }}
+
+  homebrew:
+    needs: [meta, publish]
+    if: needs.meta.outputs.release_type == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch update for homebrew tap
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.PAT }}
+          repository: wgtunnel/homebrew-wgtunnel
+          event-type: homebrew-update
