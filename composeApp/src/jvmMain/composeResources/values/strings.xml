@@ -62,6 +62,8 @@
     <string name="use_wildcards">Use name wildcards</string>
     <string name="learn_more">Learn more</string>
     <string name="donate">Donate to project</string>
+    <string name="donate_action">Donate</string>
+    <string name="donation_prompt_message">Thanks for using WG Tunnel! If you are able, please consider supporting the project to keep it free and improving.</string>
     <string name="local_logging">Local logs monitor</string>
     <string name="stop_on_no_internet">Stop on no internet</string>
     <string name="allow_lan_traffic">Allow LAN traffic</string>

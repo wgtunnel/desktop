@@ -155,7 +155,7 @@ choco install wgtunnel
 </br>
 
 Via our [apt repository](https://apt.wgtunnel.com). Review the
-script [here](https://apt.wgtunnel.com/install.sh) before running it:
+script [here](https://raw.githubusercontent.com/wgtunnel/desktop/master/packaging/apt/install.sh) before running it:
 
 ```bash
 wget -qO- https://apt.wgtunnel.com/install.sh | sh

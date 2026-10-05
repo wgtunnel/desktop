@@ -61,6 +61,16 @@ class PropertiesClientCacheRepository(
             WindowBounds(width, height, x, y, isMaximized)
         }
 
+    override suspend fun updateLastSeenAppVersion(version: String) {
+        synchronized(lock) {
+            props[KEY_LAST_SEEN_APP_VERSION] = version
+            persistLocked()
+        }
+    }
+
+    override suspend fun getLastSeenAppVersion(): String? =
+        synchronized(lock) { props.getProperty(KEY_LAST_SEEN_APP_VERSION) }
+
     private fun persistLocked() {
         try {
             FileOutputStream(storePath.toFile()).use { output ->
@@ -80,5 +90,6 @@ class PropertiesClientCacheRepository(
         private const val KEY_WINDOW_X = "window_x"
         private const val KEY_WINDOW_Y = "window_y"
         private const val KEY_WINDOW_MAXIMIZED = "window_maximized"
+        private const val KEY_LAST_SEEN_APP_VERSION = "last_seen_app_version"
     }
 }

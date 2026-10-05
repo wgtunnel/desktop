@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,12 +21,15 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.InstallDesktop
 import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
@@ -52,6 +57,7 @@ import androidx.compose.ui.window.rememberWindowState
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.platformLogWriter
+import com.dokar.sonner.TextToastAction
 import com.dokar.sonner.Toast
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.Toaster
@@ -94,6 +100,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.TrayBadgeState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.ErrorRed
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.HealthyGreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Heart
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WGTunnelTheme
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.WarningAmber
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
@@ -536,10 +543,11 @@ fun main(args: Array<String>) {
                                                 Icons.Outlined.ErrorOutline to ErrorRed
                                             ToastType.Warning ->
                                                 Icons.Outlined.WarningAmber to WarningAmber
-                                            ToastType.Info,
-                                            ToastType.Normal ->
+                                            ToastType.Info ->
                                                 Icons.Outlined.Info to
                                                     MaterialTheme.colorScheme.onSurface
+                                            ToastType.Normal ->
+                                                Icons.Outlined.FavoriteBorder to Heart
                                         }
                                     Icon(
                                         icon,
@@ -613,6 +621,25 @@ fun main(args: Array<String>) {
                                                         contentDescription =
                                                             action.contentDescription,
                                                         tint = MaterialTheme.colorScheme.primary,
+                                                    )
+                                                }
+                                            is TextToastAction ->
+                                                TextButton(
+                                                    onClick = { action.onClick(toast) },
+                                                    colors =
+                                                        ButtonDefaults.textButtonColors(
+                                                            contentColor =
+                                                                MaterialTheme.colorScheme.primary
+                                                        ),
+                                                    modifier = Modifier.fillMaxWidth(.25f),
+                                                    contentPadding =
+                                                        PaddingValues(horizontal = 12.dp),
+                                                ) {
+                                                    Text(
+                                                        text = action.text,
+                                                        fontWeight = FontWeight.Medium,
+                                                        softWrap = true,
+                                                        maxLines = 5,
                                                     )
                                                 }
                                             else -> ToasterDefaults.actionSlot(toast)

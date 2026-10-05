@@ -28,6 +28,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.dokar.sonner.TextToastAction
 import com.dokar.sonner.Toast
 import com.dokar.sonner.ToasterState
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
@@ -117,6 +118,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is AppSideEffect.Toast -> toaster.show(Toast(sideEffect.message, sideEffect.type))
+            is AppSideEffect.Navigate -> navController.push(sideEffect.route)
             is AppSideEffect.ActionableToast ->
                 toaster.show(
                     Toast(
@@ -143,7 +145,21 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                         id = sideEffect.id,
                         action = NavigateAction(sideEffect.actionLabel, sideEffect.onAction),
                         type = sideEffect.type,
-                        duration = Duration.INFINITE,
+                        duration = sideEffect.duration,
+                    )
+                )
+            is AppSideEffect.TextActionToast ->
+                toaster.show(
+                    Toast(
+                        message = sideEffect.message,
+                        id = sideEffect.id,
+                        action =
+                            TextToastAction(sideEffect.actionLabel) { toast ->
+                                sideEffect.onAction()
+                                toaster.dismiss(toast.id)
+                            },
+                        type = sideEffect.type,
+                        duration = sideEffect.duration,
                     )
                 )
             is AppSideEffect.DismissToast -> toaster.dismiss(sideEffect.id)

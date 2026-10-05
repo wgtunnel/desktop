@@ -11,6 +11,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.ClientCacheRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.orchestration.AutoTunnelCoordinator
@@ -24,9 +25,12 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_requires_approval
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_restart_command_label
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_start_command_label
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.donate_action
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.donation_prompt_message
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.open_system_settings
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.theme_from_image_failed
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
+import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.DaemonConnectionStatus
@@ -54,6 +58,7 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 @OptIn(FlowPreview::class)
 class AppViewModel(
     private val settingsRepository: GeneralSettingRepository,
+    private val clientCacheRepository: ClientCacheRepository,
     private val autoTunnelRepository: AutoTunnelSettingsRepository,
     private val tunnelRepository: TunnelRepository,
     private val daemonService: DaemonService,
@@ -203,6 +208,27 @@ class AppViewModel(
                 val result = appUpdater.check(silent = true)
                 if (result is UpdateResult.Error) log.w(result.exception) { "Update check failed" }
             }
+
+            intent {
+                val lastSeenAppVersion = clientCacheRepository.getLastSeenAppVersion()
+                if (lastSeenAppVersion != BuildConfig.APP_VERSION) {
+                    if (lastSeenAppVersion != null && !settingsRepository.get().alreadyDonated) {
+                        postSideEffect(
+                            AppSideEffect.TextActionToast(
+                                id = DONATION_PROMPT_TOAST_ID,
+                                message = getString(Res.string.donation_prompt_message),
+                                actionLabel = getString(Res.string.donate_action),
+                                onAction = {
+                                    intent { postSideEffect(AppSideEffect.Navigate(Route.Donate)) }
+                                },
+                                type = ToastType.Normal,
+                                duration = DONATION_PROMPT_DURATION,
+                            )
+                        )
+                    }
+                    clientCacheRepository.updateLastSeenAppVersion(BuildConfig.APP_VERSION)
+                }
+            }
         }
 
     fun setAlreadyDonated(donated: Boolean) = intent {
@@ -280,7 +306,9 @@ class AppViewModel(
         private const val DAEMON_NOT_RUNNING_TOAST_ID = "daemon_not_running"
         private const val DAEMON_OUTDATED_TOAST_ID = "daemon_outdated"
         private const val DAEMON_APPROVAL_TOAST_ID = "daemon_requires_approval"
+        private const val DONATION_PROMPT_TOAST_ID = "donation_prompt"
         private val DISCONNECT_GRACE_PERIOD = 5.seconds
+        private val DONATION_PROMPT_DURATION = 30.seconds
 
         private val isWindows = Platform.Current == Platform.Windows
         private val isMacOS = Platform.Current == Platform.MacOS

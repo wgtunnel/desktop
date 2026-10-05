@@ -14,4 +14,8 @@ interface ClientCacheRepository {
     suspend fun updateWindowBounds(bounds: WindowBounds)
 
     suspend fun getWindowBounds(): WindowBounds?
+
+    suspend fun updateLastSeenAppVersion(version: String)
+
+    suspend fun getLastSeenAppVersion(): String?
 }
