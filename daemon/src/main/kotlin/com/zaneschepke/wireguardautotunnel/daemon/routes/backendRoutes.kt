@@ -20,6 +20,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+private val whitelistUpdates = Mutex()
 private val log = Logger.withTag("BackendRoutes")
 
 fun Route.backendRoutes(backend: Backend, cacheRepository: DaemonCacheRepository, directAccess: DirectAccessService) {
@@ -29,6 +33,7 @@ fun Route.backendRoutes(backend: Backend, cacheRepository: DaemonCacheRepository
     }
     put(Routes.BACKEND_DIRECT_WHITELIST) {
         val request = call.receive<DirectWhitelistRequest>()
+        whitelistUpdates.withLock {
         directAccess.apply(request.entries).fold(
             onSuccess = {
                 cacheRepository.updateDirectWhitelist(request.entries)
@@ -36,6 +41,7 @@ fun Route.backendRoutes(backend: Backend, cacheRepository: DaemonCacheRepository
             },
             onFailure = { call.respond(HttpStatusCode.BadRequest, it.message ?: "Invalid whitelist") },
         )
+        }
     }
 
     put(Routes.BACKEND_KILL_SWITCH) {
