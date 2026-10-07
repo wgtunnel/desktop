@@ -136,3 +136,21 @@ tasks.register<Exec>("buildWinSW") {
         "-p:PublishSingleFile=true",
     )
 }
+
+val directWhitelistResources = layout.buildDirectory.dir("generated/direct-whitelist-resources")
+val buildDirectWhitelistHelper = tasks.register<Exec>("buildDirectWhitelistHelper") {
+    val linux = System.getProperty("os.name").startsWith("Linux")
+    onlyIf { linux }
+    val arch = if (System.getProperty("os.arch") in listOf("aarch64", "arm64")) "arm64" else "amd64"
+    val executable = directWhitelistResources.map { it.file("direct-whitelist/linux-$arch/manager") }
+    inputs.dir("tools/direct-whitelist")
+    outputs.file(executable)
+    workingDir("tools/direct-whitelist")
+    environment("CGO_ENABLED", "0")
+    environment("GOOS", "linux")
+    environment("GOARCH", arch)
+    doFirst { executable.get().asFile.parentFile.mkdirs() }
+    commandLine("go", "build", "-trimpath", "-buildvcs=false", "-o", executable.get().asFile.absolutePath, ".")
+}
+sourceSets.main { resources.srcDir(directWhitelistResources) }
+tasks.processResources { dependsOn(buildDirectWhitelistHelper) }

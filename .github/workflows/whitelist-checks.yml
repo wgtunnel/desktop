@@ -1,0 +1,33 @@
+name: Direct whitelist checks
+on:
+  pull_request:
+  push:
+    branches: [feature/direct-whitelist-current]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.5'
+          cache-dependency-path: daemon/tools/direct-whitelist/go.sum
+      - name: Native unit tests and helper build
+        working-directory: daemon/tools/direct-whitelist
+        run: |
+          go test -race ./...
+          CGO_ENABLED=0 go build -buildvcs=false -o /tmp/wgtunnel-direct .
+      - name: IPv4 and IPv6 routing and firewall integration
+        run: sudo env "PATH=$PATH" "GOCACHE=$(go env GOCACHE)" "GOMODCACHE=$(go env GOMODCACHE)" bash scripts/test-whitelist-linux.sh
+  kotlin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Compile current GUI, client, IPC and daemon
+        run: ./gradlew :composeApp:compileKotlinJvm :daemon:compileKotlin -x buildGoLibs -x exportLibraryDefinitions --no-configuration-cache

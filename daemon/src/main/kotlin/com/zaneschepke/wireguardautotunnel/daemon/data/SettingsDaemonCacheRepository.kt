@@ -49,6 +49,10 @@ class SettingsDaemonCacheRepository(
         }
     }
 
+    override suspend fun getDirectWhitelist(): String = getString("direct_whitelist") ?: ""
+
+    override suspend fun updateDirectWhitelist(entries: String) = put("direct_whitelist", entries)
+
     override suspend fun updateKillSwitchEnabled(enabled: Boolean) =
         put(KEY_KS_ENABLED, enabled.toString())
 

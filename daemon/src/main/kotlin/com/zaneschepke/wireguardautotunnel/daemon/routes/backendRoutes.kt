@@ -1,5 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.daemon.routes
 
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.DirectWhitelistRequest
+import com.zaneschepke.wireguardautotunnel.daemon.direct.DirectAccessService
 import co.touchlab.kermit.Logger
 import com.wgtunnel.backend.Backend
 import com.wgtunnel.backend.exception.BackendException
@@ -20,7 +22,21 @@ import kotlinx.coroutines.flow.map
 
 private val log = Logger.withTag("BackendRoutes")
 
-fun Route.backendRoutes(backend: Backend, cacheRepository: DaemonCacheRepository) {
+fun Route.backendRoutes(backend: Backend, cacheRepository: DaemonCacheRepository, directAccess: DirectAccessService) {
+
+    get(Routes.BACKEND_DIRECT_WHITELIST) {
+        call.respond(DirectWhitelistRequest(cacheRepository.getDirectWhitelist()))
+    }
+    put(Routes.BACKEND_DIRECT_WHITELIST) {
+        val request = call.receive<DirectWhitelistRequest>()
+        directAccess.apply(request.entries).fold(
+            onSuccess = {
+                cacheRepository.updateDirectWhitelist(request.entries)
+                call.respond(HttpStatusCode.OK, "Whitelist updated")
+            },
+            onFailure = { call.respond(HttpStatusCode.BadRequest, it.message ?: "Invalid whitelist") },
+        )
+    }
 
     put(Routes.BACKEND_KILL_SWITCH) {
         val request = call.receive<KillSwitchRequest>()

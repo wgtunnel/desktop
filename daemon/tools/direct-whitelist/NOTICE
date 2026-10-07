@@ -1,0 +1,2 @@
+Direct-access routing and whitelist management adapted from the earlier patch in this repository.
+Some nftables expressions and the isolated test firewall are derived from WG Tunnel core 1.8.1, Copyright (c) 2026 Zane Schepke / WG Tunnel, including Tailscale-derived portions licensed under BSD-3-Clause.

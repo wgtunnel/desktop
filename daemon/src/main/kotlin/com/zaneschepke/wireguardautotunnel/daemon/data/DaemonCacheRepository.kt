@@ -3,6 +3,9 @@ package com.zaneschepke.wireguardautotunnel.daemon.data
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.KillSwitchConfigDto
 
 interface DaemonCacheRepository {
+    suspend fun getDirectWhitelist(): String
+    suspend fun updateDirectWhitelist(entries: String)
+
     suspend fun updateKillSwitchEnabled(enabled: Boolean)
 
     suspend fun updateKillSwitchConfig(config: KillSwitchConfigDto?)

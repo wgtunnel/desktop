@@ -20,6 +20,7 @@ object Routes {
     const val BACKEND_BASE = "/backend"
     const val BACKEND_STATUS = "$BACKEND_BASE/status"
     const val BACKEND_STATUS_WS = "$BACKEND_BASE/status/ws"
+    const val BACKEND_DIRECT_WHITELIST = "$BACKEND_BASE/direct-whitelist"
     const val BACKEND_KILL_SWITCH = "$BACKEND_BASE/kill-switch"
 
     object Tunnels {

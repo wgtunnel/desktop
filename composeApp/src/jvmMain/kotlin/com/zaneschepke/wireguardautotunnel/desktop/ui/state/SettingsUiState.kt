@@ -19,6 +19,10 @@ data class SettingsUiState(
     val updateBusy: Boolean = false,
     val updateMessage: String? = null,
     val pendingUpdateVersion: String? = null,
+    val directWhitelist: String = "",
+    val directWhitelistLoaded: Boolean = false,
+    val directWhitelistSaving: Boolean = false,
+    val directWhitelistError: String? = null,
     val daemonConnected: Boolean = false,
 ) {
     val tunnelMode: TunnelMode

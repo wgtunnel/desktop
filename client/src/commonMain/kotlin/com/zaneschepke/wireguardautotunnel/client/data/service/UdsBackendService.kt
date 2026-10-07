@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.client.data.service
 
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.DirectWhitelistRequest
 import co.touchlab.kermit.Logger
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
@@ -54,6 +55,15 @@ class UdsBackendService(
             Unit
         }
             .onFailure { lockdownSettingsRepository.updateEnabled(!enabled) }
+    }
+
+    override suspend fun getDirectWhitelist(): Result<String> = safeDaemonCall {
+        client.get(Routes.BACKEND_DIRECT_WHITELIST).body<DirectWhitelistRequest>().entries
+    }
+
+    override suspend fun setDirectWhitelist(entries: String): Result<Unit> = safeDaemonCall {
+        client.put(Routes.BACKEND_DIRECT_WHITELIST) { setBody(DirectWhitelistRequest(entries)) }
+        Unit
     }
 
     override suspend fun getStatus(): Result<BackendStatus> = runCatching {

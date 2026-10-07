@@ -357,3 +357,43 @@ Any contributions in the form of feedback, issues, code, or translations are wel
 appreciated!
 
 If your PR requires [core](https://github.com/wgtunnel/core) changes, please link the associated PR.
+
+
+### Linux direct-access whitelist (this fork)
+
+Settings → Lockdown → **Direct access without VPN** accepts one IPv4/IPv6 address,
+CIDR network or exact DNS hostname per line, up to 256 entries. Paste with Ctrl+V
+or use **Paste**, then **Apply**. Clear the field and Apply to revoke exceptions.
+Invalid lists do not replace the previously applied list. Wildcards, URLs,
+ports, scoped addresses and default-route CIDRs are rejected.
+
+Destinations use physical interfaces even with a VPN and persistent kill switch
+active. The list is stored by the daemon and restored after restart. This is a
+port to upstream desktop 2.3.0 and core 1.8.1; it does not replace either with
+older code. The daemon bundles a small Linux Go helper because the current core
+API allows firewall exceptions but does not offer direct-destination routing.
+
+The helper copies non-VPN main routes to reserved table **53**, uses policy-rule
+priorities **60/61** for its marked DNS sockets and **75/76** for destinations,
+and adds only dedicated `wgtunnel-direct` and `wgtunnel-direct-input` child chains
+to core's private IPv4/IPv6 `wgtunnel` tables. It never disables kill switch or
+modifies core's tunnel rules. Missing physical routes are unreachable rather
+than falling back into the VPN. Hooks and routes are reconciled each second;
+a recreated backend firewall can temporarily block whitelist traffic until
+reconciliation. Do not use these reserved table/rule numbers for other routing.
+
+Hostnames are resolved directly through Cloudflare DNS (1.1.1.1) with privileged
+socket marks, then refreshed every minute. A DNS failure revokes domain-derived
+exceptions, preserving explicit IP/CIDR entries. All traffic to the resolved IPs
+bypasses VPN, including sites sharing those IPs. Subdomains must be added
+separately. This does not change the DNS resolver of other applications: their
+DNS must remain usable, or the app may fail to resolve an otherwise allowed host.
+
+Linux builds require **Go 1.25.5 or newer** in PATH. `:daemon:processResources`
+builds the helper for the host amd64/arm64 architecture and embeds it into daemon
+resources, including native-image builds. Other operating systems retain the
+upstream behavior. Run `go test -race ./...` in `daemon/tools/direct-whitelist`;
+root-only `scripts/test-whitelist-linux.sh` tests in isolated network namespaces,
+with a simulated ISP, VPN routes and core-style nftables DROP rules. It verifies
+IP/CIDR add, removal, invalid-input rollback, VPN disconnect, firewall recreation
+and IPv6 neighbor discovery without modifying the host firewall.

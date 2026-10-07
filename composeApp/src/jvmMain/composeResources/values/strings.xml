@@ -383,4 +383,9 @@
     <string name="add_group_ellipsis">Add group…</string>
     <string name="expand_group">Expand group</string>
     <string name="collapse_group">Collapse group</string>
+    <string name="direct_whitelist_title">Direct access without VPN</string>
+    <string name="direct_whitelist_description">One IP, IPv6, CIDR or exact hostname per line (up to 256). Listed destinations bypass VPN even with kill switch enabled. Domains are resolved through Cloudflare DNS (1.1.1.1) and refreshed every minute. A domain applies to its resolved IPs, including other sites sharing those IPs. Application DNS must also remain available. Clear the list and Apply to remove exceptions.</string>
+    <string name="direct_whitelist_paste">Paste</string>
+    <string name="direct_whitelist_apply">Apply</string>
+    <string name="direct_whitelist_clipboard_error">Could not read text from clipboard</string>
 </resources>

@@ -7,6 +7,10 @@ import kotlinx.coroutines.flow.Flow
 interface BackendService {
     suspend fun setKillSwitch(enabled: Boolean, config: KillSwitchConfigDto? = null): Result<Unit>
 
+    suspend fun getDirectWhitelist(): Result<String>
+
+    suspend fun setDirectWhitelist(entries: String): Result<Unit>
+
     suspend fun getStatus(): Result<BackendStatus>
 
     fun statusFlow(): Flow<BackendStatus>

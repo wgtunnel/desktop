@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.daemon
 
+import com.zaneschepke.wireguardautotunnel.daemon.direct.DirectAccessService
 import co.touchlab.kermit.Logger
 import com.wgtunnel.backend.Backend
 import com.zaneschepke.wireguardautotunnel.core.helper.PermissionsHelper
@@ -45,6 +46,7 @@ class TunnelDaemon(
     private val daemonLogService: DaemonLogService,
     private val scope: CoroutineScope,
 ) {
+    private val directAccess = DirectAccessService(json)
     private var server: EmbeddedServer<*, *>? = null
     private val running = AtomicBoolean(false)
     private val shutdownLatch = CountDownLatch(1)
@@ -67,6 +69,12 @@ class TunnelDaemon(
                 }
             } else {
                 daemonLog.d { "Kill switch restore disabled in settings — skipping" }
+            }
+        }
+        runBlocking {
+            if (directAccess.supported) {
+                directAccess.apply(cacheRepository.getDirectWhitelist())
+                    .onFailure { daemonLog.e(it) { "Failed to restore direct whitelist" } }
             }
         }
         startUdsServer()
@@ -121,7 +129,7 @@ class TunnelDaemon(
                     routing {
                         daemonRoutes(cacheRepository, autoTunnelSupervisor, daemonLogService)
                         tunnelRoutes(backend, autoTunnelSupervisor)
-                        backendRoutes(backend, cacheRepository)
+                        backendRoutes(backend, cacheRepository, directAccess)
                     }
                     monitor.subscribe(ApplicationStarted) {
                         daemonLog.i { "IPC server started successfully" }
@@ -146,6 +154,7 @@ class TunnelDaemon(
             backend.stopAllActiveTunnels()
             backend.disableKillSwitch()
         }
+        directAccess.close()
         networkMonitor?.stop()
         daemonLog.i { "All tunnels closed - stopping server" }
         server?.stop(gracePeriodMillis = 1_000, timeoutMillis = 2_000)

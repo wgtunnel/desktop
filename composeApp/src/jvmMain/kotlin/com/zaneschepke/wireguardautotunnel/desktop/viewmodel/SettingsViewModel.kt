@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
@@ -27,6 +28,7 @@ class SettingsViewModel(
     private val tunnelRepository: TunnelRepository,
     private val autoTunnelRepository: AutoTunnelSettingsRepository,
     private val daemonService: DaemonService,
+    private val backendService: BackendService,
     private val tunnelBackendCoordinator: TunnelBackendCoordinator,
 ) : OrbitContainerHost<SettingsUiState, SettingsUiState, AppSideEffect>, ViewModel() {
 
@@ -62,7 +64,14 @@ class SettingsViewModel(
                         }
                     }
             }
-            intent { daemonService.alive.collect { reduce { state.copy(daemonConnected = it) } } }
+            intent {
+                daemonService.alive.collect { alive ->
+                    reduce { state.copy(daemonConnected = alive, directWhitelistLoaded = false) }
+                    if (alive) backendService.getDirectWhitelist().onSuccess { entries ->
+                        reduce { state.copy(directWhitelist = entries, directWhitelistLoaded = true) }
+                    }
+                }
+            }
         }
 
     fun onRestoreTunnelOnBoot(enabled: Boolean) = intent {
@@ -100,6 +109,14 @@ class SettingsViewModel(
             val message = (it as? ClientException).asUserMessage()
             postSideEffect(AppSideEffect.Toast(message, ToastType.Error))
         }
+    }
+
+    fun onDirectWhitelist(entries: String) = intent {
+        reduce { state.copy(directWhitelistSaving = true, directWhitelistError = null) }
+        backendService.setDirectWhitelist(entries)
+            .onSuccess { reduce { state.copy(directWhitelist = entries) } }
+            .onFailure { reduce { state.copy(directWhitelistError = it.message ?: "Could not apply whitelist") } }
+        reduce { state.copy(directWhitelistSaving = false) }
     }
 
     fun onBypassLan(enabled: Boolean) = intent {

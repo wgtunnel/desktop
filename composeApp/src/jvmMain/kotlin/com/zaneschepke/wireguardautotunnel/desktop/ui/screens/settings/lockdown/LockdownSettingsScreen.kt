@@ -56,6 +56,9 @@ fun LockdownSettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top),
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
+            if (System.getProperty("os.name").orEmpty().startsWith("Linux")) {
+                DirectWhitelistEditor(uiState, viewModel::onDirectWhitelist)
+            }
             Column {
                 GroupLabel(
                     stringResource(Res.string.configuration),
