@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.AltRoute
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Dns
@@ -25,10 +26,16 @@ import com.dokar.sonner.Toast
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.automation
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.configuration
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.current_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ddns_auto_update
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ddns_auto_update_description
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_add_another
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_desc
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_none
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.general
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ipv6_settings
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.multihop
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.prefer_ipv6
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.prefer_ipv6_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.primary_tunnel
@@ -69,6 +76,16 @@ fun TunnelSettingsScreen(viewModel: TunnelViewModel) {
 
     if (!uiState.isLoaded) return
     val tunnel = uiState.currentConfig
+    val selectedEntry = uiState.userTunnels.firstOrNull { it.id == tunnel.entryTunnelId }
+    val entryLabel = selectedEntry?.name ?: stringResource(Res.string.entry_tunnel_none)
+    val entryDescription =
+        when {
+            uiState.userTunnels.size <= 1 -> stringResource(Res.string.entry_tunnel_add_another)
+            else ->
+                stringResource(Res.string.current_template, entryLabel) +
+                    "\n" +
+                    stringResource(Res.string.entry_tunnel_desc)
+        }
 
     val requestApply =
         rememberRestartToApplyChanges(
@@ -138,6 +155,20 @@ fun TunnelSettingsScreen(viewModel: TunnelViewModel) {
                         )
                     },
                     onClick = { viewModel.togglePrimaryTunnel() },
+                )
+            }
+            Column {
+                GroupLabel(
+                    stringResource(Res.string.multihop),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+                SurfaceRow(
+                    leading = {
+                        Icon(Icons.AutoMirrored.Outlined.AltRoute, contentDescription = null)
+                    },
+                    title = stringResource(Res.string.entry_tunnel),
+                    description = { DescriptionText(entryDescription) },
+                    onClick = { navController.push(Route.EntryTunnel(tunnel.id)) },
                 )
             }
             Column {

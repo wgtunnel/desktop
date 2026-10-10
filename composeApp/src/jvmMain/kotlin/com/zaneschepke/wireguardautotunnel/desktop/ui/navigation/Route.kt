@@ -40,6 +40,8 @@ sealed class Route : NavKey {
 
     @Keep @Serializable data class LiveConfig(val id: Long) : Route()
 
+    @Keep @Serializable data class EntryTunnel(val id: Long) : Route()
+
     @Keep @Serializable data object Settings : Route()
 
     @Keep @Serializable data object TunnelMonitoring : Route()
@@ -105,7 +107,8 @@ enum class Tab(
                 is Route.Tunnels,
                 is Route.Tunnel,
                 is Route.Config,
-                is Route.LiveConfig -> TUNNELS
+                is Route.LiveConfig,
+                is Route.EntryTunnel -> TUNNELS
                 is Route.AutoTunnel,
                 Route.WifiPreferences,
                 is Route.PreferredTunnel -> AUTOTUNNEL
@@ -140,6 +143,7 @@ fun routeSerializersModule(): SerializersModule = SerializersModule {
         subclass(Route.Tunnel::class, Route.Tunnel.serializer())
         subclass(Route.Config::class, Route.Config.serializer())
         subclass(Route.LiveConfig::class, Route.LiveConfig.serializer())
+        subclass(Route.EntryTunnel::class, Route.EntryTunnel.serializer())
         subclass(Route.Settings::class, Route.Settings.serializer())
         subclass(Route.TunnelMonitoring::class, Route.TunnelMonitoring.serializer())
         subclass(Route.Dns::class, Route.Dns.serializer())

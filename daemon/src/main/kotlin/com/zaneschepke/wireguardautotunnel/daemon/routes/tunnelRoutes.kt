@@ -7,6 +7,7 @@ import com.wgtunnel.parser.Config
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.StartTunnelRequest
 import com.zaneschepke.wireguardautotunnel.daemon.autotunnel.AutoTunnelSupervisor
+import com.zaneschepke.wireguardautotunnel.daemon.dto.outerConfigOrNull
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toBackendMode
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toCore
 import com.zaneschepke.wireguardautotunnel.daemon.tunnel.RunningTunnel
@@ -43,9 +44,24 @@ fun Route.tunnelRoutes(backend: Backend, autoTunnelSupervisor: AutoTunnelSupervi
             val tunnel = RunningTunnel.fromRequest(id, request)
             val mode = request.toBackendMode(config)
             val dns = request.tunnelDns?.toCore()
+            val outerConfig =
+                try {
+                    request.outerConfigOrNull()
+                } catch (e: Exception) {
+                    log.e(e) { "Failed to parse entry tunnel config" }
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        e.message ?: "Invalid entry tunnel configuration",
+                    )
+                }
 
             backend
-                .start(tunnel = tunnel, mode = mode, tunnelDnsConfig = dns)
+                .start(
+                    tunnel = tunnel,
+                    mode = mode,
+                    tunnelDnsConfig = dns,
+                    outerConfig = outerConfig,
+                )
                 .onSuccess { call.respond(HttpStatusCode.OK, "Tunnel ${request.name} started") }
                 .onFailure { error ->
                     log.e(error) { "Failed to start tunnel ${request.name}" }

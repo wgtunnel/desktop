@@ -38,6 +38,7 @@ class RoomTunnelRepository(private val tunnelConfigDao: TunnelConfigDao) : Tunne
     }
 
     override suspend fun delete(id: Long) {
+        tunnelConfigDao.clearEntryRefsTo(id)
         tunnelConfigDao.deleteById(id)
     }
 
@@ -62,6 +63,7 @@ class RoomTunnelRepository(private val tunnelConfigDao: TunnelConfigDao) : Tunne
     }
 
     override suspend fun delete(ids: List<Long>) {
+        tunnelConfigDao.clearEntryRefsTo(ids)
         tunnelConfigDao.deleteByIds(ids)
     }
 

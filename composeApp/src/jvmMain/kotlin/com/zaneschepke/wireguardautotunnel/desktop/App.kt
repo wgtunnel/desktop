@@ -72,6 +72,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.donate.cry
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.support.license.LicenseScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.TunnelsScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.ConfigScreen
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.EntryTunnelScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel.TunnelSettingsScreen
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
@@ -330,6 +331,11 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                                         val viewModel: TunnelViewModel =
                                             koinViewModel(parameters = { parametersOf(it.id) })
                                         ConfigScreen(viewModel, live = true)
+                                    }
+                                    entry<Route.EntryTunnel> {
+                                        val viewModel: TunnelViewModel =
+                                            koinViewModel(parameters = { parametersOf(it.id) })
+                                        EntryTunnelScreen(viewModel)
                                     }
                                     entry<Route.Settings> { SettingsScreen() }
                                     entry<Route.Logs> { LogsScreen() }

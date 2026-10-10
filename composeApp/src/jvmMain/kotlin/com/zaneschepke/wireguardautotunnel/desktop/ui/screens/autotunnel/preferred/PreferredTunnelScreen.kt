@@ -11,9 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +33,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollbarThi
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.appScrollbarStyle
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.TunnelNetwork
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.autotunnel.components.NetworkRuleInput
+import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.TunnelPickerList
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AutoTunnelViewModel
 import dev.nucleusframework.core.runtime.Platform
@@ -73,28 +71,24 @@ fun PreferredTunnelScreen(
         }
 
     NestedSettingsScaffold(title = stringResource(Res.string.preferred_tunnel)) { padding ->
-        val lazyListState = rememberLazyListState()
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier.fillMaxSize().padding(end = ScrollbarThickness),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                if (tunnelNetwork == TunnelNetwork.ETHERNET) {
-                    items(uiState.tunnels, key = { it.id }) { tunnel ->
-                        val selected = currentSelection?.id == tunnel.id
-                        SurfaceRow(
-                            title = tunnel.name,
-                            selected = selected,
-                            trailing = {
-                                if (selected) Icon(Icons.Outlined.Check, contentDescription = null)
-                            },
-                            onClick = {
-                                viewModel.setEthernetTunnel(if (selected) null else tunnel)
-                            },
-                        )
-                    }
-                } else {
+        if (tunnelNetwork == TunnelNetwork.ETHERNET) {
+            TunnelPickerList(
+                modifier = Modifier.padding(padding),
+                tunnels = uiState.tunnels,
+                isSelected = { it.id == currentSelection?.id },
+                onSelect = { tunnel ->
+                    val selected = currentSelection?.id == tunnel.id
+                    viewModel.setEthernetTunnel(if (selected) null else tunnel)
+                },
+            )
+        } else {
+            val lazyListState = rememberLazyListState()
+            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                LazyColumn(
+                    state = lazyListState,
+                    modifier = Modifier.fillMaxSize().padding(end = ScrollbarThickness),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     items(uiState.tunnels, key = { it.id }) { tunnel ->
                         val expanded = selectedTunnel?.id == tunnel.id
                         Column {
@@ -134,13 +128,13 @@ fun PreferredTunnelScreen(
                         }
                     }
                 }
-            }
 
-            VerticalScrollbar(
-                adapter = rememberScrollbarAdapter(lazyListState),
-                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                style = appScrollbarStyle(),
-            )
+                VerticalScrollbar(
+                    adapter = rememberScrollbarAdapter(lazyListState),
+                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    style = appScrollbarStyle(),
+                )
+            }
         }
     }
 }

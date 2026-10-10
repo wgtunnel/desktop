@@ -463,18 +463,16 @@ if (isMacOS) {
                 provider {
                     val binariesRoot = layout.buildDirectory.dir("compose/binaries").get().asFile
                     val appBundle =
-                        binariesRoot
-                            .walkTopDown()
-                            .maxDepth(5)
-                            .firstOrNull { it.isDirectory && it.name.endsWith(".app") }
+                        binariesRoot.walkTopDown().maxDepth(5).firstOrNull {
+                            it.isDirectory && it.name.endsWith(".app")
+                        }
                             ?: run {
                                 // Diagnostic
                                 val listing =
                                     if (binariesRoot.isDirectory) {
-                                        binariesRoot
-                                            .walkTopDown()
-                                            .maxDepth(5)
-                                            .joinToString("\n") { "  ${it.relativeTo(binariesRoot)}" }
+                                        binariesRoot.walkTopDown().maxDepth(5).joinToString("\n") {
+                                            "  ${it.relativeTo(binariesRoot)}"
+                                        }
                                     } else {
                                         "<does not exist>"
                                     }

@@ -18,4 +18,5 @@ data class StartTunnelRequest(
     val features: TunnelFeaturesDto = TunnelFeaturesDto(),
     val preferIpv6: Boolean = false,
     val ipv6RestoreEnabled: Boolean = false,
+    val outerQuickConfig: String? = null,
 )

@@ -10,6 +10,7 @@ import com.zaneschepke.wireguardautotunnel.client.domain.enums.TransitDnsPolicy
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelDnsMode
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelDnsProtocol
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.DnsSettingsRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
@@ -28,6 +29,7 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 
 class DnsViewModel(
     private val dnsSettingsRepository: DnsSettingsRepository,
+    private val generalSettingRepository: GeneralSettingRepository,
     private val backendService: BackendService,
     private val tunnelCoordinator: TunnelCoordinator,
 ) : OrbitContainerHost<DnsUiState, DnsUiState, AppSideEffect>, ViewModel() {
@@ -42,6 +44,11 @@ class DnsViewModel(
             intent {
                 backendService.statusFlow().collect { status ->
                     reduce { state.copy(hasActiveTunnel = status.activeTunnels.isNotEmpty()) }
+                }
+            }
+            intent {
+                generalSettingRepository.flow.collect { settings ->
+                    reduce { state.copy(tunnelMode = settings.tunnelMode) }
                 }
             }
         }

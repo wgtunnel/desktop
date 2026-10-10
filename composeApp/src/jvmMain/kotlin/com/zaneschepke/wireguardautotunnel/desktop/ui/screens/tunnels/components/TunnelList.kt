@@ -2,7 +2,9 @@ package com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.component
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,6 +59,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.no_tun
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.rename_group
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_tunnels
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ungroup
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.via_entry
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SwitchWithDivider
@@ -103,6 +106,10 @@ fun TunnelList(
     val lazyListState = rememberLazyListState()
     val rows = uiState.rows
     val visibleTunnels = rows.filterIsInstance<TunnelListRow.TunnelRow>().map { it.tunnel }
+    val tunnelNamesById =
+        remember(uiState.tunnelItems) {
+            uiState.tunnelItems.associate { it.config.id to it.config.name }
+        }
     val windowInfo = LocalWindowInfo.current
     // Where a Shift-click range starts from, the last tunnel picked by a plain or Ctrl-click
     var anchorId by remember { mutableStateOf<Long?>(null) }
@@ -396,7 +403,24 @@ fun TunnelList(
                                         }
                                     },
                                     selected = isSelected,
-                                    description = { TunnelStatisticsSection(status = item.status) },
+                                    description = {
+                                        val entryName =
+                                            item.config.entryTunnelId?.let { tunnelNamesById[it] }
+                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            if (entryName != null) {
+                                                Text(
+                                                    text =
+                                                        stringResource(
+                                                            Res.string.via_entry,
+                                                            entryName,
+                                                        ),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.outline,
+                                                )
+                                            }
+                                            TunnelStatisticsSection(status = item.status)
+                                        }
+                                    },
                                     trailing = {
                                         if (!uiState.isSelectionMode) {
                                             RequiresDaemonTooltip(

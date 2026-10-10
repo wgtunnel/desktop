@@ -7,6 +7,7 @@ data class TunnelUiState(
     val isLoaded: Boolean = false,
     val editedConfig: TunnelConfig = TunnelConfig.Empty,
     val currentConfig: TunnelConfig = TunnelConfig.Empty,
+    val userTunnels: List<TunnelConfig> = emptyList(),
     val activeConfig: ActiveConfig? = null,
     val lastStatsAtMs: Long = 0L,
     val isDirty: Boolean = false,

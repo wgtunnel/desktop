@@ -184,5 +184,5 @@ fun serviceModule(appVersionLabel: String) = module {
         )
     }
 
-    single<TunnelImportService> { DefaultTunnelImportService(get()) }
+    single<TunnelImportService> { DefaultTunnelImportService(get(), get()) }
 }

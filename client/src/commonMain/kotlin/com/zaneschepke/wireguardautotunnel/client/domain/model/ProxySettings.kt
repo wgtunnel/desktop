@@ -14,7 +14,13 @@ data class ProxySettings(
     val httpProxyBindAddress: String? = null,
     val proxyUsername: String? = null,
     val proxyPassword: String? = null,
+    val allowSocks4: Boolean = false,
 ) {
+    // SOCKS4 has no auth mechanism, so the toggle only ever takes effect when no
+    // username/password is configured.
+    val canAllowSocks4: Boolean
+        get() = proxyUsername.isNullOrBlank()
+
     fun toProxyConfig(): ProxyConfig {
         val socks5 =
             if (socks5ProxyEnabled) {
@@ -25,6 +31,7 @@ data class ProxySettings(
                         port = port,
                         username = proxyUsername,
                         password = proxyPassword,
+                        allowSocks4 = allowSocks4 && canAllowSocks4,
                     )
                 }
             } else null
@@ -50,7 +57,13 @@ data class ProxySettings(
         return ProxyConfigDto(
             socks5 =
                 core.socks5?.let {
-                    ProxyConfigDto.Socks5(it.host, it.port, it.username, it.password)
+                    ProxyConfigDto.Socks5(
+                        it.host,
+                        it.port,
+                        it.username,
+                        it.password,
+                        it.allowSocks4,
+                    )
                 },
             http =
                 core.http?.let { ProxyConfigDto.Http(it.host, it.port, it.username, it.password) },

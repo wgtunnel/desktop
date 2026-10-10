@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.outlined.Forward5
 import androidx.compose.material.icons.outlined.Http
 import androidx.compose.material.icons.outlined.RemoveRedEye
@@ -21,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import com.dokar.sonner.Toast
 import com.zaneschepke.wireguardautotunnel.client.domain.model.ProxySettings
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.allow_socks4
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.allow_socks4_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.credentials_encrypted_at_rest
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.hide_password
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.http_bind_address
@@ -38,6 +41,7 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.rememberRest
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scaffold.NestedSettingsScaffold
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.text.DescriptionText
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.textbox.ConfigurationTextBox
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.ProxyViewModel
@@ -98,6 +102,26 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
                         hint = ProxySettings.DEFAULT_SOCKS_BIND_ADDRESS,
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
+                    if (uiState.draft.canAllowSocks4) {
+                        SurfaceRow(
+                            leading = {
+                                Icon(Icons.AutoMirrored.Outlined.Forward, contentDescription = null)
+                            },
+                            title = stringResource(Res.string.allow_socks4),
+                            description = {
+                                DescriptionText(stringResource(Res.string.allow_socks4_desc))
+                            },
+                            trailing = {
+                                ThemedSwitch(
+                                    checked = uiState.draft.allowSocks4,
+                                    onClick = viewModel::onAllowSocks4Changed,
+                                )
+                            },
+                            onClick = {
+                                viewModel.onAllowSocks4Changed(!uiState.draft.allowSocks4)
+                            },
+                        )
+                    }
                 }
             }
 

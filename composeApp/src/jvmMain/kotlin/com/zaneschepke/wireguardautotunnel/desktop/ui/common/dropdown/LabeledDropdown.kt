@@ -16,6 +16,7 @@ fun <T> LabeledDropdown(
     options: List<T?>,
     currentValue: T?,
     optionToString: @Composable (T?) -> String,
+    enabled: Boolean = true,
 ) {
     var isDropDownExpanded by remember { mutableStateOf(false) }
 
@@ -23,6 +24,7 @@ fun <T> LabeledDropdown(
         leading = leading,
         title = title,
         description = description,
+        enabled = enabled,
         onClick = { isDropDownExpanded = true },
         trailing = {
             DropdownSelector(
@@ -31,6 +33,7 @@ fun <T> LabeledDropdown(
                 onValueSelected = { selected -> onSelected(selected) },
                 isExpanded = isDropDownExpanded,
                 onDismiss = { isDropDownExpanded = false },
+                enabled = enabled,
                 optionToString = optionToString,
             )
         },

@@ -51,6 +51,7 @@ fun ProxyConfigDto.toCore(): ProxyConfig =
                     port = it.port,
                     username = it.username,
                     password = it.password,
+                    allowSocks4 = it.allowSocks4,
                 )
             },
         http =
@@ -73,6 +74,7 @@ fun ProxyConfig.toDto(): ProxyConfigDto =
                     port = it.port,
                     username = it.username,
                     password = it.password,
+                    allowSocks4 = it.allowSocks4,
                 )
             },
         http =
@@ -105,6 +107,12 @@ fun TunnelDnsConfigDto.toCore(): TunnelDnsConfig =
                 else -> com.wgtunnel.backend.model.dns.DnsSplitMode.SYSTEM
             },
     )
+
+fun StartTunnelRequest.outerConfigOrNull(): Config? {
+    val quick = outerQuickConfig?.trim().orEmpty()
+    if (quick.isEmpty()) return null
+    return Config.parseQuickString(quick)
+}
 
 fun StartTunnelRequest.toBackendMode(config: Config): CoreBackendMode {
     return when (mode) {

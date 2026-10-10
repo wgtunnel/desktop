@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources._default
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dropdown
+import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Disabled
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -30,20 +31,27 @@ fun <T> DropdownSelector(
     label: @Composable (() -> Unit)? = null,
     isExpanded: Boolean = false,
     onDismiss: () -> Unit = {},
+    enabled: Boolean = true,
     optionToString: @Composable (T?) -> String = {
         it?.toString() ?: stringResource(Res.string._default)
     },
 ) {
+    val contentColor = if (enabled) MaterialTheme.colorScheme.onSurface else Disabled
     Box(modifier = modifier) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (label != null) label()
-            Text(text = optionToString(currentValue), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = optionToString(currentValue),
+                style = MaterialTheme.typography.bodyMedium,
+                color = contentColor,
+            )
             Icon(
                 Icons.Default.ArrowDropDown,
                 contentDescription = stringResource(Res.string.dropdown),
+                tint = contentColor,
             )
         }
 

@@ -16,6 +16,7 @@ import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelConfigDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelStatusDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelTunnelConfigDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.NetworkStatusDto
+import com.zaneschepke.wireguardautotunnel.daemon.dto.outerConfigOrNull
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toBackendMode
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toCore
 import com.zaneschepke.wireguardautotunnel.daemon.tunnel.DesktopNetworkMonitor
@@ -149,8 +150,21 @@ class AutoTunnelSupervisor(
                 .onFailure { log.e(it) { "Invalid auto-tunnel config for ${tunnelPlan.name}" } }
                 .getOrNull() ?: return
         val tunnel = RunningTunnel.fromRequest(tunnelPlan.id.toInt(), request)
+        val outerConfig = runCatching {
+            request.outerConfigOrNull()
+        }
+            .onFailure {
+                log.e(it) { "Invalid entry tunnel config for auto-tunnel ${tunnelPlan.name}" }
+            }
+            .getOrNull()
+        if (!request.outerQuickConfig.isNullOrBlank() && outerConfig == null) return
         backend
-            .start(tunnel, request.toBackendMode(config), request.tunnelDns?.toCore())
+            .start(
+                tunnel,
+                request.toBackendMode(config),
+                request.tunnelDns?.toCore(),
+                outerConfig,
+            )
             .onFailure { log.w(it) { "Failed to start auto-tunnel ${tunnelPlan.name}" } }
     }
 

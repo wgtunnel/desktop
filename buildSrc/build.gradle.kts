@@ -7,5 +7,3 @@ repositories {
     mavenCentral()
     google()
 }
-
-

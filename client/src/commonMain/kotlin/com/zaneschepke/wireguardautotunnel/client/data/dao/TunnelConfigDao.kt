@@ -29,6 +29,12 @@ interface TunnelConfigDao {
 
     @Query("DELETE FROM tunnel_config WHERE id IN (:ids)") suspend fun deleteByIds(ids: List<Long>)
 
+    @Query("UPDATE tunnel_config SET entry_tunnel_id = NULL WHERE entry_tunnel_id = :id")
+    suspend fun clearEntryRefsTo(id: Long)
+
+    @Query("UPDATE tunnel_config SET entry_tunnel_id = NULL WHERE entry_tunnel_id IN (:ids)")
+    suspend fun clearEntryRefsTo(ids: List<Long>)
+
     @Query("DELETE FROM tunnel_config WHERE name = :name") suspend fun deleteByName(name: String)
 
     @Query("SELECT COUNT('id') FROM tunnel_config") suspend fun count(): Long

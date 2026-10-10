@@ -32,6 +32,7 @@ import com.zaneschepke.wireguardautotunnel.client.domain.enums.SplitDnsSuffixTar
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TransitDnsPolicy
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelDnsMode
 import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelDnsProtocol
+import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.current_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_endpoint_hint
@@ -297,13 +298,18 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                                 )
                             }
                         }
+                        // Proxy mode always enforces Redirect at the engine level
+                        val transitPolicyLocked = uiState.tunnelMode == TunnelMode.PROXY
                         LabeledDropdown(
                             title = stringResource(Res.string.transit_dns_policy),
                             description = {
                                 DescriptionText(stringResource(Res.string.transit_dns_policy_desc))
                             },
                             leading = { Icon(Icons.Outlined.Dns, contentDescription = null) },
-                            currentValue = uiState.draft.transitDnsPolicy,
+                            enabled = !transitPolicyLocked,
+                            currentValue =
+                                if (transitPolicyLocked) TransitDnsPolicy.Redirect
+                                else uiState.draft.transitDnsPolicy,
                             onSelected = { selected ->
                                 selected?.let { viewModel.setForeignDnsPolicy(it) }
                             },

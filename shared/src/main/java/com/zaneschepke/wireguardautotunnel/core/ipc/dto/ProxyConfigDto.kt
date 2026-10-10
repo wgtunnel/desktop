@@ -10,6 +10,7 @@ data class ProxyConfigDto(val socks5: Socks5? = null, val http: Http? = null) {
         val port: Int = 25344,
         val username: String? = null,
         val password: String? = null,
+        val allowSocks4: Boolean = false,
     )
 
     @Serializable

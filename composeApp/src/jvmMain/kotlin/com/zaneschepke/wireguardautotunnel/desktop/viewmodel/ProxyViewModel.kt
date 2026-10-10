@@ -51,6 +51,10 @@ class ProxyViewModel(
         reduce { state.copy(draft = state.draft.copy(httpProxyEnabled = enabled)) }
     }
 
+    fun onAllowSocks4Changed(allowed: Boolean) = intent {
+        reduce { state.copy(draft = state.draft.copy(allowSocks4 = allowed)) }
+    }
+
     fun onSocksBindChanged(value: String) = intent {
         reduce {
             state.copy(
@@ -71,9 +75,10 @@ class ProxyViewModel(
 
     fun onUsernameChanged(value: String) = intent {
         reduce {
+            val updated = state.draft.copy(proxyUsername = value.ifBlank { null })
             state.copy(
                 username = value,
-                draft = state.draft.copy(proxyUsername = value.ifBlank { null }),
+                draft = if (updated.canAllowSocks4) updated else updated.copy(allowSocks4 = false),
             )
         }
     }

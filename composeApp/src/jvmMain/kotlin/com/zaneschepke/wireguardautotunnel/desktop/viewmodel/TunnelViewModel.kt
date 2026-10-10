@@ -30,19 +30,19 @@ class TunnelViewModel(
             buildSettings = { repeatOnSubscribedStopTimeout = 5000L },
         ) {
             intent {
-                tunnelRepository.flow
-                    .map { it.firstOrNull { tun -> tun.id == tunnelId } }
-                    .collect { tunnel ->
-                        reduce {
-                            state.copy(
-                                isLoaded = true,
-                                currentConfig = tunnel ?: state.currentConfig,
-                                editedConfig =
-                                    if (state.isDirty) state.editedConfig
-                                    else tunnel ?: state.editedConfig,
-                            )
-                        }
+                tunnelRepository.userTunnelsFlow.collect { tunnels ->
+                    val tunnel = tunnels.firstOrNull { tun -> tun.id == tunnelId }
+                    reduce {
+                        state.copy(
+                            isLoaded = true,
+                            userTunnels = tunnels,
+                            currentConfig = tunnel ?: state.currentConfig,
+                            editedConfig =
+                                if (state.isDirty) state.editedConfig
+                                else tunnel ?: state.editedConfig,
+                        )
                     }
+                }
             }
             intent {
                 backendService
@@ -97,6 +97,28 @@ class TunnelViewModel(
 
     fun onIpv6Restore(enabled: Boolean) = intent {
         tunnelRepository.save(state.currentConfig.copy(ipv6RestoreEnabled = enabled))
+    }
+
+    fun onEntryTunnel(entryId: Long?) = intent {
+        val tunnel = state.currentConfig
+        if (tunnel.id == 0L) return@intent
+        if (entryId == tunnel.id) return@intent
+        if (entryId != null) {
+            val entry = state.userTunnels.firstOrNull { it.id == entryId } ?: return@intent
+            if (entry.entryTunnelId != null) return@intent
+        }
+        val updated = tunnel.copy(entryTunnelId = entryId)
+        tunnelRepository.save(updated)
+        reduce {
+            state.copy(
+                currentConfig = updated,
+                editedConfig = state.editedConfig.copy(entryTunnelId = entryId),
+            )
+        }
+        if (state.isRunning) {
+            tunnelCoordinator.stopTunnel(tunnelId)
+            tunnelCoordinator.startTunnel(updated)
+        }
     }
 
     fun saveChanges(restart: Boolean = false) = intent {

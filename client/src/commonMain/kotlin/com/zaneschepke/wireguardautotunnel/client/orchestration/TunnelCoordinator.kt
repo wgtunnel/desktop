@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.client.orchestration
 
+import co.touchlab.kermit.Logger
 import com.wgtunnel.backend.util.parseDnsServersOnly
 import com.wgtunnel.parser.AmneziaConfigNormalizer
 import com.wgtunnel.parser.Config
@@ -49,6 +50,8 @@ class TunnelCoordinator(
     lockdownRepository: LockdownSettingsRepository,
     scope: CoroutineScope,
 ) {
+    private val log = Logger.withTag("TunnelCoordinator")
+
     data class RuntimeSettingsSnapshot(
         val general: GeneralSettings,
         val dns: DnsSettings,
@@ -150,8 +153,13 @@ class TunnelCoordinator(
                 splitTunnel = false,
                 amnezia = snapshot.general.isGlobalAmneziaEnabled,
             )
+        val globalConfig =
+            if (policy.hasAnyOverrides) {
+                tunnelRepository.globalTunnelFlow.firstOrNull()?.asConfig()
+            } else {
+                null
+            }
         if (policy.hasAnyOverrides) {
-            val globalConfig = tunnelRepository.globalTunnelFlow.firstOrNull()?.asConfig()
             config = ConfigReconciler.reconcileConfig(config, globalConfig, policy)
         }
 
@@ -182,6 +190,44 @@ class TunnelCoordinator(
                 ),
             preferIpv6 = tunnelConfig.preferIpv6,
             ipv6RestoreEnabled = tunnelConfig.ipv6RestoreEnabled,
+            outerQuickConfig = resolveOuterQuickConfig(tunnelConfig, globalConfig, policy),
         )
+    }
+
+    private suspend fun resolveOuterQuickConfig(
+        exit: TunnelConfig,
+        globalConfig: Config?,
+        policy: ConfigReconciler.ConfigReconcilePolicy,
+    ): String? {
+        val entryId = exit.entryTunnelId ?: return null
+        if (entryId == exit.id) {
+            log.w { "Ignoring self-referential entry tunnel on ${exit.name}" }
+            return null
+        }
+        val entry = tunnelRepository.getById(entryId)
+        if (entry == null) {
+            log.w { "Entry tunnel id=$entryId missing for ${exit.name}; starting one-hop" }
+            return null
+        }
+        return runCatching {
+            var outer = AmneziaConfigNormalizer.ensureAmneziaCompatibility(entry.asConfig())
+            if (policy.amnezia) {
+                outer =
+                    ConfigReconciler.reconcileConfig(
+                        outer,
+                        globalConfig,
+                        ConfigReconciler.ConfigReconcilePolicy(
+                            dns = false,
+                            splitTunnel = false,
+                            amnezia = true,
+                        ),
+                    )
+            }
+            outer.asQuickString()
+        }
+            .onFailure {
+                log.e(it) { "Failed to load entry tunnel ${entry.name} for ${exit.name}" }
+            }
+            .getOrNull()
     }
 }
