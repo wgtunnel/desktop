@@ -49,7 +49,7 @@ fun TunnelPickerList(
 
     Column(modifier = modifier.fillMaxSize()) {
         ConfigurationTextBox(
-            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp).fillMaxWidth(),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
             value = query,
             onValueChange = { query = it },
             label = stringResource(Res.string.search),

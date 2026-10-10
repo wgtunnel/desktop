@@ -284,17 +284,6 @@ class TunnelsViewModel(
         }
     }
 
-    fun onCreateGroup(name: String) = intent {
-        val unique = uniqueDisplayName(name, state.groups.map { it.name }, "Group")
-        tunnelGroupRepository.save(
-            TunnelGroup(
-                name = unique,
-                position = nextRootPosition(state.groups, state.tunnelItems.map { it.config }),
-                expanded = true,
-            )
-        )
-    }
-
     fun onRenameGroup(group: TunnelGroup, name: String) = intent {
         val unique =
             uniqueDisplayName(

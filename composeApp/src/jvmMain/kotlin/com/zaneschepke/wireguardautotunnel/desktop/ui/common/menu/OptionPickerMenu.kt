@@ -1,6 +1,9 @@
 package com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
@@ -8,6 +11,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -32,6 +36,8 @@ fun OptionPickerMenu(
     onDismiss: () -> Unit,
     options: List<PickerOption>,
     modifier: Modifier = Modifier,
+    title: String? = null,
+    description: String? = null,
 ) {
     DropdownMenu(
         expanded = expanded,
@@ -40,6 +46,16 @@ fun OptionPickerMenu(
         containerColor = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
+        if (title != null || description != null) {
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                title?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
+                description?.let { DescriptionText(it) }
+            }
+            HorizontalDivider()
+        }
         options.forEachIndexed { index, option ->
             SurfaceRow(
                 title = option.label,

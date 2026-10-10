@@ -2,7 +2,12 @@ package com.zaneschepke.wireguardautotunnel.desktop.util
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.CallSplit
+import androidx.compose.material.icons.automirrored.outlined.Forward
+import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.EnhancedEncryption
+import androidx.compose.material.icons.outlined.Https
+import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.NoEncryption
 import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material.icons.outlined.Wifi
@@ -32,6 +37,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.accent_style_vibrant
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.amoled
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.automatic
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.bootstrap_system_dns_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dark
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.default_dns_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_empty
@@ -41,7 +47,9 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_er
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_scheme
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_error_invalid_url
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.doh
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.doh_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dot
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dot_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.encrypted_dns
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.encrypted_dns_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.light
@@ -49,6 +57,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.local_
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.local_proxy_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.minutes_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.plain_dns
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.plain_dns_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.proxy
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.seconds_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.split_dns
@@ -61,8 +70,11 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.system
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.system_dns_only
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.system_dns_only_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.transit_dns_allow
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.transit_dns_allow_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.transit_dns_block
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.transit_dns_block_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.transit_dns_redirect
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.transit_dns_redirect_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.vpn
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.vpn_desc
 import org.jetbrains.compose.resources.stringResource
@@ -127,12 +139,46 @@ fun TunnelDnsProtocol.asLabel(): String =
     }
 
 @Composable
+fun TunnelDnsProtocol.asDescription(): String =
+    when (this) {
+        TunnelDnsProtocol.Doh -> stringResource(Res.string.doh_desc)
+        TunnelDnsProtocol.Dot -> stringResource(Res.string.dot_desc)
+        TunnelDnsProtocol.Plain -> stringResource(Res.string.plain_dns_desc)
+    }
+
+@Composable
+fun TunnelDnsProtocol.asIcon(): ImageVector =
+    when (this) {
+        TunnelDnsProtocol.Doh -> Icons.Outlined.Https
+        TunnelDnsProtocol.Dot -> Icons.Outlined.EnhancedEncryption
+        TunnelDnsProtocol.Plain -> Icons.Outlined.NoEncryption
+    }
+
+@Composable
 fun BootstrapDnsProtocol.asLabel(): String =
     when (this) {
         BootstrapDnsProtocol.SYSTEM -> stringResource(Res.string.system)
         BootstrapDnsProtocol.DOH -> stringResource(Res.string.doh)
         BootstrapDnsProtocol.DOT -> stringResource(Res.string.dot)
         BootstrapDnsProtocol.UDP -> stringResource(Res.string.plain_dns)
+    }
+
+@Composable
+fun BootstrapDnsProtocol.asDescription(): String =
+    when (this) {
+        BootstrapDnsProtocol.SYSTEM -> stringResource(Res.string.bootstrap_system_dns_desc)
+        BootstrapDnsProtocol.DOH -> stringResource(Res.string.doh_desc)
+        BootstrapDnsProtocol.DOT -> stringResource(Res.string.dot_desc)
+        BootstrapDnsProtocol.UDP -> stringResource(Res.string.plain_dns_desc)
+    }
+
+@Composable
+fun BootstrapDnsProtocol.asIcon(): ImageVector =
+    when (this) {
+        BootstrapDnsProtocol.SYSTEM -> Icons.Outlined.Computer
+        BootstrapDnsProtocol.DOH -> Icons.Outlined.Https
+        BootstrapDnsProtocol.DOT -> Icons.Outlined.EnhancedEncryption
+        BootstrapDnsProtocol.UDP -> Icons.Outlined.NoEncryption
     }
 
 @Composable
@@ -150,11 +196,34 @@ fun SplitDnsSuffixTarget.asDescription(): String =
     }
 
 @Composable
+fun SplitDnsSuffixTarget.asIcon(): ImageVector =
+    when (this) {
+        SplitDnsSuffixTarget.System -> Icons.Outlined.Computer
+        SplitDnsSuffixTarget.Tunnel -> Icons.Outlined.VpnKey
+    }
+
+@Composable
 fun TransitDnsPolicy.asLabel(): String =
     when (this) {
         TransitDnsPolicy.Redirect -> stringResource(Res.string.transit_dns_redirect)
         TransitDnsPolicy.Block -> stringResource(Res.string.transit_dns_block)
         TransitDnsPolicy.Allow -> stringResource(Res.string.transit_dns_allow)
+    }
+
+@Composable
+fun TransitDnsPolicy.asDescription(): String =
+    when (this) {
+        TransitDnsPolicy.Redirect -> stringResource(Res.string.transit_dns_redirect_desc)
+        TransitDnsPolicy.Block -> stringResource(Res.string.transit_dns_block_desc)
+        TransitDnsPolicy.Allow -> stringResource(Res.string.transit_dns_allow_desc)
+    }
+
+@Composable
+fun TransitDnsPolicy.asIcon(): ImageVector =
+    when (this) {
+        TransitDnsPolicy.Redirect -> Icons.AutoMirrored.Outlined.Forward
+        TransitDnsPolicy.Block -> Icons.Outlined.Block
+        TransitDnsPolicy.Allow -> Icons.Outlined.LockOpen
     }
 
 @Composable

@@ -26,12 +26,9 @@ import com.dokar.sonner.Toast
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.automation
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.configuration
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.current_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ddns_auto_update
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ddns_auto_update_description
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_add_another
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_none
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.general
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.ipv6_settings
@@ -78,14 +75,6 @@ fun TunnelSettingsScreen(viewModel: TunnelViewModel) {
     val tunnel = uiState.currentConfig
     val selectedEntry = uiState.userTunnels.firstOrNull { it.id == tunnel.entryTunnelId }
     val entryLabel = selectedEntry?.name ?: stringResource(Res.string.entry_tunnel_none)
-    val entryDescription =
-        when {
-            uiState.userTunnels.size <= 1 -> stringResource(Res.string.entry_tunnel_add_another)
-            else ->
-                stringResource(Res.string.current_template, entryLabel) +
-                    "\n" +
-                    stringResource(Res.string.entry_tunnel_desc)
-        }
 
     val requestApply =
         rememberRestartToApplyChanges(
@@ -167,7 +156,7 @@ fun TunnelSettingsScreen(viewModel: TunnelViewModel) {
                         Icon(Icons.AutoMirrored.Outlined.AltRoute, contentDescription = null)
                     },
                     title = stringResource(Res.string.entry_tunnel),
-                    description = { DescriptionText(entryDescription) },
+                    description = { DescriptionText(entryLabel) },
                     onClick = { navController.push(Route.EntryTunnel(tunnel.id)) },
                 )
             }

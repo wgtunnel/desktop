@@ -9,10 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.FileOpen
 import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -41,7 +39,6 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_selected
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.failed_to_read_conf_file
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.failed_to_read_zip_archive
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.import_from_file
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.move_to_group
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.only_conf_or_zip_supported
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.rename_group
@@ -50,8 +47,6 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnel
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.yes
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.InfoDialog
-import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.OptionPickerMenu
-import com.zaneschepke.wireguardautotunnel.desktop.ui.common.menu.PickerOption
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.tooltip.CustomTooltip
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.GroupNameDialog
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.MoveToGroupDialog
@@ -80,8 +75,6 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
 
     var pendingDeleteIntent by remember { mutableStateOf<DeleteIntent?>(null) }
-    var showAddMenu by remember { mutableStateOf(false) }
-    var showNewGroup by remember { mutableStateOf(false) }
     var renameGroup by remember { mutableStateOf<TunnelGroup?>(null) }
     var moveTargets by remember { mutableStateOf<List<TunnelConfig>?>(null) }
     var newGroupTargets by remember { mutableStateOf<List<TunnelConfig>?>(null) }
@@ -183,39 +176,13 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                 title = { Text(stringResource(Res.string.tunnels)) },
                 actions = {
                     if (!uiState.isSelectionMode) {
-                        Box {
-                            CustomTooltip(text = stringResource(Res.string.add_a_tunnel)) {
-                                IconButton(onClick = { showAddMenu = true }) {
-                                    Icon(
-                                        Icons.Outlined.Add,
-                                        contentDescription =
-                                            stringResource(Res.string.add_a_tunnel),
-                                    )
-                                }
+                        CustomTooltip(text = stringResource(Res.string.add_a_tunnel)) {
+                            IconButton(onClick = { pickerLauncher.launch() }) {
+                                Icon(
+                                    Icons.Outlined.Add,
+                                    contentDescription = stringResource(Res.string.add_a_tunnel),
+                                )
                             }
-                            OptionPickerMenu(
-                                expanded = showAddMenu,
-                                onDismiss = { showAddMenu = false },
-                                options =
-                                    listOf(
-                                        PickerOption(
-                                            leadingIcon = Icons.Outlined.FileOpen,
-                                            label = stringResource(Res.string.import_from_file),
-                                            onClick = {
-                                                showAddMenu = false
-                                                pickerLauncher.launch()
-                                            },
-                                        ),
-                                        PickerOption(
-                                            leadingIcon = Icons.Outlined.CreateNewFolder,
-                                            label = stringResource(Res.string.add_group),
-                                            onClick = {
-                                                showAddMenu = false
-                                                showNewGroup = true
-                                            },
-                                        ),
-                                    ),
-                            )
                         }
                         return@TopAppBar
                     }
@@ -288,18 +255,6 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                 onUngroup = viewModel::onUngroupTunnels,
             )
         }
-    }
-
-    if (showNewGroup) {
-        GroupNameDialog(
-            title = stringResource(Res.string.add_group),
-            initialName = "",
-            onDismiss = { showNewGroup = false },
-            onConfirm = { name ->
-                viewModel.onCreateGroup(name)
-                showNewGroup = false
-            },
-        )
     }
 
     renameGroup?.let { group ->

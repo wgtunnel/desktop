@@ -34,7 +34,6 @@ import com.zaneschepke.wireguardautotunnel.client.domain.enums.TunnelMode
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.appearance
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.backend_mode
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.current_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.dns_settings
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.general
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.kill_switch_desc
@@ -133,11 +132,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
                             }
                         },
                         title = stringResource(Res.string.backend_mode),
-                        description = {
-                            DescriptionText(
-                                stringResource(Res.string.current_template, appMode.asTitleString())
-                            )
-                        },
+                        description = { DescriptionText(appMode.asTitleString()) },
                         onClick = {
                             when (appMode) {
                                 TunnelMode.PROXY -> navController.push(Route.ProxySettings)

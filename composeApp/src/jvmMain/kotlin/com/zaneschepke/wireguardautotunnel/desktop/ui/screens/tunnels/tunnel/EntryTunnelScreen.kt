@@ -1,5 +1,7 @@
 package com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.tunnel
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.AltRoute
@@ -10,9 +12,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.dokar.sonner.Toast
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_add_another
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_desc
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_none
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.entry_tunnel_none_desc
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
@@ -49,33 +54,51 @@ fun EntryTunnelScreen(viewModel: TunnelViewModel) {
         }
 
     NestedSettingsScaffold(title = stringResource(Res.string.entry_tunnel)) { padding ->
-        TunnelPickerList(
-            modifier = Modifier.padding(padding),
-            tunnels = candidates,
-            isSelected = { it.id == tunnel.entryTunnelId },
-            onSelect = {
-                viewModel.onEntryTunnel(it.id)
-                navController.pop()
-            },
-            leading = { Icon(Icons.AutoMirrored.Outlined.AltRoute, contentDescription = null) },
-            leadingItem = {
-                val noneSelected = tunnel.entryTunnelId == null
+        if (candidates.isEmpty()) {
+            Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
                 SurfaceRow(
-                    leading = { Icon(Icons.Outlined.LinkOff, contentDescription = null) },
-                    title = stringResource(Res.string.entry_tunnel_none),
-                    description = {
-                        DescriptionText(stringResource(Res.string.entry_tunnel_none_desc))
+                    leading = {
+                        Icon(Icons.AutoMirrored.Outlined.AltRoute, contentDescription = null)
                     },
-                    selected = noneSelected,
-                    trailing = {
-                        if (noneSelected) Icon(Icons.Outlined.Check, contentDescription = null)
-                    },
-                    onClick = {
-                        viewModel.onEntryTunnel(null)
-                        navController.pop()
-                    },
+                    title = stringResource(Res.string.entry_tunnel_add_another),
+                    description = { DescriptionText(stringResource(Res.string.entry_tunnel_desc)) },
                 )
-            },
-        )
+            }
+            return@NestedSettingsScaffold
+        }
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            DescriptionText(
+                stringResource(Res.string.entry_tunnel_desc),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+            TunnelPickerList(
+                modifier = Modifier.weight(1f),
+                tunnels = candidates,
+                isSelected = { it.id == tunnel.entryTunnelId },
+                onSelect = {
+                    viewModel.onEntryTunnel(it.id)
+                    navController.pop()
+                },
+                leading = { Icon(Icons.AutoMirrored.Outlined.AltRoute, contentDescription = null) },
+                leadingItem = {
+                    val noneSelected = tunnel.entryTunnelId == null
+                    SurfaceRow(
+                        leading = { Icon(Icons.Outlined.LinkOff, contentDescription = null) },
+                        title = stringResource(Res.string.entry_tunnel_none),
+                        description = {
+                            DescriptionText(stringResource(Res.string.entry_tunnel_none_desc))
+                        },
+                        selected = noneSelected,
+                        trailing = {
+                            if (noneSelected) Icon(Icons.Outlined.Check, contentDescription = null)
+                        },
+                        onClick = {
+                            viewModel.onEntryTunnel(null)
+                            navController.pop()
+                        },
+                    )
+                },
+            )
+        }
     }
 }
