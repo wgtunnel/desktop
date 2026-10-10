@@ -1,0 +1,23 @@
+name: publish-winget
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag'
+        required: false
+        default: 'v2.1.0'
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event.action == 'published' && !github.event.release.prerelease)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: WGTunnel.WGTunnel
+          installers-regex: 'wgtunnel-.*-win-x64-nsis\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}
+          release-tag: ${{ github.event.release.tag_name || github.event.inputs.release_tag }}
