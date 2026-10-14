@@ -34,7 +34,7 @@ jobs:
     name: publish-apt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: desktop
 
@@ -45,7 +45,7 @@ jobs:
           path: artifacts
 
       - name: Checkout gh-pages (apt.wgtunnel.com root)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: gh-pages
           path: gh-pages

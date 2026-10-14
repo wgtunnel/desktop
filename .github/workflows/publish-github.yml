@@ -36,7 +36,7 @@ jobs:
       GH_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set latest tag
         uses: rickstaa/action-create-tag@v1
