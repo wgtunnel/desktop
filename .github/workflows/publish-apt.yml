@@ -38,7 +38,7 @@ jobs:
         with:
           path: desktop
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: github.event_name != 'workflow_dispatch'
         with:
           name: release-assets-Linux-amd64

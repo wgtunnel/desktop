@@ -81,7 +81,7 @@ jobs:
             echo "EOF_RELEASE_NOTES"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
           pattern: release-assets-*
