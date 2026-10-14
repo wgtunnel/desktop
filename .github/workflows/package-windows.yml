@@ -74,7 +74,7 @@ jobs:
         with:
           go-version: "1.25"
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "7.0.x"
 
