@@ -163,13 +163,9 @@
     <string name="mapped">Associato</string>
     <string name="tunnel_mapping">Associazione dei tunnel</string>
     <string name="wifi_settings">Impostazioni Wi-Fi</string>
-    <string name="wifi_name_permission_title">Nome della rete Wi-Fi</string>
-    <string name="wifi_name_permission_body">macOS nasconde il nome della rete Wi-Fi finché non consenti a WG Tunnel di usare i Servizi di localizzazione. Il nome serve solo a riconoscere le reti attendibili. WG Tunnel non traccia la tua posizione.</string>
-    <string name="wifi_name_allow">Consenti l\'accesso al nome Wi-Fi</string>
-    <string name="wifi_name_unavailable_title">Nome della rete Wi-Fi non disponibile</string>
-    <string name="wifi_name_denied_body">I Servizi di localizzazione sono disattivati per WG Tunnel, quindi macOS non fornisce il nome della rete Wi-Fi. Attivali in Impostazioni di Sistema, Privacy e sicurezza, Servizi di localizzazione.</string>
-    <string name="wifi_name_services_off_body">I Servizi di localizzazione sono disattivati su questo Mac, quindi il nome della rete Wi-Fi non è disponibile. Attivali in Impostazioni di Sistema, Privacy e sicurezza, Servizi di localizzazione, poi consenti l\'accesso a WG Tunnel.</string>
-    <string name="wifi_name_open_settings">Apri le impostazioni di localizzazione</string>
+    <string name="wifi_name_permission_title">Permesso di accesso alla posizione</string>
+    <string name="wifi_name_permission_body">Su macOS, per leggere il nome della rete Wi-Fi connessa e usarlo per il tunnel automatico, servono i Servizi di localizzazione e il relativo permesso. WG Tunnel non traccia mai la tua posizione.</string>
+    <string name="wifi_name_allow">Apri le impostazioni di localizzazione</string>
     <string name="ethernet">Ethernet</string>
     <string name="no_network">Nessuna rete connessa</string>
     <string name="active_network">Rete attiva: </string>
