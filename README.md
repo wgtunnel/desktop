@@ -363,3 +363,8 @@ Any contributions in the form of feedback, issues, code, or translations are wel
 appreciated!
 
 If your PR requires [core](https://github.com/wgtunnel/core) changes, please link the associated PR.
+
+### Translators
+
+<!-- CROWDIN-CONTRIBUTORS-START -->
+<!-- CROWDIN-CONTRIBUTORS-END -->
