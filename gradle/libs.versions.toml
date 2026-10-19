@@ -43,7 +43,7 @@ room3 = "3.0.3"
 sqlite = "2.7.1"
 
 lang3 = "3.21.0"
-humanReadable = "1.13.1"
+humanReadable = "2.0.0"
 core = "1.9.9"
 
 [bundles]
