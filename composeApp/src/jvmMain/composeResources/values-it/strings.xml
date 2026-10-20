@@ -48,6 +48,7 @@
     <string name="display_theme">Tema schermo</string>
     <string name="language">Lingua</string>
     <string name="trusted_wifi_names">Nomi delle reti Wi-Fi attendibili</string>
+    <string name="trusted_wifi_desc">Reti Wi-Fi che disattivano il tunnel</string>
     <string name="primary_tunnel">Tunnel predefinito</string>
     <string name="entry_tunnel">Tunnel di ingresso</string>
     <string name="entry_tunnel_desc">Fai passare questo tunnel attraverso un altro tunnel.</string>
@@ -342,6 +343,7 @@
     <string name="tunnel_name_empty">Il nome del tunnel non può essere vuoto</string>
     <string name="add">Aggiungi</string>
     <string name="trusted_bssid">BSSID attendibili</string>
+    <string name="trusted_bssid_desc">Access point che disattivano il tunnel</string>
     <string name="wifi_rules">Regole Wi-Fi</string>
     <string name="wildcard_desc">Attiva il riconoscimento avanzato delle reti tramite pattern</string>
     <string name="wildcard_wifi_desc">Supporta *, ? e ! per escludere</string>
