@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WG Tunnel</string>
-    <string name="tray_open">Otwórz Tunnel WG</string>
+    <string name="tray_open">Otwórz WG Tunnel</string>
     <string name="tray_minimize_to_tray">Minimalizuj do zasobnika</string>
     <string name="tray_exit">Wyjdź</string>
     <string name="dismiss">Odrzuć</string>
@@ -9,7 +9,7 @@
     <string name="expand_rail">Rozwiń szynę</string>
     <string name="failed_to_read_conf_file">Nie udało się odczytać pliku .conf</string>
     <string name="failed_to_read_zip_archive">Nie udało się odczytać archiwum .zip</string>
-    <string name="only_conf_or_zip_supported">Tylko pliki '.conf' lub '.zip' obsługiwane</string>
+    <string name="only_conf_or_zip_supported">Tylko pliki \'.conf\' lub \'.zip\' obsługiwane</string>
     <string name="tunnel_state_starting">Uruchamianie</string>
     <string name="tunnel_state_stopping">Zatrzymywanie</string>
     <string name="tunnel_state_healthy">Poprawny</string>
@@ -46,7 +46,9 @@
     <string name="light">Jasny</string>
     <string name="dark">Ciemny</string>
     <string name="display_theme">Motyw wyświetlania</string>
+    <string name="language">Język</string>
     <string name="trusted_wifi_names">Nazwy zaufanych sieci Wi-Fi</string>
+    <string name="trusted_wifi_desc">Sieci Wi-Fi, które wyłączają tunel</string>
     <string name="primary_tunnel">Tunel domyślny</string>
     <string name="entry_tunnel">Tunel wejściowy</string>
     <string name="entry_tunnel_desc">Wyślij ten tunel przez inny tunel.</string>
@@ -162,6 +164,9 @@
     <string name="mapped">Zmapowano</string>
     <string name="tunnel_mapping"></string>
     <string name="wifi_settings">Ustawienia Wi-Fi</string>
+    <string name="wifi_name_permission_title">Uprawnienia lokalizacji</string>
+    <string name="wifi_name_permission_body">Do odczytania nazwy podłączonej sieci Wi-Fi na potrzeby automatycznego tunelowania w systemie macOS wymagane są usługi lokalizacyjne i odpowiednie uprawnienia. WG Tunnel nigdy nie śledzi Twojej lokalizacji.</string>
+    <string name="wifi_name_allow">Otwórz ustawienia lokalizacji</string>
     <string name="ethernet">Ethernet</string>
     <string name="no_network">Brak połączenia z siecią</string>
     <string name="active_network">Aktywna sieć:</string>
@@ -250,10 +255,12 @@
     <string name="daemon_start_command_label">Kopiuj polecenie startowe</string>
     <string name="daemon_outdated_template">Uruchomiony demon (v%1$s) jest starszy niż ta aplikacja (v%2$s). Uruchom go ponownie, aby zakończyć aktualizację.</string>
     <string name="daemon_restart_command_label">Kopiuj polecenie restartu</string>
-    <string name="daemon_requires_approval">Tunnel WG wymaga Twojej zgody na uruchomienie usługi w tle.</string>
+    <string name="mac_service_requires_approval_template">WG Tunnel wymaga Twojej zgody, aby uruchomić %1$s.</string>
+    <string name="background_service_name">usługa działająca w tle</string>
+    <string name="wifi_helper_service_name">Pomocnik Wi-Fi</string>
     <string name="open_system_settings">Otwórz ustawienia</string>
     <string name="remove_background_service">Usuń usługę w tle</string>
-    <string name="remove_background_service_desc">Zatrzymuje i usuwa demona przed odinstalowaniem aplikacji</string>
+    <string name="remove_background_service_desc">Zatrzymuje i wyrejestrowuje demona oraz pomocniczy proces Wi-Fi przed odinstalowaniem aplikacji</string>
     <string name="remove_background_service_message">Spowoduje to odłączenie dowolnego aktywnego tunelu i zatrzymanie usługi w tle. Nadal możesz ponownie otworzyć aplikację, aby zarejestrować ją ponownie. Kontynuować?</string>
     <string name="background_service_removed">Usługa w tle usunięta</string>
     <string name="background_service_remove_failed">Nie udało się usunąć usługi w tle</string>
@@ -336,6 +343,7 @@
     <string name="tunnel_name_empty">Nazwa tunelu nie może być pusta</string>
     <string name="add">Dodaj</string>
     <string name="trusted_bssid">Zaufany BSSID</string>
+    <string name="trusted_bssid_desc">Punkty dostępu, które wyłączają tunel</string>
     <string name="wifi_rules">Reguły Wi-Fi</string>
     <string name="wildcard_desc">Włącz zaawansowane dopasowywanie dla sieci przy użyciu wzorców</string>
     <string name="wildcard_wifi_desc">Obsługuje *, ? i ! w celu umieszczenia na czarnej liście</string>
