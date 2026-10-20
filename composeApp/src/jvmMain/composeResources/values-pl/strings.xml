@@ -48,6 +48,7 @@
     <string name="display_theme">Motyw wyświetlania</string>
     <string name="language">Język</string>
     <string name="trusted_wifi_names">Nazwy zaufanych sieci Wi-Fi</string>
+    <string name="trusted_wifi_desc">Sieci Wi-Fi, które wyłączają tunel</string>
     <string name="primary_tunnel">Tunel domyślny</string>
     <string name="entry_tunnel">Tunel wejściowy</string>
     <string name="entry_tunnel_desc">Wyślij ten tunel przez inny tunel.</string>
@@ -342,6 +343,7 @@
     <string name="tunnel_name_empty">Nazwa tunelu nie może być pusta</string>
     <string name="add">Dodaj</string>
     <string name="trusted_bssid">Zaufany BSSID</string>
+    <string name="trusted_bssid_desc">Punkty dostępu, które wyłączają tunel</string>
     <string name="wifi_rules">Reguły Wi-Fi</string>
     <string name="wildcard_desc">Włącz zaawansowane dopasowywanie dla sieci przy użyciu wzorców</string>
     <string name="wildcard_wifi_desc">Obsługuje *, ? i ! w celu umieszczenia na czarnej liście</string>
