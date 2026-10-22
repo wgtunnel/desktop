@@ -446,6 +446,15 @@ If your PR requires [core](https://github.com/wgtunnel/core) changes, please lin
         <sub><b>950 words</b></sub>
       </td>
       <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/EvanTechDev"><img alt="logo" style="width: 100px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17786633/medium/75db2d8a253d39f149683c270378d8c0.jpeg" />
+          <br />
+          <sub><b>Evan Huang</b></sub>
+          <br />
+          <sub><b>(EvanTechDev)</b></sub></a>
+        <br />
+        <sub><b>940 words</b></sub>
+      </td>
+      <td align="center" valign="top">
         <a href="https://crowdin.com/profile/cyanwolfg"><img alt="logo" style="width: 100px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/15465504/medium/c294e2b66970ece817e0639c12319b48.png" />
           <br />
           <sub><b>CyanWolf</b></sub>
@@ -453,15 +462,6 @@ If your PR requires [core](https://github.com/wgtunnel/core) changes, please lin
           <sub><b>(cyanwolfg)</b></sub></a>
         <br />
         <sub><b>891 words</b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/EvanTechDev"><img alt="logo" style="width: 100px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17786633/medium/75db2d8a253d39f149683c270378d8c0.jpeg" />
-          <br />
-          <sub><b>Evan Huang</b></sub>
-          <br />
-          <sub><b>(EvanTechDev)</b></sub></a>
-        <br />
-        <sub><b>751 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/pixnet"><img alt="logo" style="width: 100px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17785035/medium/ba0625fb3822f186f2a2892f443d5af9_default.png" />
