@@ -37,10 +37,8 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel_message
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_selected
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.failed_to_read_conf_file
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.failed_to_read_zip_archive
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.multi_import_errors_title
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.move_to_group
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.only_conf_or_zip_supported
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.rename_group
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_all
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnels
@@ -54,7 +52,6 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelsViewModel
-import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.extension
@@ -127,43 +124,57 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
     if (!uiState.isLoaded) return
 
     val scope = rememberCoroutineScope()
-    val failedToReadConfMessage = stringResource(Res.string.failed_to_read_conf_file)
-    val failedToReadZipMessage = stringResource(Res.string.failed_to_read_zip_archive)
-    val unsupportedFileTypeMessage = stringResource(Res.string.only_conf_or_zip_supported)
+    val multiImportErrorsTitle = stringResource(Res.string.multi_import_errors_title)
     val pickerLauncher =
-        rememberFilePickerLauncher(mode = FileKitMode.Single) { platformFile: PlatformFile? ->
-            platformFile?.let { file ->
-                val ext = file.extension.lowercase()
-
+        rememberFilePickerLauncher(mode = FileKitMode.Multiple()) { files ->
+            files?.let { selectedFiles ->
                 scope.launch(Dispatchers.Main.immediate) {
-                    when (ext) {
-                        FileUtils.CONF_FILE_EXTENSION -> {
-                            runCatching {
-                                val text = file.readString()
-                                viewModel.onConfImport(text, file.nameWithoutExtension)
-                            }
-                                .onFailure {
-                                    toaster.show(Toast(ToastType.Error, failedToReadConfMessage))
+                    val configMap = mutableMapOf<String, String>()
+                    var badFiles = 0
+
+                    for (file in selectedFiles) {
+                        when (file.extension.lowercase()) {
+                            FileUtils.CONF_FILE_EXTENSION -> {
+                                runCatching {
+                                    file.readString()
                                 }
-                        }
-                        FileUtils.ZIP_FILE_EXTENSION -> {
-                            runCatching {
-                                val bytes = file.readBytes()
-                                val configMap = FileUtils.readConfigsFromZip(bytes)
-                                viewModel.onMultiConfImport(configMap)
+                                    .onSuccess { content ->
+                                        if (content.isNotBlank()) {
+                                            configMap[content] = file.nameWithoutExtension
+                                        }
+                                    }
+                                    .onFailure {
+                                        badFiles++
+                                    }
                             }
-                                .onFailure {
-                                    toaster.show(Toast(ToastType.Error, failedToReadZipMessage))
+
+                            FileUtils.ZIP_FILE_EXTENSION -> {
+                                runCatching {
+                                    FileUtils.readConfigsFromZip(file.readBytes())
                                 }
+                                    .onSuccess { zipConfigs ->
+                                        configMap.putAll(zipConfigs)
+                                    }
+                                    .onFailure {
+                                        badFiles++
+                                    }
+                            }
+
+                            else -> {
+                                badFiles++
+                            }
                         }
-                        else -> {
-                            toaster.show(
-                                Toast(
-                                    type = ToastType.Warning,
-                                    message = unsupportedFileTypeMessage,
-                                )
-                            )
-                        }
+                    }
+
+                    if (configMap.isNotEmpty()) {
+                        viewModel.onMultiConfImport(configMap)
+                    }
+
+                    if (badFiles > 0) {
+                        toaster.show(Toast(
+                            type = ToastType.Warning,
+                            message = multiImportErrorsTitle.format(badFiles))
+                        )
                     }
                 }
             }

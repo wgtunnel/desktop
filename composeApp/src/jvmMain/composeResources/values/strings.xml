@@ -10,6 +10,7 @@
     <string name="failed_to_read_conf_file">Failed to read .conf file</string>
     <string name="failed_to_read_zip_archive">Failed to read .zip archive</string>
     <string name="only_conf_or_zip_supported">Only '.conf' or '.zip' files supported</string>
+    <string name="multi_import_errors_title">Could not process %1$d files. Ensure files are valid .conf or .zip files.</string>
     <string name="tunnel_state_starting">Starting</string>
     <string name="tunnel_state_stopping">Stopping</string>
     <string name="tunnel_state_healthy">Healthy</string>
