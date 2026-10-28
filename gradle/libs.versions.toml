@@ -37,7 +37,7 @@ reorderable = "3.1.0"
 nucleus = "2.5.18"
 
 # Logging
-kermit = "2.1.0"
+kermit = "2.2.0"
 
 room3 = "3.0.3"
 sqlite = "2.7.1"
