@@ -23,7 +23,7 @@ orbitCompose = "12.0.1"
 sonner = "0.4.0"
 materialKolor = "5.0.1"
 colorPickerCompose = "1.3.0"
-nativeTray = "2.1.6"
+nativeTray = "2.1.7"
 
 # Files
 kmpIo = "0.3.2"
