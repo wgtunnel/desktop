@@ -9,7 +9,8 @@
     <string name="expand_rail">Rozwiń szynę</string>
     <string name="failed_to_read_conf_file">Nie udało się odczytać pliku .conf</string>
     <string name="failed_to_read_zip_archive">Nie udało się odczytać archiwum .zip</string>
-    <string name="only_conf_or_zip_supported">Tylko pliki '.conf' lub '.zip' obsługiwane</string>
+    <string name="only_conf_or_zip_supported">Tylko pliki \'.conf\' lub \'.zip\' obsługiwane</string>
+    <string name="multi_import_errors_title">Nie udało się przetworzyć %1$d plików. Upewnij się, że są to poprawne pliki typu .conf lub .zip.</string>
     <string name="tunnel_state_starting">Uruchamianie</string>
     <string name="tunnel_state_stopping">Zatrzymywanie</string>
     <string name="tunnel_state_healthy">Poprawny</string>
