@@ -27,7 +27,7 @@ nativeTray = "2.1.7"
 
 # Files
 kmpIo = "0.3.2"
-filekit = "0.16.0"
+filekit = "0.17.0"
 
 # UI
 localina = "1.0.0-beta2"
