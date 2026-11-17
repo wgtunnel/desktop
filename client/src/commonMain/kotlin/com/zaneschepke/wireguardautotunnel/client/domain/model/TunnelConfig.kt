@@ -48,7 +48,8 @@ data class TunnelConfig(
         }
 
         private fun tunnelConfFromConfig(config: Config, name: String? = null): TunnelConfig {
-            val resolvedName = name ?: DEFAULT_TUNNEL_NAME
+            // A name line in the config beats the file name, as it survives ASCII file names
+            val resolvedName = config.name ?: name ?: DEFAULT_TUNNEL_NAME
             return TunnelConfig(
                 name = resolvedName,
                 quickConfig = config.withName(resolvedName).asQuickString(),

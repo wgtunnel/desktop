@@ -37,8 +37,8 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.delete_tunnel_message
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.export_selected
-import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.multi_import_errors_title
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.move_to_group
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.multi_import_errors_title
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.rename_group
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.select_all
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tunnels
@@ -143,21 +143,15 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                                             configMap[content] = file.nameWithoutExtension
                                         }
                                     }
-                                    .onFailure {
-                                        badFiles++
-                                    }
+                                    .onFailure { badFiles++ }
                             }
 
                             FileUtils.ZIP_FILE_EXTENSION -> {
                                 runCatching {
                                     FileUtils.readConfigsFromZip(file.readBytes())
                                 }
-                                    .onSuccess { zipConfigs ->
-                                        configMap.putAll(zipConfigs)
-                                    }
-                                    .onFailure {
-                                        badFiles++
-                                    }
+                                    .onSuccess { zipConfigs -> configMap.putAll(zipConfigs) }
+                                    .onFailure { badFiles++ }
                             }
 
                             else -> {
@@ -171,9 +165,11 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                     }
 
                     if (badFiles > 0) {
-                        toaster.show(Toast(
-                            type = ToastType.Warning,
-                            message = multiImportErrorsTitle.format(badFiles))
+                        toaster.show(
+                            Toast(
+                                type = ToastType.Warning,
+                                message = multiImportErrorsTitle.format(badFiles),
+                            )
                         )
                     }
                 }

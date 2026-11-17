@@ -36,6 +36,7 @@ fun CustomTooltip(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DisabledReasonTooltip(
     enabled: Boolean,

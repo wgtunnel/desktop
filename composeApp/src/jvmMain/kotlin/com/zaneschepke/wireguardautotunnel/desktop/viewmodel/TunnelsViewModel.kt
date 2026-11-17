@@ -2,6 +2,7 @@ package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.dokar.sonner.ToastType
+import com.wgtunnel.parser.archive.ConfigArchive
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelConfig
 import com.zaneschepke.wireguardautotunnel.client.domain.model.TunnelGroup
@@ -183,8 +184,12 @@ class TunnelsViewModel(
                         )
                         return@intent
                     }
-                    val configMap = state.selectedTunnels.associate { it.name to it.quickConfig }
-                    val zipBytes = FileUtils.createZipArchive(configMap)
+                    val zipBytes =
+                        FileUtils.createZipArchive(
+                            state.selectedTunnels.map {
+                                ConfigArchive.Entry(it.name, it.quickConfig)
+                            }
+                        )
                     FileKit.openFileSaver(
                         suggestedName = "tunnels",
                         defaultExtension = FileUtils.ZIP_FILE_EXTENSION,
@@ -198,7 +203,9 @@ class TunnelsViewModel(
                         defaultExtension = FileUtils.CONF_FILE_EXTENSION,
                         directory = null,
                         dialogSettings = FileKitDialogSettings.createDefault(),
-                    ) to intent.tunnel.quickConfig.toByteArray()
+                    ) to
+                        ConfigArchive.withNameComment(intent.tunnel.quickConfig, intent.tunnel.name)
+                            .toByteArray()
                 }
                 is ExportIntent.Group -> {
                     val children =
@@ -218,7 +225,9 @@ class TunnelsViewModel(
                         directory = null,
                         dialogSettings = FileKitDialogSettings.createDefault(),
                     ) to
-                        FileUtils.createZipArchive(children.associate { it.name to it.quickConfig })
+                        FileUtils.createZipArchive(
+                            children.map { ConfigArchive.Entry(it.name, it.quickConfig) }
+                        )
                 }
             }
 

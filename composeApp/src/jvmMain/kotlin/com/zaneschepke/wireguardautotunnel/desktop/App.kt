@@ -379,6 +379,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StatusFooter(uiState: AppUiState) {
     Row(
