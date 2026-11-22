@@ -34,7 +34,6 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,6 +88,7 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tray_m
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.tray_open
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelState
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.di.viewModelModule
 import com.zaneschepke.wireguardautotunnel.desktop.ui.WindowIntent
@@ -124,6 +124,8 @@ import java.nio.file.Paths
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.painterResource
@@ -247,13 +249,31 @@ fun main(args: Array<String>) {
 
         SingleInstanceRestoreEffect { handleWindowIntent(WindowIntent.SHOW) }
 
-        var trayBadgeState: TrayBadgeState? by remember { mutableStateOf(null) }
+        var trayTunnelStatuses by remember { mutableStateOf(emptyList<TunnelStatus>()) }
+        var trayLockdownActive by remember { mutableStateOf(false) }
         val appIcon = painterResource(Res.drawable.appicon)
         val appName = stringResource(Res.string.app_name)
         val trayOpenLabel = stringResource(Res.string.tray_open)
         val trayMinimizeLabel = stringResource(Res.string.tray_minimize_to_tray)
         val trayExitLabel = stringResource(Res.string.tray_exit)
         val trayLockdownActiveLabel = stringResource(Res.string.lockdown_active)
+        val trayTunnelStatus =
+            trayTunnelStatuses.firstOrNull { it.state == TunnelState.HANDSHAKE_FAILURE }
+                ?: trayTunnelStatuses.firstOrNull {
+                    it.state == TunnelState.RESOLVING_DNS ||
+                        it.state == TunnelState.STOPPING ||
+                        it.state == TunnelState.STARTING
+                }
+                ?: trayTunnelStatuses.firstOrNull { it.state == TunnelState.HEALTHY }
+        val trayTunnelTooltip = trayTunnelStatus?.state?.asTooltipMessage()
+        val trayBadgeState =
+            when {
+                trayLockdownActive && trayTunnelStatus == null ->
+                    TrayBadgeState(ErrorRed, trayLockdownActiveLabel)
+                trayTunnelStatus == null -> null
+                else ->
+                    TrayBadgeState(trayTunnelStatus.state.asColor(), trayTunnelTooltip.orEmpty())
+            }
 
         Tray(
             iconContent = {
@@ -454,20 +474,14 @@ fun main(args: Array<String>) {
                         }
                     }
 
-                    val currentTunnelStatus by remember {
-                        derivedStateOf {
-                            uiState.tunnelStatuses.firstOrNull {
-                                it.state == TunnelState.HANDSHAKE_FAILURE
+                    LaunchedEffect(viewModel) {
+                        viewModel.container.stateFlow
+                            .map { it.tunnelStatuses to it.lockdownActive }
+                            .distinctUntilChanged()
+                            .collect { (statuses, lockdown) ->
+                                trayTunnelStatuses = statuses
+                                trayLockdownActive = lockdown
                             }
-                                ?: uiState.tunnelStatuses.firstOrNull {
-                                    it.state == TunnelState.RESOLVING_DNS ||
-                                        it.state == TunnelState.STOPPING ||
-                                        it.state == TunnelState.STARTING
-                                }
-                                ?: uiState.tunnelStatuses.firstOrNull {
-                                    it.state == TunnelState.HEALTHY
-                                }
-                        }
                     }
 
                     MaterialTitleBar(modifier = Modifier.newFullscreenControls()) { _ ->
@@ -488,27 +502,6 @@ fun main(args: Array<String>) {
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
-                    }
-
-                    val currentTunnelTooltipMessage = currentTunnelStatus?.state?.asTooltipMessage()
-
-                    LaunchedEffect(
-                        currentTunnelStatus,
-                        currentTunnelTooltipMessage,
-                        uiState.lockdownActive,
-                    ) {
-                        val status = currentTunnelStatus
-                        trayBadgeState =
-                            when {
-                                uiState.lockdownActive && status == null ->
-                                    TrayBadgeState(ErrorRed, trayLockdownActiveLabel)
-                                status == null -> null
-                                else ->
-                                    TrayBadgeState(
-                                        status.state.asColor(),
-                                        currentTunnelTooltipMessage.orEmpty(),
-                                    )
-                            }
                     }
 
                     Surface(
