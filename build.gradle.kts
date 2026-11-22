@@ -1,3 +1,5 @@
+import com.ncorti.ktfmt.gradle.tasks.KtfmtBaseTask
+import com.ncorti.ktfmt.gradle.tasks.KtfmtCheckTask
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import org.gradle.api.plugins.JavaApplication
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -14,6 +16,30 @@ plugins {
 }
 
 val jvmVersion = libs.versions.jvm.get().toInt()
+
+ktfmt { kotlinLangStyle() }
+
+fun KtfmtBaseTask.useRepoKotlinSources() {
+    source = fileTree(rootDir)
+    include("**/*.kt", "**/*.kts")
+    exclude(
+        "**/build/**",
+        ".*generated.*",
+        "**/winsw/**",
+        "**/amneziawg-tools/**",
+        "**/.gradle/**",
+    )
+}
+
+tasks.register<KtfmtFormatTask>("format") {
+    description = "Format Kotlin sources with the same scope as formatCheck."
+    useRepoKotlinSources()
+}
+
+tasks.register<KtfmtCheckTask>("formatCheck") {
+    description = "Fail if Kotlin sources would change under ./gradlew format."
+    useRepoKotlinSources()
+}
 
 version = libs.versions.app.get()
 
@@ -37,19 +63,6 @@ subprojects {
     apply {
         plugin(rootProject.libs.plugins.ktfmt.get().pluginId)
         plugin(rootProject.libs.plugins.aboutLibraries.get().pluginId)
-    }
-
-    tasks.register<KtfmtFormatTask>("format") {
-        description = "Kotlin formatting"
-        source = project.fileTree(rootDir)
-        include("**/*.kt", "**/*.kts")
-        exclude(
-            "**/build/**",
-            ".*generated.*",
-            "**/winsw/**",
-            "**/amneziawg-tools/**",
-            "**/.gradle/**",
-        )
     }
 
     aboutLibraries {

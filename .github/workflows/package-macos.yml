@@ -15,11 +15,23 @@ on:
         description: "Installer packageVersion MAJOR.MINOR.PATCH"
         type: string
         required: true
-      nucleus_ref:
-        description: "NucleusFramework/Nucleus ref"
-        type: string
+    secrets:
+      APPLE_KEYCHAIN_PASSWORD:
         required: false
-        default: main
+      APPLE_NOTARIZATION_API_ISSUER:
+        required: false
+      APPLE_NOTARIZATION_API_KEY_BASE64:
+        required: false
+      APPLE_NOTARIZATION_API_KEY_ID:
+        required: false
+      APPLE_SIGNING_IDENTITY:
+        required: false
+      APPLE_SIGNING_P12_BASE64:
+        required: false
+      APPLE_SIGNING_P12_PASSWORD:
+        required: false
+      APPLE_TEAM_ID:
+        required: false
   workflow_dispatch:
     inputs:
       variant:
@@ -37,10 +49,6 @@ on:
         description: "Installer packageVersion MAJOR.MINOR.PATCH"
         type: string
         default: "0.0.0"
-      nucleus_ref:
-        description: "NucleusFramework/Nucleus ref"
-        type: string
-        default: main
 
 permissions:
   contents: read
@@ -52,25 +60,20 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           path: desktop
+          persist-credentials: false
           submodules: recursive
 
-      - uses: actions/checkout@v7
-        with:
-          repository: NucleusFramework/Nucleus
-          ref: ${{ inputs.nucleus_ref || 'main' }}
-          path: Nucleus
-
-      - uses: ./Nucleus/.github/actions/setup-nucleus
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v2.5.18
         with:
           java-version: "25"
           setup-gradle: "true"
           setup-node: "true"
           graalvm: "true"
 
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@v7.1.0
         with:
           go-version: "1.25"
 
@@ -135,13 +138,13 @@ jobs:
       # Captures codesign/notarytool/stapler stdout+stderr
       - name: Upload codesign/notarization tool logs
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: macos-notarization-logs
           if-no-files-found: ignore
           path: desktop/composeApp/build/compose/logs/**
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: release-assets-macOS-arm64
           if-no-files-found: error

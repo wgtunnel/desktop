@@ -10,6 +10,8 @@ on:
         required: false
         default: 'v2.1.0'
 
+permissions: {}
+
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || (github.event.action == 'published' && !github.event.release.prerelease)

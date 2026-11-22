@@ -11,6 +11,11 @@ on:
         description: "Version being published (0.0.0 or 0.0.0-beta.1)"
         type: string
         required: true
+    secrets:
+      GPG_SECRET_KEY:
+        required: false
+      GPG_PASS:
+        required: false
   workflow_dispatch:
     inputs:
       channel:
@@ -34,18 +39,19 @@ jobs:
     name: publish-apt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           path: desktop
+          persist-credentials: false
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8.0.2
         if: github.event_name != 'workflow_dispatch'
         with:
           name: release-assets-Linux-amd64
           path: artifacts
 
       - name: Checkout gh-pages (apt.wgtunnel.com root)
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           ref: gh-pages
           path: gh-pages
@@ -55,10 +61,25 @@ jobs:
 
       - name: Import GPG signing key
         id: gpg
-        uses: crazy-max/ghaction-import-gpg@v7
-        with:
-          gpg_private_key: ${{ secrets.GPG_SECRET_KEY }}
-          passphrase: ${{ secrets.GPG_PASS }}
+        env:
+          GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
+          GPG_PASS: ${{ secrets.GPG_PASS }}
+        run: |
+          set -euo pipefail
+          if printf '%s' "$GPG_SECRET_KEY" | grep -q -- '-----BEGIN PGP'; then
+            printf '%s' "$GPG_SECRET_KEY" | gpg --batch --import
+          else
+            printf '%s' "$GPG_SECRET_KEY" | base64 -d | gpg --batch --import
+          fi
+          # reprepro signs without a prompt, so the agent holds the passphrase
+          echo allow-preset-passphrase >> "$HOME/.gnupg/gpg-agent.conf"
+          gpg-connect-agent reloadagent /bye >/dev/null
+          PRESET="$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase"
+          gpg --batch --with-colons --with-keygrip --list-secret-keys \
+            | awk -F: '$1 == "grp" { print $10 }' \
+            | while read -r keygrip; do "$PRESET" --preset --passphrase "$GPG_PASS" "$keygrip"; done
+          FINGERPRINT=$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1 == "fpr" { print $10; exit }')
+          echo "fingerprint=$FINGERPRINT" >> "$GITHUB_OUTPUT"
 
       - name: Configure apt repo (first run only)
         run: |

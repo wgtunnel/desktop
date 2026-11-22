@@ -1,9 +1,7 @@
 name: release
 
 permissions:
-  contents: write
-  id-token: write
-  packages: write
+  contents: read
 
 on:
   push:
@@ -66,7 +64,6 @@ jobs:
   linux:
     needs: meta
     uses: ./.github/workflows/package-linux.yml
-    secrets: inherit
     with:
       variant: ${{ needs.meta.outputs.variant }}
       version: ${{ needs.meta.outputs.version }}
@@ -75,7 +72,14 @@ jobs:
   windows:
     needs: meta
     uses: ./.github/workflows/package-windows.yml
-    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
     with:
       variant: ${{ needs.meta.outputs.variant }}
       version: ${{ needs.meta.outputs.version }}
@@ -84,7 +88,15 @@ jobs:
   macos:
     needs: meta
     uses: ./.github/workflows/package-macos.yml
-    secrets: inherit
+    secrets:
+      APPLE_KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+      APPLE_NOTARIZATION_API_ISSUER: ${{ secrets.APPLE_NOTARIZATION_API_ISSUER }}
+      APPLE_NOTARIZATION_API_KEY_BASE64: ${{ secrets.APPLE_NOTARIZATION_API_KEY_BASE64 }}
+      APPLE_NOTARIZATION_API_KEY_ID: ${{ secrets.APPLE_NOTARIZATION_API_KEY_ID }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_SIGNING_P12_BASE64: ${{ secrets.APPLE_SIGNING_P12_BASE64 }}
+      APPLE_SIGNING_P12_PASSWORD: ${{ secrets.APPLE_SIGNING_P12_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     with:
       variant: ${{ needs.meta.outputs.variant }}
       version: ${{ needs.meta.outputs.version }}
@@ -93,7 +105,11 @@ jobs:
   apt:
     needs: [meta, linux]
     uses: ./.github/workflows/publish-apt.yml
-    secrets: inherit
+    permissions:
+      contents: write
+    secrets:
+      GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
+      GPG_PASS: ${{ secrets.GPG_PASS }}
     with:
       channel: ${{ needs.meta.outputs.channel }}
       version: ${{ needs.meta.outputs.version }}
@@ -101,7 +117,10 @@ jobs:
   publish:
     needs: [meta, linux, windows, macos]
     uses: ./.github/workflows/publish-github.yml
-    secrets: inherit
+    permissions:
+      contents: write
+    secrets:
+      PAT: ${{ secrets.PAT }}
     with:
       tag: ${{ needs.meta.outputs.tag }}
       version: ${{ needs.meta.outputs.version }}
@@ -113,7 +132,10 @@ jobs:
     needs: [meta, publish]
     if: needs.meta.outputs.release_type == 'release'
     uses: ./.github/workflows/publish-copr.yml
-    secrets: inherit
+    secrets:
+      COPR_LOGIN: ${{ secrets.COPR_LOGIN }}
+      COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
+      COPR_TOKEN: ${{ secrets.COPR_TOKEN }}
     with:
       tag: ${{ needs.meta.outputs.tag }}
       version: ${{ needs.meta.outputs.version }}
@@ -122,7 +144,8 @@ jobs:
     needs: [meta, publish]
     if: needs.meta.outputs.release_type == 'release'
     uses: ./.github/workflows/publish-aur.yml
-    secrets: inherit
+    secrets:
+      AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
     with:
       tag: ${{ needs.meta.outputs.tag }}
       version: ${{ needs.meta.outputs.version }}
@@ -133,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch update for homebrew tap
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@v4.0.1
         with:
           token: ${{ secrets.PAT }}
           repository: wgtunnel/homebrew-wgtunnel

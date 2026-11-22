@@ -15,11 +15,15 @@ on:
         description: "Installer packageVersion MAJOR.MINOR.PATCH"
         type: string
         required: true
-      nucleus_ref:
-        description: "NucleusFramework/Nucleus ref"
-        type: string
+    secrets:
+      AZURE_CLIENT_ID:
         required: false
-        default: main
+      AZURE_CLIENT_SECRET:
+        required: false
+      AZURE_SUBSCRIPTION_ID:
+        required: false
+      AZURE_TENANT_ID:
+        required: false
   workflow_dispatch:
     inputs:
       variant:
@@ -37,10 +41,6 @@ on:
         description: "Installer packageVersion MAJOR.MINOR.PATCH"
         type: string
         default: "0.0.0"
-      nucleus_ref:
-        description: "NucleusFramework/Nucleus ref"
-        type: string
-        default: main
 
 permissions:
   contents: read
@@ -52,34 +52,29 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           path: desktop
+          persist-credentials: false
           submodules: recursive
 
-      - uses: actions/checkout@v7
-        with:
-          repository: NucleusFramework/Nucleus
-          ref: ${{ inputs.nucleus_ref || 'main' }}
-          path: Nucleus
-
-      - uses: ./Nucleus/.github/actions/setup-nucleus
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v2.5.18
         with:
           java-version: "25"
           setup-gradle: "true"
           setup-node: "true"
           graalvm: "true"
 
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@v7.1.0
         with:
           go-version: "1.25"
 
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@v6.1.0
         with:
           dotnet-version: "7.0.x"
 
       - name: Set up MinGW
-        uses: egor-tensin/setup-mingw@v3
+        uses: egor-tensin/setup-mingw@v3.0.4
         with:
           platform: x64
 
@@ -89,7 +84,7 @@ jobs:
           go version
 
       - name: Azure Login
-        uses: azure/login@v3
+        uses: azure/login@v3.1.0
         with:
           creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
@@ -101,7 +96,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: ./gradlew :composeApp:packageGraalvmNsis :composeApp:packageGraalvmZip --no-daemon --stacktrace "-Papp.variant=${{ inputs.variant || 'release' }}" "-Papp.version=${{ inputs.version || github.ref_name }}" "-Papp.packageVersion=${{ inputs.package_version || '0.0.0' }}"
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: release-assets-Windows-amd64
           if-no-files-found: error

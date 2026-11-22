@@ -24,6 +24,9 @@ on:
         type: boolean
         required: false
         default: false
+    secrets:
+      PAT:
+        required: false
 
 permissions:
   contents: write
@@ -33,33 +36,26 @@ jobs:
     name: publish-github
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - name: Set latest tag
-        uses: rickstaa/action-create-tag@v1
-        id: tag_creation
-        with:
-          tag: "latest"
-          message: "Automated tag for HEAD commit"
-          force_push_tag: true
-          github_token: ${{ env.GH_TOKEN }}
-          tag_exists_error: false
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -fa latest -m "Automated tag for HEAD commit"
+          git push --force origin refs/tags/latest
 
       - name: Get latest release
         id: latest_release
-        uses: kaliber5/action-get-release@v1
-        with:
-          token: ${{ env.GH_TOKEN }}
-          latest: true
+        run: echo "tag_name=$(gh release view --json tagName --jq .tagName)" >> "$GITHUB_OUTPUT"
 
       - name: Generate Changelog
         id: changelog
-        uses: requarks/changelog-action@v1
+        uses: requarks/changelog-action@v1.11.0
         with:
-          token: ${{ env.GH_TOKEN }}
+          token: ${{ github.token }}
           toTag: ${{ steps.latest_release.outputs.tag_name }}
           fromTag: "latest"
           writeToFile: false
@@ -81,7 +77,7 @@ jobs:
             echo "EOF_RELEASE_NOTES"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8.0.2
         with:
           path: artifacts
           pattern: release-assets-*
@@ -94,14 +90,18 @@ jobs:
           gh release delete "$TAG" --yes --cleanup-tag || true
 
       - name: Generate update YML
-        uses: NucleusFramework/Nucleus/.github/actions/generate-update-yml@main
+        uses: NucleusFramework/Nucleus/.github/actions/generate-update-yml@v2.5.18
         with:
           artifacts-path: artifacts
           version: ${{ inputs.version }}
           channel: ${{ inputs.channel }}
 
+      # The PAT creates the release, so its published event starts the chocolatey, winget and
+      # notifications workflows. A release made with the job token would not.
       - name: Publish GitHub Release
-        uses: NucleusFramework/Nucleus/.github/actions/publish-release@main
+        uses: NucleusFramework/Nucleus/.github/actions/publish-release@v2.5.18
+        env:
+          GH_TOKEN: ${{ secrets.PAT || github.token }}
         with:
           artifacts-path: artifacts
           tag: ${{ inputs.tag }}

@@ -1,8 +1,6 @@
 name: notifications
 
-permissions:
-  contents: write
-  packages: write
+permissions: {}
 
 on:
   issues:

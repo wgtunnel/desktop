@@ -11,6 +11,9 @@ on:
         description: "Version to publish (e.g. 2.0.2)"
         type: string
         required: true
+    secrets:
+      AUR_SSH_PRIVATE_KEY:
+        required: false
   workflow_dispatch:
     inputs:
       tag_name:
@@ -18,12 +21,17 @@ on:
         required: false
         default: '2.0.2'
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     name: publish-aur
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Determine version
         run: |

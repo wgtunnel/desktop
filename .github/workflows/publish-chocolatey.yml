@@ -10,12 +10,17 @@ on:
         required: false
         default: 'v1.0.2'
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || (github.event.action == 'published' && !github.event.release.prerelease)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Determine version
         shell: pwsh
