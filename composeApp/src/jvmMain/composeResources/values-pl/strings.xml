@@ -83,6 +83,8 @@
     <string name="delete">Usuń</string>
     <string name="export_failed">Eksport nieudany: %1$s</string>
     <string name="export_cancelled">Eksport anulowany</string>
+    <string name="file_dialog_failed">Nie można otworzyć okna dialogowego plików</string>
+    <string name="file_dialog_failed_linux">Nie można otworzyć okna dialogowego plików. Zainstaluj portal wyboru plików, taki jak xdg-desktop-portal-gtk, a następnie spróbuj ponownie.</string>
     <string name="exported_to_template">Wyeksportowano do %1$s</string>
     <string name="logs_exported_template">Dzienniki wyeksportowano do %1$s</string>
     <string name="stored_logs_deleted">Zapisane dzienniki zostały usunięte</string>
