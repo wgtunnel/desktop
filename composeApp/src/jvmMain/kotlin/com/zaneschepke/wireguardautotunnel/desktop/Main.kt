@@ -73,8 +73,11 @@ import com.zaneschepke.wireguardautotunnel.client.di.serviceModule
 import com.zaneschepke.wireguardautotunnel.client.domain.model.WindowBounds
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.ClientCacheRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
+import com.zaneschepke.wireguardautotunnel.client.service.BackendService
+import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.app_name
@@ -124,8 +127,8 @@ import java.nio.file.Paths
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.painterResource
@@ -199,180 +202,218 @@ fun main(args: Array<String>) {
         dockIconFollowsWindows = true,
         enableSingleInstance = true,
     ) {
-        var nucleusWindowRef: NucleusWindow? by remember { mutableStateOf(null) }
-        // A login-triggered launch should come up quietly in the tray
-        var isMainWindowVisible by remember { mutableStateOf(!wasStartedAtLogin) }
-
-        var theme by remember { mutableStateOf(Theme.DEFAULT) }
-        var useSystemColors by remember { mutableStateOf(false) }
-        var customSeedColor by remember { mutableStateOf<Color?>(null) }
-        var accentStyle by remember { mutableStateOf(AccentStyle.TONAL_SPOT) }
-        var trayIconAppearance by remember { mutableStateOf(TrayIconAppearance.AUTOMATIC) }
-
-        val initialWindowState = remember { loadInitialWindowState() }
-        val windowState =
-            rememberWindowState(
-                size = initialWindowState.size,
-                position = initialWindowState.position,
-                placement = initialWindowState.placement,
-            )
-
-        fun bringToFront() {
-            val win = nucleusWindowRef ?: return
-            win.setMinimized(false)
-            win.show()
-            win.toFront()
-            win.requestFocus()
-        }
-
-        fun handleWindowIntent(intent: WindowIntent) {
-            when (intent) {
-                WindowIntent.SHOW -> {
-                    isMainWindowVisible = true
-                    windowState.isMinimized = false
-                    bringToFront()
-                }
-
-                WindowIntent.HIDE -> {
-                    isMainWindowVisible = false
-                }
-
-                WindowIntent.TOGGLE -> {
-                    if (isMainWindowVisible) {
-                        handleWindowIntent(WindowIntent.HIDE)
-                    } else {
-                        handleWindowIntent(WindowIntent.SHOW)
-                    }
-                }
-            }
-        }
-
-        SingleInstanceRestoreEffect { handleWindowIntent(WindowIntent.SHOW) }
-
-        var trayTunnelStatuses by remember { mutableStateOf(emptyList<TunnelStatus>()) }
-        var trayLockdownActive by remember { mutableStateOf(false) }
-        val appIcon = painterResource(Res.drawable.appicon)
-        val appName = stringResource(Res.string.app_name)
-        val trayOpenLabel = stringResource(Res.string.tray_open)
-        val trayMinimizeLabel = stringResource(Res.string.tray_minimize_to_tray)
-        val trayExitLabel = stringResource(Res.string.tray_exit)
-        val trayLockdownActiveLabel = stringResource(Res.string.lockdown_active)
-        val trayTunnelStatus =
-            trayTunnelStatuses.firstOrNull { it.state == TunnelState.HANDSHAKE_FAILURE }
-                ?: trayTunnelStatuses.firstOrNull {
-                    it.state == TunnelState.RESOLVING_DNS ||
-                        it.state == TunnelState.STOPPING ||
-                        it.state == TunnelState.STARTING
-                }
-                ?: trayTunnelStatuses.firstOrNull { it.state == TunnelState.HEALTHY }
-        val trayTunnelTooltip = trayTunnelStatus?.state?.asTooltipMessage()
-        val trayBadgeState =
-            when {
-                trayLockdownActive && trayTunnelStatus == null ->
-                    TrayBadgeState(ErrorRed, trayLockdownActiveLabel)
-                trayTunnelStatus == null -> null
-                else ->
-                    TrayBadgeState(trayTunnelStatus.state.asColor(), trayTunnelTooltip.orEmpty())
-            }
-
-        Tray(
-            iconContent = {
-                val useLightIcon =
-                    when (trayIconAppearance) {
-                        TrayIconAppearance.AUTOMATIC -> isSystemInDarkMode()
-                        TrayIconAppearance.LIGHT -> true
-                        TrayIconAppearance.DARK -> false
-                    }
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Image(
-                        painter = painterResource(Res.drawable.titleicon),
-                        contentDescription = appName,
-                        modifier = Modifier.fillMaxSize(),
-                        colorFilter =
-                            ColorFilter.tint(if (useLightIcon) Color.White else Color.Black),
-                    )
-
-                    trayBadgeState?.let {
-                        Icon(
-                            imageVector = Icons.Filled.Circle,
-                            contentDescription = it.description,
-                            modifier = Modifier.size(40.dp).align(Alignment.TopEnd),
-                            tint = it.iconColor,
-                        )
-                    }
-                }
-            },
-            tooltip = appName,
-            primaryAction = { handleWindowIntent(WindowIntent.SHOW) },
+        // App level so the tray and login restore keep running while the window is hidden
+        KoinApplication(
+            configuration =
+                koinConfiguration(
+                    declaration = {
+                        val appVersionLabel =
+                            "${BuildConfig.APP_VERSION} (${AppVariant.current.id})"
+                        modules(databaseModule, serviceModule(appVersionLabel), viewModelModule)
+                    },
+                ),
         ) {
-            Item(label = trayOpenLabel) { handleWindowIntent(WindowIntent.SHOW) }
-            Item(label = trayMinimizeLabel) { handleWindowIntent(WindowIntent.HIDE) }
-            Item(label = trayExitLabel) { exitApplication() }
-        }
+            var nucleusWindowRef: NucleusWindow? by remember { mutableStateOf(null) }
+            // A login-triggered launch should come up quietly in the tray
+            var isMainWindowVisible by remember { mutableStateOf(!wasStartedAtLogin) }
 
-        WGTunnelTheme(theme, useSystemColors, customSeedColor, accentStyle) {
-            MaterialDecoratedWindow(
-                visible = isMainWindowVisible,
-                onCloseRequest = { handleWindowIntent(WindowIntent.HIDE) },
-                title = appName + AppVariant.current.displaySuffix,
-                resizable = true,
-                icon = appIcon,
-                state = windowState,
-                minimumSize = DpSize(640.dp, 480.dp),
-                nativePopupLayers = false,
-                nativeContextMenu = true,
+            var theme by remember { mutableStateOf(Theme.DEFAULT) }
+            var useSystemColors by remember { mutableStateOf(false) }
+            var customSeedColor by remember { mutableStateOf<Color?>(null) }
+            var accentStyle by remember { mutableStateOf(AccentStyle.TONAL_SPOT) }
+            var trayIconAppearance by remember { mutableStateOf(TrayIconAppearance.AUTOMATIC) }
+
+            val initialWindowState = remember { loadInitialWindowState() }
+            val windowState =
+                rememberWindowState(
+                    size = initialWindowState.size,
+                    position = initialWindowState.position,
+                    placement = initialWindowState.placement,
+                )
+
+            fun bringToFront() {
+                val win = nucleusWindowRef ?: return
+                win.setMinimized(false)
+                win.show()
+                win.toFront()
+                win.requestFocus()
+            }
+
+            fun handleWindowIntent(intent: WindowIntent) {
+                when (intent) {
+                    WindowIntent.SHOW -> {
+                        isMainWindowVisible = true
+                        windowState.isMinimized = false
+                        bringToFront()
+                    }
+
+                    WindowIntent.HIDE -> {
+                        isMainWindowVisible = false
+                    }
+
+                    WindowIntent.TOGGLE -> {
+                        if (isMainWindowVisible) {
+                            handleWindowIntent(WindowIntent.HIDE)
+                        } else {
+                            handleWindowIntent(WindowIntent.SHOW)
+                        }
+                    }
+                }
+            }
+
+            SingleInstanceRestoreEffect { handleWindowIntent(WindowIntent.SHOW) }
+
+            if (wasStartedAtLogin) {
+                val settingsRepository = koinInject<GeneralSettingRepository>()
+                val clientCacheRepository = koinInject<ClientCacheRepository>()
+                val tunnelRepository = koinInject<TunnelRepository>()
+                val tunnelCoordinator = koinInject<TunnelCoordinator>()
+                val autoTunnelRepository = koinInject<AutoTunnelSettingsRepository>()
+                LaunchedEffect(Unit) {
+                    val autoTunnelSettings = autoTunnelRepository.get()
+                    if (autoTunnelSettings.startOnBoot) {
+                        if (!autoTunnelSettings.isAutoTunnelEnabled) {
+                            Logger.i { "Enabling auto-tunnel at login (startOnBoot)" }
+                            autoTunnelRepository.updateAutoTunnelEnabled(true)
+                        }
+                        return@LaunchedEffect
+                    }
+
+                    if (!settingsRepository.flow.first().restoreTunnelOnBoot) return@LaunchedEffect
+                    val id = clientCacheRepository.getLastStartedTunnelId()
+                    val config = id?.let { tunnelRepository.getById(it) }
+                    if (config == null) {
+                        Logger.i { "Nothing to restore at login (no cached tunnel)" }
+                        return@LaunchedEffect
+                    }
+                    Logger.i { "Restoring tunnel ${config.name} at login" }
+                    tunnelCoordinator.startTunnel(config).onFailure {
+                        Logger.e(it) { "Failed to restore tunnel at login" }
+                    }
+                }
+            }
+
+            val daemonService = koinInject<DaemonService>()
+            val backendService = koinInject<BackendService>()
+            val trayStatus by remember {
+                combine(daemonService.alive, backendService.statusFlow()) { alive, status ->
+                    if (alive) status.activeTunnels to status.killSwitchEnabled
+                    else emptyList<TunnelStatus>() to false
+                }
+            }
+                .collectAsState(emptyList<TunnelStatus>() to false)
+            val (trayTunnelStatuses, trayLockdownActive) = trayStatus
+            val appIcon = painterResource(Res.drawable.appicon)
+            val appName = stringResource(Res.string.app_name)
+            val trayOpenLabel = stringResource(Res.string.tray_open)
+            val trayMinimizeLabel = stringResource(Res.string.tray_minimize_to_tray)
+            val trayExitLabel = stringResource(Res.string.tray_exit)
+            val trayLockdownActiveLabel = stringResource(Res.string.lockdown_active)
+            val trayTunnelStatus =
+                trayTunnelStatuses.firstOrNull { it.state == TunnelState.HANDSHAKE_FAILURE }
+                    ?: trayTunnelStatuses.firstOrNull {
+                        it.state == TunnelState.RESOLVING_DNS ||
+                            it.state == TunnelState.STOPPING ||
+                            it.state == TunnelState.STARTING
+                    }
+                    ?: trayTunnelStatuses.firstOrNull { it.state == TunnelState.HEALTHY }
+            val trayTunnelTooltip = trayTunnelStatus?.state?.asTooltipMessage()
+            val trayBadgeState =
+                when {
+                    trayLockdownActive && trayTunnelStatus == null ->
+                        TrayBadgeState(ErrorRed, trayLockdownActiveLabel)
+                    trayTunnelStatus == null -> null
+                    else ->
+                        TrayBadgeState(
+                            trayTunnelStatus.state.asColor(),
+                            trayTunnelTooltip.orEmpty(),
+                        )
+                }
+
+            Tray(
+                iconContent = {
+                    val useLightIcon =
+                        when (trayIconAppearance) {
+                            TrayIconAppearance.AUTOMATIC -> isSystemInDarkMode()
+                            TrayIconAppearance.LIGHT -> true
+                            TrayIconAppearance.DARK -> false
+                        }
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(Res.drawable.titleicon),
+                            contentDescription = appName,
+                            modifier = Modifier.fillMaxSize(),
+                            colorFilter =
+                                ColorFilter.tint(if (useLightIcon) Color.White else Color.Black),
+                        )
+
+                        trayBadgeState?.let {
+                            Icon(
+                                imageVector = Icons.Filled.Circle,
+                                contentDescription = it.description,
+                                modifier = Modifier.size(40.dp).align(Alignment.TopEnd),
+                                tint = it.iconColor,
+                            )
+                        }
+                    }
+                },
+                tooltip = appName,
+                primaryAction = { handleWindowIntent(WindowIntent.SHOW) },
             ) {
-                DisposableEffect(nucleusWindow) {
-                    nucleusWindowRef = nucleusWindow
-                    onDispose { nucleusWindowRef = null }
-                }
+                Item(label = trayOpenLabel) { handleWindowIntent(WindowIntent.SHOW) }
+                Item(label = trayMinimizeLabel) { handleWindowIntent(WindowIntent.HIDE) }
+                Item(label = trayExitLabel) { exitApplication() }
+            }
 
-                val density = LocalDensity.current
-                LaunchedEffect(density.density) {
-                    Logger.i {
-                        "Tao window density=${density.density} fontScale=${density.fontScale}"
-                    }
-                }
-
-                val isWindowFocused by nucleusWindow.focusFlow.collectAsState()
-
-                LaunchedEffect(
-                    windowState.isMinimized,
-                    isMainWindowVisible,
-                    isWindowFocused,
+            WGTunnelTheme(theme, useSystemColors, customSeedColor, accentStyle) {
+                MaterialDecoratedWindow(
+                    visible = isMainWindowVisible,
+                    onCloseRequest = { handleWindowIntent(WindowIntent.HIDE) },
+                    title = appName + AppVariant.current.displaySuffix,
+                    resizable = true,
+                    icon = appIcon,
+                    state = windowState,
+                    minimumSize = DpSize(640.dp, 480.dp),
+                    nativePopupLayers = false,
+                    nativeContextMenu = true,
                 ) {
-                    when {
-                        !isMainWindowVisible || windowState.isMinimized -> {
-                            EnergyManager.disableLightEfficiencyMode()
-                            EnergyManager.enableEfficiencyMode()
-                        }
+                    DisposableEffect(nucleusWindow) {
+                        nucleusWindowRef = nucleusWindow
+                        onDispose { nucleusWindowRef = null }
+                    }
 
-                        !isWindowFocused -> {
-                            EnergyManager.disableEfficiencyMode()
-                            EnergyManager.enableLightEfficiencyMode()
-                        }
-
-                        else -> {
-                            EnergyManager.disableEfficiencyMode()
-                            EnergyManager.disableLightEfficiencyMode()
+                    val density = LocalDensity.current
+                    LaunchedEffect(density.density) {
+                        Logger.i {
+                            "Tao window density=${density.density} fontScale=${density.fontScale}"
                         }
                     }
-                }
 
-                KoinApplication(
-                    configuration =
-                        koinConfiguration(
-                            declaration = {
-                                val appVersionLabel =
-                                    "${BuildConfig.APP_VERSION} (${AppVariant.current.id})"
-                                modules(
-                                    databaseModule,
-                                    serviceModule(appVersionLabel),
-                                    viewModelModule,
-                                )
-                            },
-                        ),
-                ) {
+                    val isWindowFocused by nucleusWindow.focusFlow.collectAsState()
+
+                    LaunchedEffect(
+                        windowState.isMinimized,
+                        isMainWindowVisible,
+                        isWindowFocused,
+                    ) {
+                        when {
+                            !isMainWindowVisible || windowState.isMinimized -> {
+                                EnergyManager.disableLightEfficiencyMode()
+                                EnergyManager.enableEfficiencyMode()
+                            }
+
+                            !isWindowFocused -> {
+                                EnergyManager.disableEfficiencyMode()
+                                EnergyManager.enableLightEfficiencyMode()
+                            }
+
+                            else -> {
+                                EnergyManager.disableEfficiencyMode()
+                                EnergyManager.disableLightEfficiencyMode()
+                            }
+                        }
+                    }
+
                     val toaster = rememberToasterState()
                     val viewModel: AppViewModel = koinViewModel()
                     val uiState by viewModel.collectAsState()
@@ -436,52 +477,6 @@ fun main(args: Array<String>) {
                             Logger.w { "AutoLaunch sync returned $result" }
                             toaster.show(Toast(autoLaunchFailedLabel, type = ToastType.Warning))
                         }
-                    }
-
-                    // Restore features should only trigger if launch was actually triggered by
-                    // the login mechanism, not a normal manual reopen
-                    if (wasStartedAtLogin) {
-                        val clientCacheRepository = koinInject<ClientCacheRepository>()
-                        val tunnelRepository = koinInject<TunnelRepository>()
-                        val tunnelCoordinator = koinInject<TunnelCoordinator>()
-                        val autoTunnelRepository = koinInject<AutoTunnelSettingsRepository>()
-                        var restoreAttempted by remember { mutableStateOf(false) }
-
-                        LaunchedEffect(uiState.isLoaded) {
-                            if (restoreAttempted || !uiState.isLoaded) return@LaunchedEffect
-                            restoreAttempted = true
-
-                            val autoTunnelSettings = autoTunnelRepository.get()
-                            if (autoTunnelSettings.startOnBoot) {
-                                if (!autoTunnelSettings.isAutoTunnelEnabled) {
-                                    Logger.i { "Enabling auto-tunnel at login (startOnBoot)" }
-                                    autoTunnelRepository.updateAutoTunnelEnabled(true)
-                                }
-                                return@LaunchedEffect
-                            }
-
-                            if (!uiState.restoreTunnelOnBoot) return@LaunchedEffect
-                            val id = clientCacheRepository.getLastStartedTunnelId()
-                            val config = id?.let { tunnelRepository.getById(it) }
-                            if (config == null) {
-                                Logger.i { "Nothing to restore at login (no cached tunnel)" }
-                                return@LaunchedEffect
-                            }
-                            Logger.i { "Restoring tunnel ${config.name} at login" }
-                            tunnelCoordinator.startTunnel(config).onFailure {
-                                Logger.e(it) { "Failed to restore tunnel at login" }
-                            }
-                        }
-                    }
-
-                    LaunchedEffect(viewModel) {
-                        viewModel.container.stateFlow
-                            .map { it.tunnelStatuses to it.lockdownActive }
-                            .distinctUntilChanged()
-                            .collect { (statuses, lockdown) ->
-                                trayTunnelStatuses = statuses
-                                trayLockdownActive = lockdown
-                            }
                     }
 
                     MaterialTitleBar(modifier = Modifier.newFullscreenControls()) { _ ->
