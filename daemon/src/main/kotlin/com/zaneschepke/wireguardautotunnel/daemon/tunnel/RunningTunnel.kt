@@ -29,8 +29,8 @@ class RunningTunnel(
                 if (request.features.statisticsEnabled) {
                     add(
                         Tunnel.Feature.ActiveConfigMonitor(
-                            request.features.statisticsPollIntervalSeconds
-                        )
+                            request.features.statisticsPollIntervalSeconds,
+                        ),
                     )
                 }
                 add(
@@ -39,7 +39,7 @@ class RunningTunnel(
                         dynamicDnsRecovery = request.features.dynamicDnsRecovery,
                         ipv4Fallback = request.preferIpv6,
                         ipv6Recovery = request.ipv6RestoreEnabled,
-                    )
+                    ),
                 )
             }
             val strategy =

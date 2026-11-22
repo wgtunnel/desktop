@@ -29,7 +29,7 @@ class AppUpdater(
         provider = GitHubProvider(owner = "wgtunnel", repo = "desktop")
         channel = AppVariant.current.updateChannel
         allowPrerelease = AppVariant.current == AppVariant.BETA
-    }
+    },
 ) {
     // Test hook for testing the updater flow
     private val simulateUpdate: Boolean =
@@ -55,7 +55,7 @@ class AppUpdater(
                     if (silent) UpdateState.Idle
                     else
                         UpdateState.Failed(
-                            result.exception.message ?: getString(Res.string.update_check_failed)
+                            result.exception.message ?: getString(Res.string.update_check_failed),
                         )
             }
         return result
@@ -127,7 +127,7 @@ class AppUpdater(
                     totalBytes = FAKE_TOTAL_BYTES,
                     percent = downloaded.toDouble() / FAKE_TOTAL_BYTES * 100.0,
                     isDifferential = true,
-                )
+                ),
             )
         }
         delay(FAKE_STEP_DELAY_MS.milliseconds)
@@ -138,7 +138,7 @@ class AppUpdater(
                 percent = 100.0,
                 file = File.createTempFile("wgtunnel-fake-update", ".tmp"),
                 isDifferential = true,
-            )
+            ),
         )
     }
 

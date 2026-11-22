@@ -46,7 +46,7 @@ fun LogItem(log: LogMessageDto) {
                         scope.launch { clipboard.setClipEntry(log.toString().toClipEntry()) }
                     },
                 )
-                .padding(vertical = 6.dp, horizontal = 4.dp)
+                .padding(vertical = 6.dp, horizontal = 4.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

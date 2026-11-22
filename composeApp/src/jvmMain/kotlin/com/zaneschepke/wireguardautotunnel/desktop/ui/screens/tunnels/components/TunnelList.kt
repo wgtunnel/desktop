@@ -149,7 +149,7 @@ fun TunnelList(
                         true
                     } else false
                 }
-                .fillMaxSize()
+                .fillMaxSize(),
     ) {
         LazyColumn(
             state = lazyListState,
@@ -179,31 +179,31 @@ fun TunnelList(
                                         add(
                                             NucleusContextMenuItem(renameLabel) {
                                                 onRenameGroup(row.group)
-                                            }
+                                            },
                                         )
                                         if (row.childCount > 0) {
                                             add(
                                                 NucleusContextMenuItem(exportGroupLabel) {
                                                     onExport(ExportIntent.Group(row.group))
-                                                }
+                                                },
                                             )
                                         }
                                         add(
                                             NucleusContextMenuItem(deleteGroupLabel) {
                                                 onDelete(DeleteIntent.Group(row.group))
-                                            }
+                                            },
                                         )
                                         if (row.childCount > 0) {
                                             add(
                                                 NucleusContextMenuItem(deleteGroupAndTunnelsLabel) {
                                                     onDelete(
-                                                        DeleteIntent.GroupAndTunnels(row.group)
+                                                        DeleteIntent.GroupAndTunnels(row.group),
                                                     )
-                                                }
+                                                },
                                             )
                                         }
                                     }
-                                }
+                                },
                             ) {
                                 SurfaceRow(
                                     title = row.group.name,
@@ -212,7 +212,7 @@ fun TunnelList(
                                             .animateItem()
                                             .then(
                                                 if (draggable) Modifier.draggableHandle()
-                                                else Modifier
+                                                else Modifier,
                                             )
                                             .pointerHoverIcon(PointerIcon.Hand)
                                             .onKeyEvent {
@@ -222,14 +222,14 @@ fun TunnelList(
                                                 } else false
                                             }
                                             .then(
-                                                if (isDragging) Modifier.zIndex(1f) else Modifier
+                                                if (isDragging) Modifier.zIndex(1f) else Modifier,
                                             ),
                                     onClick = { onToggleGroup(row.group) },
                                     description =
                                         if (row.childCount > 0) {
                                             {
                                                 Row(
-                                                    verticalAlignment = Alignment.CenterVertically
+                                                    verticalAlignment = Alignment.CenterVertically,
                                                 ) {
                                                     Text(
                                                         pluralStringResource(
@@ -271,7 +271,7 @@ fun TunnelList(
                                                 stringResource(
                                                     if (row.visibleExpanded)
                                                         Res.string.collapse_group
-                                                    else Res.string.expand_group
+                                                    else Res.string.expand_group,
                                                 ),
                                         )
                                     },
@@ -288,59 +288,59 @@ fun TunnelList(
                                             add(
                                                 NucleusContextMenuItem(detailsLabel) {
                                                     navController.push(Route.Tunnel(item.config.id))
-                                                }
+                                                },
                                             )
                                             add(
                                                 NucleusContextMenuItem(deleteLabel) {
                                                     onDelete(DeleteIntent.Tunnel(item.config))
-                                                }
+                                                },
                                             )
                                             add(
                                                 NucleusContextMenuItem(exportLabel) {
                                                     onExport(ExportIntent.Tunnel(item.config))
-                                                }
+                                                },
                                             )
                                             add(
                                                 NucleusContextMenuItem(moveToGroupLabel) {
                                                     onMoveToGroup(listOf(item.config))
-                                                }
+                                                },
                                             )
                                             if (item.config.groupId != null) {
                                                 add(
                                                     NucleusContextMenuItem(ungroupLabel) {
                                                         onUngroup(listOf(item.config))
-                                                    }
+                                                    },
                                                 )
                                             }
                                             add(
                                                 NucleusContextMenuItem(selectLabel) {
                                                     onSelected(item.config)
-                                                }
+                                                },
                                             )
                                         } else {
                                             add(
                                                 NucleusContextMenuItem(deleteSelectedLabel) {
                                                     onDelete(DeleteIntent.Selected)
-                                                }
+                                                },
                                             )
                                             add(
                                                 NucleusContextMenuItem(exportSelectedLabel) {
                                                     onExport(ExportIntent.Selected)
-                                                }
+                                                },
                                             )
                                             add(
                                                 NucleusContextMenuItem(moveToGroupLabel) {
                                                     onMoveToGroup(uiState.selectedTunnels)
-                                                }
+                                                },
                                             )
                                             add(
                                                 NucleusContextMenuItem(exitSelectionLabel) {
                                                     onExitSelectionMode()
-                                                }
+                                                },
                                             )
                                         }
                                     }
-                                }
+                                },
                             ) {
                                 SurfaceRow(
                                     title = item.config.name,
@@ -349,16 +349,16 @@ fun TunnelList(
                                             .animateItem()
                                             .then(
                                                 if (row.grouped) Modifier.padding(start = 24.dp)
-                                                else Modifier
+                                                else Modifier,
                                             )
                                             .then(
                                                 if (!uiState.isSelectionMode)
                                                     Modifier.draggableHandle()
-                                                else Modifier
+                                                else Modifier,
                                             )
                                             .pointerHoverIcon(PointerIcon.Hand)
                                             .then(
-                                                if (isDragging) Modifier.zIndex(1f) else Modifier
+                                                if (isDragging) Modifier.zIndex(1f) else Modifier,
                                             ),
                                     onClick = {
                                         val keys = windowInfo.keyboardModifiers
@@ -373,7 +373,7 @@ fun TunnelList(
                                                         visibleTunnels.subList(
                                                             minOf(from, to),
                                                             maxOf(from, to) + 1,
-                                                        )
+                                                        ),
                                                     )
                                                 }
                                             }
@@ -424,7 +424,7 @@ fun TunnelList(
                                     trailing = {
                                         if (!uiState.isSelectionMode) {
                                             RequiresDaemonTooltip(
-                                                daemonConnected = uiState.hasBackendStatus
+                                                daemonConnected = uiState.hasBackendStatus,
                                             ) {
                                                 SwitchWithDivider(
                                                     checked = item.isRunning,

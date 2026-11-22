@@ -29,12 +29,10 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.state.nextChildPosition
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.nextRootPosition
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.ungroupKeepingOrder
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.uniqueDisplayName
+import com.zaneschepke.wireguardautotunnel.desktop.util.FileDialogs
 import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
 import com.zaneschepke.wireguardautotunnel.desktop.util.asUserMessage
 import com.zaneschepke.wireguardautotunnel.desktop.util.toConfigErrorMessage
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
-import io.github.vinceglb.filekit.dialogs.openFileSaver
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.write
 import org.jetbrains.compose.resources.getString
@@ -127,7 +125,10 @@ class TunnelsViewModel(
             tunnelRepository.getById(id)
                 ?: run {
                     postSideEffect(
-                        AppSideEffect.Toast(getString(Res.string.tunnel_not_found), ToastType.Error)
+                        AppSideEffect.Toast(
+                            getString(Res.string.tunnel_not_found),
+                            ToastType.Error,
+                        ),
                     )
                     return@intent
                 }
@@ -172,7 +173,7 @@ class TunnelsViewModel(
     }
 
     fun onExportIntent(intent: ExportIntent) = intent {
-        val (file, bytes) =
+        val (fileResult, bytes) =
             when (intent) {
                 ExportIntent.Selected -> {
                     if (state.selectedTunnels.isEmpty()) {
@@ -180,7 +181,7 @@ class TunnelsViewModel(
                             AppSideEffect.Toast(
                                 getString(Res.string.no_tunnels_selected),
                                 ToastType.Warning,
-                            )
+                            ),
                         )
                         return@intent
                     }
@@ -188,22 +189,12 @@ class TunnelsViewModel(
                         FileUtils.createZipArchive(
                             state.selectedTunnels.map {
                                 ConfigArchive.Entry(it.name, it.quickConfig)
-                            }
+                            },
                         )
-                    FileKit.openFileSaver(
-                        suggestedName = "tunnels",
-                        defaultExtension = FileUtils.ZIP_FILE_EXTENSION,
-                        directory = null,
-                        dialogSettings = FileKitDialogSettings.createDefault(),
-                    ) to zipBytes
+                    FileDialogs.saveFile("tunnels", FileUtils.ZIP_FILE_EXTENSION) to zipBytes
                 }
                 is ExportIntent.Tunnel -> {
-                    FileKit.openFileSaver(
-                        suggestedName = intent.tunnel.name,
-                        defaultExtension = FileUtils.CONF_FILE_EXTENSION,
-                        directory = null,
-                        dialogSettings = FileKitDialogSettings.createDefault(),
-                    ) to
+                    FileDialogs.saveFile(intent.tunnel.name, FileUtils.CONF_FILE_EXTENSION) to
                         ConfigArchive.withNameComment(intent.tunnel.quickConfig, intent.tunnel.name)
                             .toByteArray()
                 }
@@ -215,22 +206,21 @@ class TunnelsViewModel(
                             AppSideEffect.Toast(
                                 getString(Res.string.no_tunnels_in_group),
                                 ToastType.Warning,
-                            )
+                            ),
                         )
                         return@intent
                     }
-                    FileKit.openFileSaver(
-                        suggestedName = intent.group.name,
-                        defaultExtension = FileUtils.ZIP_FILE_EXTENSION,
-                        directory = null,
-                        dialogSettings = FileKitDialogSettings.createDefault(),
-                    ) to
+                    FileDialogs.saveFile(intent.group.name, FileUtils.ZIP_FILE_EXTENSION) to
                         FileUtils.createZipArchive(
-                            children.map { ConfigArchive.Entry(it.name, it.quickConfig) }
+                            children.map { ConfigArchive.Entry(it.name, it.quickConfig) },
                         )
                 }
             }
 
+        val file = fileResult.getOrElse {
+            postSideEffect(AppSideEffect.Toast(FileDialogs.failureMessage(), ToastType.Error))
+            return@intent
+        }
         try {
             if (file != null) {
                 file.write(bytes)
@@ -238,11 +228,11 @@ class TunnelsViewModel(
                     AppSideEffect.Toast(
                         getString(Res.string.exported_to_template, file.name),
                         ToastType.Success,
-                    )
+                    ),
                 )
             } else {
                 postSideEffect(
-                    AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info)
+                    AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info),
                 )
             }
         } catch (e: Exception) {
@@ -253,7 +243,7 @@ class TunnelsViewModel(
                         e.message ?: getString(Res.string.unknown_error),
                     ),
                     ToastType.Error,
-                )
+                ),
             )
         }
         reduce { state.copy(selectedTunnels = emptyList(), isSelectionMode = false) }
@@ -333,7 +323,7 @@ class TunnelsViewModel(
                     name = unique,
                     position = nextRootPosition(state.groups, state.tunnelItems.map { it.config }),
                     expanded = true,
-                )
+                ),
             )
         onMoveToGroup(groupId, tunnels)
     }
@@ -348,7 +338,7 @@ class TunnelsViewModel(
         var next = nextChildPosition(all, groupId)
         val ids = tunnels.map { it.id }.toSet()
         tunnelRepository.updateAll(
-            all.filter { it.id in ids }.map { it.copy(groupId = groupId, position = next++) }
+            all.filter { it.id in ids }.map { it.copy(groupId = groupId, position = next++) },
         )
         reduce { state.copy(selectedTunnels = emptyList(), isSelectionMode = false) }
     }
@@ -360,7 +350,7 @@ class TunnelsViewModel(
         var next = nextRootPosition(state.groups, all)
         val ids = grouped.map { it.id }.toSet()
         tunnelRepository.updateAll(
-            all.filter { it.id in ids }.map { it.copy(groupId = null, position = next++) }
+            all.filter { it.id in ids }.map { it.copy(groupId = null, position = next++) },
         )
         reduce { state.copy(selectedTunnels = emptyList(), isSelectionMode = false) }
     }

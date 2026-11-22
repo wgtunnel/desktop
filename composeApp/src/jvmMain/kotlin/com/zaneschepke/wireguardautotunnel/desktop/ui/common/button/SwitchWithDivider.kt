@@ -33,7 +33,7 @@ fun SwitchWithDivider(
                             if (up != null) onDisabledClick()
                         }
                     }
-                }
+                },
         ) {
             ThemedSwitch(
                 checked = checked,

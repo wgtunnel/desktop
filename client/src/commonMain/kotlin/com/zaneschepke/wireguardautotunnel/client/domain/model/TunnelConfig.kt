@@ -69,7 +69,7 @@ data class TunnelConfig(
                                 publicKey = publicKey,
                                 endpoint = "server.example.com:51820",
                                 allowedIPs = "0.0.0.0/0",
-                            )
+                            ),
                         ),
                 )
             return TunnelConfig(name = GLOBAL_CONFIG_NAME, quickConfig = config.asQuickString())

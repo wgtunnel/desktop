@@ -43,7 +43,7 @@ interface TunnelConfigDao {
     fun getAllFlow(): Flow<List<TunnelConfig>>
 
     @Query(
-        "SELECT * FROM tunnel_config WHERE name != :globalName ORDER BY is_primary_tunnel DESC, position ASC"
+        "SELECT * FROM tunnel_config WHERE name != :globalName ORDER BY is_primary_tunnel DESC, position ASC",
     )
     fun getUserTunnelsFlow(globalName: String): Flow<List<TunnelConfig>>
 

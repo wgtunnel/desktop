@@ -19,7 +19,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.model.EncryptedField
                 parentColumns = ["id"],
                 childColumns = ["entry_tunnel_id"],
                 onDelete = ForeignKey.SET_NULL,
-            )
+            ),
         ],
     indices =
         [

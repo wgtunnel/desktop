@@ -175,7 +175,7 @@ fun main(args: Array<String>) {
     Logger.setLogWriters(platformLogWriter())
     Logger.setTag("App")
     BackendLog.setMinLevel(
-        if (AppVariant.current == AppVariant.DEBUG) LogLevel.Debug else LogLevel.Info
+        if (AppVariant.current == AppVariant.DEBUG) LogLevel.Debug else LogLevel.Info,
     )
     Logger.i { "App variant=${AppVariant.current.id} packaged=${AppVariant.isPackaged()}" }
 
@@ -350,8 +350,8 @@ fun main(args: Array<String>) {
                                     serviceModule(appVersionLabel),
                                     viewModelModule,
                                 )
-                            }
-                        )
+                            },
+                        ),
                 ) {
                     val toaster = rememberToasterState()
                     val viewModel: AppViewModel = koinViewModel()
@@ -385,7 +385,7 @@ fun main(args: Array<String>) {
                                 x = position.x.value,
                                 y = position.y.value,
                                 isMaximized = windowState.placement == WindowPlacement.Maximized,
-                            )
+                            ),
                         )
                     }
 
@@ -529,7 +529,7 @@ fun main(args: Array<String>) {
                                 border = { BorderStroke(0.dp, Color.Transparent) },
                                 background = {
                                     SolidColor(
-                                        MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                                        MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
                                     )
                                 },
                                 iconSlot = { toast ->
@@ -558,7 +558,7 @@ fun main(args: Array<String>) {
                                     when (val message = toast.message) {
                                         is CommandToastMessage ->
                                             Column(
-                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                verticalArrangement = Arrangement.spacedBy(6.dp),
                                             ) {
                                                 Text(
                                                     message.description,
@@ -598,7 +598,7 @@ fun main(args: Array<String>) {
                                                     onClick = {
                                                         action.onClick(toast)
                                                         toaster.dismiss(toast.id)
-                                                    }
+                                                    },
                                                 ) {
                                                     Icon(
                                                         Icons.Outlined.ContentCopy,
@@ -612,7 +612,7 @@ fun main(args: Array<String>) {
                                                     onClick = {
                                                         action.onClick()
                                                         toaster.dismiss(toast.id)
-                                                    }
+                                                    },
                                                 ) {
                                                     Icon(
                                                         Icons.Outlined.InstallDesktop,
@@ -627,7 +627,7 @@ fun main(args: Array<String>) {
                                                     colors =
                                                         ButtonDefaults.textButtonColors(
                                                             contentColor =
-                                                                MaterialTheme.colorScheme.primary
+                                                                MaterialTheme.colorScheme.primary,
                                                         ),
                                                     modifier = Modifier.fillMaxWidth(.25f),
                                                     contentPadding =

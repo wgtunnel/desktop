@@ -141,7 +141,7 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                                 fontWeight = FontWeight.Bold,
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.surface
+                                        color = MaterialTheme.colorScheme.surface,
                                     ),
                             )
                         }
@@ -183,11 +183,11 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                                                     append(stringResource(Res.string.network_name))
                                                     withStyle(
                                                         style =
-                                                            SpanStyle(fontWeight = FontWeight.Bold)
+                                                            SpanStyle(fontWeight = FontWeight.Bold),
                                                     ) {
                                                         append(uiState.network.ssid)
                                                     }
-                                                }
+                                                },
                                             )
                                         }
                                         if (
@@ -200,11 +200,11 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                                                     append(": ")
                                                     withStyle(
                                                         style =
-                                                            SpanStyle(fontWeight = FontWeight.Bold)
+                                                            SpanStyle(fontWeight = FontWeight.Bold),
                                                     ) {
                                                         append(uiState.network.bssid)
                                                     }
-                                                }
+                                                },
                                             )
                                         }
                                     }
@@ -229,10 +229,10 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                     append(
                                         if (mappedTunnels) stringResource(Res.string.mapped)
-                                        else stringResource(Res.string._default)
+                                        else stringResource(Res.string._default),
                                     )
                                 }
-                            }
+                            },
                         )
                     },
                     onClick = { navController.push(Route.WifiPreferences) },
@@ -255,7 +255,7 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                                     ?: withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                         append(stringResource(Res.string._default))
                                     }
-                            }
+                            },
                         )
                     },
                     onClick = { navController.push(Route.PreferredTunnel(TunnelNetwork.ETHERNET)) },
@@ -274,7 +274,7 @@ fun AutoTunnelScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                     },
                     onClick = {
                         viewModel.setStopOnNoInternet(
-                            !uiState.autoTunnelSettings.isStopOnNoInternetEnabled
+                            !uiState.autoTunnelSettings.isStopOnNoInternetEnabled,
                         )
                     },
                 )

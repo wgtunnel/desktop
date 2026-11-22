@@ -96,7 +96,7 @@ fun TunnelSettingsScreen(viewModel: TunnelViewModel) {
                 onValueChange = onNameFieldValueChange,
                 textStyle =
                     MaterialTheme.typography.titleLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 singleLine = true,

@@ -64,7 +64,7 @@ object IpcKeyFileValidator {
             return Result.Rejected(
                 "Path does not match expected structure: $keyPath " +
                     "(name=${keyFile.name}, expected=${IPC.KEY_FILE}; " +
-                    "parent=${keyFile.parentFile?.name}, expected=${AppVariant.current.ipcFolder})"
+                    "parent=${keyFile.parentFile?.name}, expected=${AppVariant.current.ipcFolder})",
             )
         }
         if (!keyFile.isFile) {
@@ -95,7 +95,7 @@ object IpcKeyFileValidator {
         val expectedBase =
             SystemHomeDirectory.expectedIpcBaseDir(ownerAccount)
                 ?: return Result.Rejected(
-                    "Could not resolve expected IPC base directory for owner '$ownerAccount'"
+                    "Could not resolve expected IPC base directory for owner '$ownerAccount'",
                 )
 
         val expectedKeyPath = expectedKeyPathUnder(expectedBase)
@@ -109,7 +109,7 @@ object IpcKeyFileValidator {
         if (!pathsMatch) {
             return Result.Rejected(
                 "Key file is not under owner '$ownerAccount''s expected IPC directory: " +
-                    "$keyPath (expected $expectedKeyPath)"
+                    "$keyPath (expected $expectedKeyPath)",
             )
         }
         return null
@@ -125,26 +125,26 @@ object IpcKeyFileValidator {
         val profiles =
             SystemHomeDirectory.windowsProfiles()
                 ?: return Result.Rejected(
-                    "Could not read the registered Windows user profiles (reg query ProfileList failed)"
+                    "Could not read the registered Windows user profiles (reg query ProfileList failed)",
                 )
 
         val profileSid =
             matchProfileSid(keyPath, profiles)
                 ?: return Result.Rejected(
                     "Key file is not at the IPC location of any registered user profile: " +
-                        "$keyPath (checked ${profiles.size} profiles)"
+                        "$keyPath (checked ${profiles.size} profiles)",
                 )
 
         val ownerSid =
             WindowsSid.ownerOf(keyPath)
                 ?: return Result.Rejected(
-                    "Could not determine the owning SID of key file (SID lookup failed): $keyPath"
+                    "Could not determine the owning SID of key file (SID lookup failed): $keyPath",
                 )
 
         if (!isAllowedOwner(ownerSid, profileSid)) {
             return Result.Rejected(
                 "Key file $keyPath is owned by $ownerSid, expected the profile's account " +
-                    "($profileSid) or Administrators (${WindowsSid.ADMINISTRATORS})"
+                    "($profileSid) or Administrators (${WindowsSid.ADMINISTRATORS})",
             )
         }
         return null

@@ -60,7 +60,7 @@ fun main() {
                 Thread {
                     log.i { "Stopping daemon..." }
                     daemon.stop()
-                }
+                },
             )
 
         runBlocking { daemonLogService.restore() }

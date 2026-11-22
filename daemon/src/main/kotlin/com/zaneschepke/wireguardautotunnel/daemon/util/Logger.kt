@@ -10,6 +10,6 @@ fun initLogger() {
     Logger.setLogWriters(platformLogWriter())
     Logger.setTag("Daemon")
     BackendLog.setMinLevel(
-        if (AppVariant.current == AppVariant.DEBUG) LogLevel.Debug else LogLevel.Info
+        if (AppVariant.current == AppVariant.DEBUG) LogLevel.Debug else LogLevel.Info,
     )
 }

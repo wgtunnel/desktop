@@ -45,7 +45,7 @@ fun MoveToGroupDialog(
                 title = { Text(stringResource(Res.string.move_to_group)) },
                 text = {
                     Column(
-                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                     ) {
                         SurfaceRow(
                             title = stringResource(Res.string.add_group_ellipsis),

@@ -90,7 +90,7 @@ class UdsDaemonService(
                                 json.decodeFromString(
                                     AutoTunnelStatusDto.serializer(),
                                     frame.readText(),
-                                )
+                                ),
                             )
                         }
                     }
@@ -123,7 +123,7 @@ class UdsDaemonService(
                                 json.decodeFromString(
                                     LogMessageDto.serializer(),
                                     frame.readText(),
-                                )
+                                ),
                             )
                         }
                     }
@@ -198,7 +198,7 @@ class UdsDaemonService(
         suspend fun reconnectDelay(failureCount: Int) {
             val delayMillis =
                 (INITIAL_RECONNECT_DELAY_MILLIS shl failureCount.coerceAtMost(4)).coerceAtMost(
-                    DAEMON_WS_RECONNECT_DELAY_MILLIS
+                    DAEMON_WS_RECONNECT_DELAY_MILLIS,
                 )
             delay(delayMillis.milliseconds)
         }

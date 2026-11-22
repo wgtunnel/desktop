@@ -53,7 +53,7 @@ fun LicenseScreen() {
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         val lazyListState = rememberLazyListState()
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -63,7 +63,7 @@ fun LicenseScreen() {
                 lazyListState = lazyListState,
                 colors =
                     LibraryDefaults.libraryColors(
-                        libraryBackgroundColor = MaterialTheme.colorScheme.surface
+                        libraryBackgroundColor = MaterialTheme.colorScheme.surface,
                     ),
             )
             VerticalScrollbar(

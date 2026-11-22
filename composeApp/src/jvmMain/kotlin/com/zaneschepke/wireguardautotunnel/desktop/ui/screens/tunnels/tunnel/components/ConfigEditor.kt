@@ -61,7 +61,7 @@ fun ConfigEditor(
 
     Box(
         modifier =
-            modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).clipToBounds()
+            modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).clipToBounds(),
     ) {
         BasicTextField(
             value = textFieldValue,

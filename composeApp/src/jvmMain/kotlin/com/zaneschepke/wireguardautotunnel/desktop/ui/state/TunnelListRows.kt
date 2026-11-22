@@ -92,7 +92,7 @@ fun buildTunnelListRows(
                             childCount = children.size,
                             visibleExpanded = visibleExpanded,
                             activeCount = activeCount,
-                        )
+                        ),
                     )
                     if (visibleExpanded) {
                         children.forEach { add(TunnelListRow.TunnelRow(it, grouped = true)) }
@@ -235,7 +235,7 @@ fun ungroupKeepingOrder(
 private fun rootItems(groups: List<TunnelGroup>, tunnels: List<TunnelConfig>): List<RootItem> {
     val ungrouped = tunnels.filter { it.groupId == null }
     return (groups.map { RootItem.Group(it) } + ungrouped.map { RootItem.Tunnel(it) }).sortedWith(
-        compareBy({ it.position }, { it.name.lowercase() })
+        compareBy({ it.position }, { it.name.lowercase() }),
     )
 }
 

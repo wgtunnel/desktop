@@ -55,13 +55,13 @@ fun PulsingStatusLed(color: Color, modifier: Modifier = Modifier) {
                     scaleY = scale
                     this.alpha = alpha
                 }
-                .background(color, CircleShape)
+                .background(color, CircleShape),
         )
 
         Box(
             Modifier.size(10.dp)
                 .background(color, CircleShape)
-                .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape),
         )
     }
 }

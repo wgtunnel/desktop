@@ -140,7 +140,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                             },
                         type = sideEffect.type,
                         duration = Duration.INFINITE,
-                    )
+                    ),
                 )
             is AppSideEffect.NavigableToast ->
                 toaster.show(
@@ -150,7 +150,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                         action = NavigateAction(sideEffect.actionLabel, sideEffect.onAction),
                         type = sideEffect.type,
                         duration = sideEffect.duration,
-                    )
+                    ),
                 )
             is AppSideEffect.TextActionToast ->
                 toaster.show(
@@ -164,7 +164,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
                             },
                         type = sideEffect.type,
                         duration = sideEffect.duration,
-                    )
+                    ),
                 )
             is AppSideEffect.DismissToast -> toaster.dismiss(sideEffect.id)
         }
@@ -190,7 +190,7 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
             LocalToaster provides toaster,
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             ) {
                 Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     WideNavigationRail(
@@ -426,8 +426,8 @@ private fun StatusFooter(uiState: AppUiState) {
                         DaemonConnectionStatus.CONNECTED -> Res.string.daemon_connected
                         DaemonConnectionStatus.SYNCING -> Res.string.syncing_with_daemon
                         DaemonConnectionStatus.DISCONNECTED -> Res.string.connecting_to_daemon
-                    }
-                )
+                    },
+                ),
         ) {
             PulsingStatusLed(
                 color =
@@ -435,7 +435,7 @@ private fun StatusFooter(uiState: AppUiState) {
                         DaemonConnectionStatus.CONNECTED -> HealthyGreen
                         DaemonConnectionStatus.SYNCING -> WarningAmber
                         DaemonConnectionStatus.DISCONNECTED -> ErrorRed
-                    }
+                    },
             )
         }
     }

@@ -102,7 +102,7 @@ fun WifiSettingsScreen(viewModel: AutoTunnelViewModel = koinViewModel()) {
                                 val start = length
                                 append(learnMoreText)
                                 addLink(LinkAnnotation.Url(url), start, length)
-                            }
+                            },
                         )
                     },
                     trailing = {

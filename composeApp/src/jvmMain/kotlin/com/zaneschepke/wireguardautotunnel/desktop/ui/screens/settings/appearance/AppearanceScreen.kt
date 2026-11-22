@@ -37,7 +37,7 @@ fun AppearanceScreen() {
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         Column(
             horizontalAlignment = Alignment.Start,

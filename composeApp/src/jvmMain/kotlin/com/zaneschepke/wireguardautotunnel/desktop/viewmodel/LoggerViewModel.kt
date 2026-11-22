@@ -12,10 +12,8 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.stored
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.unknown_error
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.LoggerUiState
+import com.zaneschepke.wireguardautotunnel.desktop.util.FileDialogs
 import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
-import io.github.vinceglb.filekit.dialogs.openFileSaver
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.write
 import java.time.Instant
@@ -32,7 +30,7 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
     // this ViewModel's own destruction/recreation across navigation)
     override val container =
         orbitContainer<LoggerUiState, AppSideEffect>(
-            LoggerUiState(messages = logCoordinator.bufferedMessages.value, isLoading = false)
+            LoggerUiState(messages = logCoordinator.bufferedMessages.value, isLoading = false),
         ) {
             intent {
                 logCoordinator.bufferedMessages.collect { snapshot ->
@@ -44,15 +42,19 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
     fun exportLogs() = intent {
         val stamp = FILE_TIME.format(Instant.now())
         val handle =
-            FileKit.openFileSaver(
-                suggestedName = "wgtunnel_logs_${stamp}_${BuildConfig.APP_VERSION}",
-                defaultExtension = FileUtils.ZIP_FILE_EXTENSION,
-                directory = null,
-                dialogSettings = FileKitDialogSettings.createDefault(),
-            )
+            FileDialogs.saveFile(
+                    "wgtunnel_logs_${stamp}_${BuildConfig.APP_VERSION}",
+                    FileUtils.ZIP_FILE_EXTENSION,
+                )
+                .getOrElse {
+                    postSideEffect(
+                        AppSideEffect.Toast(FileDialogs.failureMessage(), ToastType.Error),
+                    )
+                    return@intent
+                }
         if (handle == null) {
             postSideEffect(
-                AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info)
+                AppSideEffect.Toast(getString(Res.string.export_cancelled), ToastType.Info),
             )
             return@intent
         }
@@ -64,7 +66,7 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
                 AppSideEffect.Toast(
                     getString(Res.string.logs_exported_template, handle.name),
                     ToastType.Success,
-                )
+                ),
             )
         } catch (e: Exception) {
             postSideEffect(
@@ -74,7 +76,7 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
                         e.message ?: getString(Res.string.unknown_error),
                     ),
                     ToastType.Error,
-                )
+                ),
             )
         } finally {
             temp.delete()
@@ -84,7 +86,7 @@ class LoggerViewModel(private val logCoordinator: LogCoordinator) :
     fun deleteLogs() = intent {
         logCoordinator.clear()
         postSideEffect(
-            AppSideEffect.Toast(getString(Res.string.stored_logs_deleted), ToastType.Success)
+            AppSideEffect.Toast(getString(Res.string.stored_logs_deleted), ToastType.Success),
         )
     }
 

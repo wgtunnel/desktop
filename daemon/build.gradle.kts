@@ -107,7 +107,7 @@ tasks.register<Exec>("buildWinSW") {
             fileTree(winSwDir) {
                 include("**/*.cs", "**/*.csproj", "**/appsettings.json")
                 exclude("bin/**", "obj/**")
-            }
+            },
         )
         .withPropertyName("winSwSourceFiles")
         .withPathSensitivity(PathSensitivity.RELATIVE)
@@ -115,8 +115,8 @@ tasks.register<Exec>("buildWinSW") {
     outputs
         .dir(
             file(
-                "winsw/artifacts/bin/WinSW/$windowsPlatform/Release/net7.0-windows/win-$windowsArch/publish"
-            )
+                "winsw/artifacts/bin/WinSW/$windowsPlatform/Release/net7.0-windows/win-$windowsArch/publish",
+            ),
         )
         .withPropertyName("winSwPublishDir")
 

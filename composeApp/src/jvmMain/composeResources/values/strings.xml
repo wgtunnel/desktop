@@ -94,6 +94,8 @@
     <string name="delete">Delete</string>
     <string name="export_failed">Export failed: %1$s</string>
     <string name="export_cancelled">Export cancelled</string>
+    <string name="file_dialog_failed">Couldn't open the file dialog</string>
+    <string name="file_dialog_failed_linux">Couldn't open the file dialog. Install a file chooser portal such as xdg-desktop-portal-gtk, then try again.</string>
     <string name="exported_to_template">Exported to %1$s</string>
     <string name="logs_exported_template">Logs exported to %1$s</string>
     <string name="stored_logs_deleted">Stored logs deleted</string>

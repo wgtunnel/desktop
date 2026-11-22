@@ -39,7 +39,7 @@ fun rememberRestartToApplyChanges(
                             onClick = {
                                 show = false
                                 latestOnSave(true)
-                            }
+                            },
                         ) {
                             Text(stringResource(Res.string.save_and_restart))
                         }
@@ -49,7 +49,7 @@ fun rememberRestartToApplyChanges(
                             onClick = {
                                 show = false
                                 latestOnSave(false)
-                            }
+                            },
                         ) {
                             Text(stringResource(Res.string.save))
                         }

@@ -148,7 +148,7 @@ class LogRecorder(
         appendLine("Version: $appVersionLabel")
         appendLine(
             "OS: ${System.getProperty("os.name")} ${System.getProperty("os.version")} " +
-                "(${System.getProperty("os.arch")})"
+                "(${System.getProperty("os.arch")})",
         )
         appendLine("Started: ${LocalDateTime.now()}")
         appendLine("=========================")

@@ -132,7 +132,7 @@ class NativeLogTailer(private val logDir: File) {
                 tag = tag,
                 message = message,
                 source = DaemonLogService.SOURCE,
-            )
+            ),
         )
     }
 

@@ -40,11 +40,11 @@ class MonitoringViewModel(private val monitoringSettingsRepository: MonitoringSe
     fun onStatisticsIntervalChanged(refresh: StatisticRefresh) = intent {
         val current = monitoringSettingsRepository.get()
         monitoringSettingsRepository.upsert(
-            current.copy(tunnelStatisticsPollInterval = refresh.value)
+            current.copy(tunnelStatisticsPollInterval = refresh.value),
         )
         reduce { state.copy(statisticRefresh = refresh) }
         postSideEffect(
-            AppSideEffect.Toast(getString(Res.string.refresh_rate_updated), ToastType.Success)
+            AppSideEffect.Toast(getString(Res.string.refresh_rate_updated), ToastType.Success),
         )
     }
 }

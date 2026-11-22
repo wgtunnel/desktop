@@ -94,7 +94,7 @@ class AutoTunnelSupervisor(
         reconciler.start(
             combine(networkMonitor.info, planFlow) { network, plan -> snapshot(network, plan) }
                 .distinctUntilChanged()
-                .debounce(300.milliseconds)
+                .debounce(300.milliseconds),
         )
         log.i { "Auto-tunnel started" }
     }

@@ -216,7 +216,7 @@ class DnsViewModel(
         reduce { state.copy(saved = updated, draft = updated) }
         if (restart) tunnelCoordinator.restartActiveTunnels()
         postSideEffect(
-            AppSideEffect.Toast(getString(Res.string.dns_settings_saved), ToastType.Success)
+            AppSideEffect.Toast(getString(Res.string.dns_settings_saved), ToastType.Success),
         )
     }
 

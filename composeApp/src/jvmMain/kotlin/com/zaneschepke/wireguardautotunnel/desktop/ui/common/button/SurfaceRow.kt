@@ -57,7 +57,7 @@ fun SurfaceRow(
                 .fillMaxWidth()
                 .background(
                     if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    else MaterialTheme.colorScheme.surface
+                    else MaterialTheme.colorScheme.surface,
                 )
                 .combinedClickable(
                     onClick = onClick ?: {},
@@ -87,7 +87,7 @@ fun SurfaceRow(
                         modifier =
                             Modifier.onSizeChanged {
                                 leadingPadding = with(density) { it.width.toDp() }
-                            }
+                            },
                     ) {
                         leading()
                         Spacer(Modifier.width(16.dp))
@@ -113,7 +113,7 @@ fun SurfaceRow(
 
             if (expandedContent != null) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = leadingPadding, top = 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(start = leadingPadding, top = 4.dp),
                 ) {
                     expandedContent()
                 }

@@ -34,7 +34,7 @@ class SupportViewModel(private val appUpdater: AppUpdater) :
             SupportUiState(
                 updateState = appUpdater.state.value,
                 updateSupported = appUpdater.isSupported(),
-            )
+            ),
         ) {
             intent {
                 appUpdater.state.collect { updateState ->
@@ -51,7 +51,7 @@ class SupportViewModel(private val appUpdater: AppUpdater) :
             is UpdateResult.Available -> Unit // appUpdater.state already reflects it
             is UpdateResult.NotAvailable -> {
                 postSideEffect(
-                    AppSideEffect.Toast(getString(Res.string.up_to_date), ToastType.Success)
+                    AppSideEffect.Toast(getString(Res.string.up_to_date), ToastType.Success),
                 )
             }
             is UpdateResult.Error -> {
@@ -85,7 +85,7 @@ class SupportViewModel(private val appUpdater: AppUpdater) :
                     message = getString(Res.string.background_service_remove_failed),
                     type = ToastType.Error,
                 )
-            }
+            },
         )
     }
 

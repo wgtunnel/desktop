@@ -57,7 +57,7 @@ fun ConfigurationTextBox(
             onValueChange = onTextFieldValueChange,
             textStyle =
                 MaterialTheme.typography.bodySmall.copy(
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             keyboardOptions = keyboardOptions,
@@ -70,7 +70,7 @@ fun ConfigurationTextBox(
                     .defaultMinSize(minHeight = 48.dp)
                     .then(
                         if (focusRequester != null) Modifier.focusRequester(focusRequester)
-                        else Modifier
+                        else Modifier,
                     ),
         ) { innerTextField ->
             OutlinedTextFieldDefaults.DecorationBox(

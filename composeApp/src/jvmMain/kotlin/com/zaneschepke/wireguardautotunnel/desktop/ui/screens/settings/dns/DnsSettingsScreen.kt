@@ -158,7 +158,7 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                     )
                 }
                 AnimatedVisibility(
-                    uiState.draft.bootstrapDnsProtocol != BootstrapDnsProtocol.SYSTEM
+                    uiState.draft.bootstrapDnsProtocol != BootstrapDnsProtocol.SYSTEM,
                 ) {
                     ConfigurationTextBox(
                         modifier =
@@ -222,7 +222,7 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                 }
                 AnimatedVisibility(
                     uiState.draft.tunnelDnsMode in
-                        setOf(TunnelDnsMode.Encrypted, TunnelDnsMode.Split, TunnelDnsMode.AllLocal)
+                        setOf(TunnelDnsMode.Encrypted, TunnelDnsMode.Split, TunnelDnsMode.AllLocal),
                 ) {
                     Column {
                         val isSplitMode = uiState.draft.tunnelDnsMode.isSplitMode()
@@ -296,7 +296,7 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                                 },
                                 onClick = {
                                     viewModel.setUseTunnelDnsServersInSplit(
-                                        !uiState.draft.useTunnelDnsServersInSplit
+                                        !uiState.draft.useTunnelDnsServersInSplit,
                                     )
                                 },
                             )
@@ -361,7 +361,7 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                                         title = stringResource(Res.string.split_suffix_target),
                                         description = {
                                             DescriptionText(
-                                                uiState.draft.splitSuffixTarget.asLabel()
+                                                uiState.draft.splitSuffixTarget.asLabel(),
                                             )
                                         },
                                         onClick = { showSplitSuffixMenu = true },
@@ -372,7 +372,7 @@ fun DnsSettingsScreen(viewModel: DnsViewModel = koinViewModel()) {
                                         title = stringResource(Res.string.split_suffix_target),
                                         description =
                                             stringResource(
-                                                Res.string.split_suffix_target_sheet_desc
+                                                Res.string.split_suffix_target_sheet_desc,
                                             ),
                                         options =
                                             SplitDnsSuffixTarget.entries.map { target ->

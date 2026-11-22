@@ -50,10 +50,9 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.MoveToGroupDialog
 import com.zaneschepke.wireguardautotunnel.desktop.ui.screens.tunnels.components.TunnelList
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
+import com.zaneschepke.wireguardautotunnel.desktop.util.FileDialogs
 import com.zaneschepke.wireguardautotunnel.desktop.util.FileUtils
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelsViewModel
-import io.github.vinceglb.filekit.dialogs.FileKitMode
-import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.extension
 import io.github.vinceglb.filekit.nameWithoutExtension
 import io.github.vinceglb.filekit.readBytes
@@ -125,56 +124,60 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
 
     val scope = rememberCoroutineScope()
     val multiImportErrorsTitle = stringResource(Res.string.multi_import_errors_title)
-    val pickerLauncher =
-        rememberFilePickerLauncher(mode = FileKitMode.Multiple()) { files ->
-            files?.let { selectedFiles ->
-                scope.launch(Dispatchers.Main.immediate) {
-                    val configMap = mutableMapOf<String, String>()
-                    var badFiles = 0
+    val importTunnels: () -> Unit = {
+        scope.launch(Dispatchers.Main.immediate) {
+            val selectedFiles =
+                FileDialogs.pickFiles().getOrElse {
+                    toaster.show(
+                        Toast(type = ToastType.Error, message = FileDialogs.failureMessage()),
+                    )
+                    return@launch
+                } ?: return@launch
+            val configMap = mutableMapOf<String, String>()
+            var badFiles = 0
 
-                    for (file in selectedFiles) {
-                        when (file.extension.lowercase()) {
-                            FileUtils.CONF_FILE_EXTENSION -> {
-                                runCatching {
-                                    file.readString()
-                                }
-                                    .onSuccess { content ->
-                                        if (content.isNotBlank()) {
-                                            configMap[content] = file.nameWithoutExtension
-                                        }
-                                    }
-                                    .onFailure { badFiles++ }
-                            }
-
-                            FileUtils.ZIP_FILE_EXTENSION -> {
-                                runCatching {
-                                    FileUtils.readConfigsFromZip(file.readBytes())
-                                }
-                                    .onSuccess { zipConfigs -> configMap.putAll(zipConfigs) }
-                                    .onFailure { badFiles++ }
-                            }
-
-                            else -> {
-                                badFiles++
-                            }
+            for (file in selectedFiles) {
+                when (file.extension.lowercase()) {
+                    FileUtils.CONF_FILE_EXTENSION -> {
+                        runCatching {
+                            file.readString()
                         }
+                            .onSuccess { content ->
+                                if (content.isNotBlank()) {
+                                    configMap[content] = file.nameWithoutExtension
+                                }
+                            }
+                            .onFailure { badFiles++ }
                     }
 
-                    if (configMap.isNotEmpty()) {
-                        viewModel.onMultiConfImport(configMap)
+                    FileUtils.ZIP_FILE_EXTENSION -> {
+                        runCatching {
+                            FileUtils.readConfigsFromZip(file.readBytes())
+                        }
+                            .onSuccess { zipConfigs -> configMap.putAll(zipConfigs) }
+                            .onFailure { badFiles++ }
                     }
 
-                    if (badFiles > 0) {
-                        toaster.show(
-                            Toast(
-                                type = ToastType.Warning,
-                                message = multiImportErrorsTitle.format(badFiles),
-                            )
-                        )
+                    else -> {
+                        badFiles++
                     }
                 }
             }
+
+            if (configMap.isNotEmpty()) {
+                viewModel.onMultiConfImport(configMap)
+            }
+
+            if (badFiles > 0) {
+                toaster.show(
+                    Toast(
+                        type = ToastType.Warning,
+                        message = multiImportErrorsTitle.format(badFiles),
+                    ),
+                )
+            }
         }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -184,7 +187,7 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                 actions = {
                     if (!uiState.isSelectionMode) {
                         CustomTooltip(text = stringResource(Res.string.add_a_tunnel)) {
-                            IconButton(onClick = { pickerLauncher.launch() }) {
+                            IconButton(onClick = importTunnels) {
                                 Icon(
                                     Icons.Outlined.Add,
                                     contentDescription = stringResource(Res.string.add_a_tunnel),
@@ -220,7 +223,7 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                         }
                         CustomTooltip(text = stringResource(Res.string.export_selected)) {
                             IconButton(
-                                onClick = { viewModel.onExportIntent(ExportIntent.Selected) }
+                                onClick = { viewModel.onExportIntent(ExportIntent.Selected) },
                             ) {
                                 Icon(
                                     Icons.Outlined.Download,
@@ -242,7 +245,7 @@ fun TunnelsScreen(viewModel: TunnelsViewModel = koinViewModel()) {
                         if (uiState.isSelectionMode) {
                             detectTapGestures(onPress = { viewModel.onClearSelectionMode() })
                         }
-                    }
+                    },
         ) {
             TunnelList(
                 uiState = uiState,

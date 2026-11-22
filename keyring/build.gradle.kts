@@ -27,7 +27,7 @@ tasks.register<BuildKeyringGoLibsTask>("buildGoLibs") {
         fileTree("tools/keyring-go") {
             include("**/*.go", "**/go.mod", "**/go.sum", "Makefile")
             exclude("out/**", "build/**", ".gocache/**")
-        }
+        },
     )
     nativeOut.set(layout.projectDirectory.dir("src/main/resources/nucleus/native"))
 }

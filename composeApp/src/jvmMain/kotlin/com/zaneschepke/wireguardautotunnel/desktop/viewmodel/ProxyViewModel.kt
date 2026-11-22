@@ -101,7 +101,7 @@ class ProxyViewModel(
         reduce { state.copy(saved = state.draft) }
         if (restart) tunnelCoordinator.restartActiveTunnels()
         postSideEffect(
-            AppSideEffect.Toast(getString(Res.string.proxy_settings_saved), ToastType.Success)
+            AppSideEffect.Toast(getString(Res.string.proxy_settings_saved), ToastType.Success),
         )
     }
 }

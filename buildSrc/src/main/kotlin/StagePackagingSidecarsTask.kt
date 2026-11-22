@@ -94,11 +94,11 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
         val variant = appVariant.get()
         out.resolve("wgtunnel-daemon.service")
             .writeText(
-                replaceTokens(linuxService.get().asFile.readText(), fsName, display, variant)
+                replaceTokens(linuxService.get().asFile.readText(), fsName, display, variant),
             )
         out.resolve("install.sh")
             .writeExecutable(
-                replaceTokens(linuxInstallScript.get().asFile.readText(), fsName, display, variant)
+                replaceTokens(linuxInstallScript.get().asFile.readText(), fsName, display, variant),
             )
         out.resolve("uninstall.sh")
             .writeExecutable(
@@ -107,7 +107,7 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
                     fsName,
                     display,
                     variant,
-                )
+                ),
             )
 
         val hooks = hooksOutputDir.get().asFile
@@ -121,7 +121,7 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
                     fsName,
                     display,
                     variant,
-                )
+                ),
             )
         hooks
             .resolve("before-remove.sh")
@@ -131,7 +131,7 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
                     fsName,
                     display,
                     variant,
-                )
+                ),
             )
         // Pacman only calls after-upgrade (never after-install) when replacing an
         // already-installed package, so it needs its own copy of the same registration
@@ -144,7 +144,7 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
                     .asFile
                     .readText()
                     .replace("\${executable}", fsName)
-                    .replace("\${sanitizedProductName}", fsName)
+                    .replace("\${sanitizedProductName}", fsName),
             )
 
         if (macOS.get()) {
@@ -157,7 +157,7 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
                             .replace(
                                 "__DAEMON_BUNDLE_ID__",
                                 macDaemonBundleId.getOrElse("com.wgtunnel.$fsName.daemon"),
-                            )
+                            ),
                     )
             }
             macWifiAgentPlist.orNull?.asFile?.let { plist ->
@@ -168,7 +168,7 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
                             .replace(
                                 "__WIFI_AGENT_BUNDLE_ID__",
                                 macWifiAgentBundleId.getOrElse("com.wgtunnel.$fsName.wifi"),
-                            )
+                            ),
                     )
             }
         }

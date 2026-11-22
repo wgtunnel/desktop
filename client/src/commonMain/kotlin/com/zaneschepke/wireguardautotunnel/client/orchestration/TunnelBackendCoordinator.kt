@@ -50,7 +50,7 @@ class TunnelBackendCoordinator(
     }
 
     private suspend fun killSwitchDto(
-        lockdown: com.zaneschepke.wireguardautotunnel.client.domain.model.LockdownSettings
+        lockdown: com.zaneschepke.wireguardautotunnel.client.domain.model.LockdownSettings,
     ) = tunnelCoordinator.killSwitchDto(lockdown, activeRunConfig())
 
     private suspend fun activeRunConfig() =

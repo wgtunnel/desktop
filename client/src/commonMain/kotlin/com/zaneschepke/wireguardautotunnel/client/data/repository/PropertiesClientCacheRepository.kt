@@ -12,7 +12,7 @@ import java.util.Properties
 private val log = Logger.withTag("ClientCache")
 
 class PropertiesClientCacheRepository(
-    private val baseCacheDir: Path = FilePathsHelper.getClientCacheDir().toPath()
+    private val baseCacheDir: Path = FilePathsHelper.getClientCacheDir().toPath(),
 ) : ClientCacheRepository {
 
     private val lock = Any()

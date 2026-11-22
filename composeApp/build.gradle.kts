@@ -160,7 +160,7 @@ kotlin {
     }
     compilerOptions {
         freeCompilerArgs.add(
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi"
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
         )
     }
 }
@@ -245,8 +245,8 @@ val stagePackagingSidecars =
                     .layout
                     .projectDirectory
                     .dir(
-                        "winsw/artifacts/bin/WinSW/$windowsPlatform/Release/net7.0-windows/win-$windowsArch/publish"
-                    )
+                        "winsw/artifacts/bin/WinSW/$windowsPlatform/Release/net7.0-windows/win-$windowsArch/publish",
+                    ),
             )
         }
     }
@@ -265,11 +265,11 @@ val stageAppResources =
                     project(":daemon")
                         .layout
                         .buildDirectory
-                        .dir("compose/tmp/main/graalvm/nativeCompile")
+                        .dir("compose/tmp/main/graalvm/nativeCompile"),
                 ) {
                     include("wgtunnel-daemon", "wgtunnel-daemon.exe")
                     builtBy(":daemon:nativeImageCompile")
-                }
+                },
             )
         }
         // The Wi-Fi helper for macOS
@@ -280,11 +280,11 @@ val stageAppResources =
                         project(":wifi-agent")
                             .layout
                             .buildDirectory
-                            .dir("compose/tmp/main/graalvm/nativeCompile")
+                            .dir("compose/tmp/main/graalvm/nativeCompile"),
                     ) {
                         include("wgtunnel-wifi")
                         builtBy(":wifi-agent:nativeImageCompile")
-                    }
+                    },
                 ) {
                     rename { "$packagingAppFsName-wifi" }
                 }
@@ -375,10 +375,26 @@ nucleus.application {
             debMaintainer = "WG Tunnel <support@wgtunnel.com>"
             // Leaving these empty makes electron-builder fall back to its own built-in default
             // dependency list
-            pacmanDepends = listOf("gtk3", "gcc-libs", "freetype2", "fontconfig")
-            rpmRequires = listOf("gtk3", "glibc", "libstdc++", "freetype", "fontconfig")
+            pacmanDepends =
+                listOf("gtk3", "gcc-libs", "freetype2", "fontconfig", "xdg-desktop-portal-gtk")
+            rpmRequires =
+                listOf(
+                    "gtk3",
+                    "glibc",
+                    "libstdc++",
+                    "freetype",
+                    "fontconfig",
+                    "(xdg-desktop-portal-gtk or xdg-desktop-portal-kde or xdg-desktop-portal-gnome)",
+                )
             debDepends =
-                listOf("libgtk-3-0", "libc6", "libstdc++6", "libfreetype6", "libfontconfig1")
+                listOf(
+                    "libgtk-3-0",
+                    "libc6",
+                    "libstdc++6",
+                    "libfreetype6",
+                    "libfontconfig1",
+                    "xdg-desktop-portal-gtk | xdg-desktop-portal-kde | xdg-desktop-portal-gnome",
+                )
             iconFile.set(rootProject.file("packaging/linux/icon.png"))
             afterInstall.set(rootProject.file("packaging/linux/after-install.sh"))
             afterRemove.set(rootProject.file("packaging/linux/after-remove.sh"))
@@ -389,15 +405,15 @@ nucleus.application {
                 layout.file(
                     stagePackagingSidecars.map {
                         it.hooksOutputDir.get().asFile.resolve("before-install.sh")
-                    }
-                )
+                    },
+                ),
             )
             beforeRemove.set(
                 layout.file(
                     stagePackagingSidecars.map {
                         it.hooksOutputDir.get().asFile.resolve("before-remove.sh")
-                    }
-                )
+                    },
+                ),
             )
             // Pacman only runs afterUpgrade/beforeUpgrade (never afterInstall/beforeInstall) when
             // replacing an already-installed package, so the same registration/stop logic needs to
@@ -406,15 +422,15 @@ nucleus.application {
                 layout.file(
                     stagePackagingSidecars.map {
                         it.hooksOutputDir.get().asFile.resolve("after-upgrade.sh")
-                    }
-                )
+                    },
+                ),
             )
             beforeUpgrade.set(
                 layout.file(
                     stagePackagingSidecars.map {
                         it.hooksOutputDir.get().asFile.resolve("before-install.sh")
-                    }
-                )
+                    },
+                ),
             )
             appImage.desktopEntries =
                 mapOf(
@@ -613,7 +629,7 @@ if (isMacOS) {
                 val src = macBundleContents("MacOS/bin/$executable").get()
                 if (!src.isFile) {
                     error(
-                        "stageMacWifiAgentBundle: Wi-Fi helper binary missing at ${src.absolutePath}"
+                        "stageMacWifiAgentBundle: Wi-Fi helper binary missing at ${src.absolutePath}",
                     )
                 }
                 macBundleContents("Resources/wifi-agent.app").get().deleteRecursively()
@@ -656,7 +672,7 @@ if (isMacOS) {
                 val nestedApp = macBundleContents("Resources/$macWifiAgentAppDir").get()
                 if (!nestedApp.isDirectory) {
                     error(
-                        "signMacWifiAgentBundle: nested helper app missing at ${nestedApp.absolutePath}"
+                        "signMacWifiAgentBundle: nested helper app missing at ${nestedApp.absolutePath}",
                     )
                 }
                 val command = buildList {
@@ -702,7 +718,7 @@ if (isMacOS) {
                 val stripped =
                     text.replace(
                         Regex(
-                            """[ \t]*<key>NSLocation(?:WhenInUse|AlwaysAndWhenInUse)?UsageDescription</key>\s*<string>[^<]*</string>\s*"""
+                            """[ \t]*<key>NSLocation(?:WhenInUse|AlwaysAndWhenInUse)?UsageDescription</key>\s*<string>[^<]*</string>\s*""",
                         ),
                         "",
                     )
@@ -730,7 +746,7 @@ fun macBundleContents(child: String) = provider {
                         "<does not exist>"
                     }
                 error(
-                    "could not locate any .app bundle under $binariesRoot\nContents (depth 5):\n$listing"
+                    "could not locate any .app bundle under $binariesRoot\nContents (depth 5):\n$listing",
                 )
             }
     appBundle.resolve("Contents/$child")

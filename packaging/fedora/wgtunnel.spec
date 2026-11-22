@@ -21,6 +21,7 @@ BuildRequires:  systemd-rpm-macros
 
 Recommends:     systemd
 Requires:       gtk3
+Requires:       (xdg-desktop-portal-gtk or xdg-desktop-portal-kde or xdg-desktop-portal-gnome)
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd

@@ -88,7 +88,7 @@ class GlobalConfigViewModel(
                 runCatching { Config.parseInterfaceQuickString(state.editorText) }
                     .getOrElse {
                         postSideEffect(
-                            AppSideEffect.Toast(it.toConfigErrorMessage(), ToastType.Error)
+                            AppSideEffect.Toast(it.toConfigErrorMessage(), ToastType.Error),
                         )
                         return@intent
                     }
@@ -116,7 +116,7 @@ class GlobalConfigViewModel(
         val saved = state.stored.copy(quickConfig = reconciled.asQuickString())
         tunnelRepository.save(saved)
         dnsSettingsRepository.upsert(
-            dnsSettingsRepository.get().copy(isGlobalTunnelConfigDnsEnabled = state.dnsEnabled)
+            dnsSettingsRepository.get().copy(isGlobalTunnelConfigDnsEnabled = state.dnsEnabled),
         )
         settingsRepository.updateGlobalAmneziaEnabled(state.amneziaEnabled)
         reduce {
@@ -128,7 +128,7 @@ class GlobalConfigViewModel(
             )
         }
         postSideEffect(
-            AppSideEffect.Toast(getString(Res.string.config_changes_saved), ToastType.Success)
+            AppSideEffect.Toast(getString(Res.string.config_changes_saved), ToastType.Success),
         )
     }
 

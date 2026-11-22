@@ -150,7 +150,7 @@ class AppViewModel(
                                     )
                                 } else {
                                     AppSideEffect.Toast(message = message, type = ToastType.Warning)
-                                }
+                                },
                             )
                         }
                     }
@@ -181,7 +181,7 @@ class AppViewModel(
                             )
                         } else {
                             AppSideEffect.Toast(message = message, type = ToastType.Warning)
-                        }
+                        },
                     )
                 }
             }
@@ -236,7 +236,7 @@ class AppViewModel(
                                 },
                                 type = ToastType.Normal,
                                 duration = DONATION_PROMPT_DURATION,
-                            )
+                            ),
                         )
                     }
                     clientCacheRepository.updateLastSeenAppVersion(BuildConfig.APP_VERSION)
@@ -271,7 +271,7 @@ class AppViewModel(
                 AppSideEffect.Toast(
                     message = getString(Res.string.theme_from_image_failed),
                     type = ToastType.Error,
-                )
+                ),
             )
             return@intent
         }
@@ -313,7 +313,7 @@ class AppViewModel(
                         getString(Res.string.mac_service_requires_approval_template, displayName),
                     actionLabel = getString(Res.string.open_system_settings),
                     onAction = { AppServiceManager.openSystemSettingsLoginItems() },
-                )
+                ),
             )
         }
     }

@@ -282,7 +282,7 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                             is UpdateState.Downloading ->
                                 stringResource(
                                     if (state.isDifferential) Res.string.downloading_update_delta
-                                    else Res.string.downloading_update
+                                    else Res.string.downloading_update,
                                 )
                             is UpdateState.ReadyToInstall ->
                                 stringResource(Res.string.restart_and_install)
@@ -300,7 +300,7 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                                         stringResource(
                                             Res.string.update_available_version,
                                             state.info.version,
-                                        )
+                                        ),
                                     )
                                 }
                             }
@@ -319,7 +319,7 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                                                 state.bytesDownloaded.formatFileSize(),
                                                 state.totalBytes.formatFileSize(),
                                                 state.percent.toInt(),
-                                            )
+                                            ),
                                         )
                                     }
                                 }
@@ -330,7 +330,7 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                                         stringResource(
                                             Res.string.ready_to_install_version,
                                             state.version,
-                                        )
+                                        ),
                                     )
                                 }
                             }
@@ -365,7 +365,7 @@ fun SupportScreen(viewModel: SupportViewModel = koinViewModel()) {
                         title = stringResource(Res.string.remove_background_service),
                         description = {
                             DescriptionText(
-                                stringResource(Res.string.remove_background_service_desc)
+                                stringResource(Res.string.remove_background_service_desc),
                             )
                         },
                         onClick = { showRemoveServiceDialog = true },

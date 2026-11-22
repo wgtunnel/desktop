@@ -125,7 +125,7 @@ class TunnelViewModel(
         val sanitizedName = state.editedConfig.name.trim()
         if (sanitizedName.isEmpty()) {
             postSideEffect(
-                AppSideEffect.Toast(getString(Res.string.tunnel_name_empty), ToastType.Error)
+                AppSideEffect.Toast(getString(Res.string.tunnel_name_empty), ToastType.Error),
             )
             return@intent
         }
@@ -142,7 +142,7 @@ class TunnelViewModel(
             .onSuccess { parsed ->
                 val toSave =
                     sanitizedConfig.copy(
-                        quickConfig = parsed.withName(sanitizedName).asQuickString()
+                        quickConfig = parsed.withName(sanitizedName).asQuickString(),
                     )
                 val wasRunning = state.isRunning
                 tunnelRepository.save(toSave)
@@ -161,7 +161,7 @@ class TunnelViewModel(
                     AppSideEffect.Toast(
                         getString(Res.string.config_changes_saved),
                         ToastType.Success,
-                    )
+                    ),
                 )
             }
             .onFailure {

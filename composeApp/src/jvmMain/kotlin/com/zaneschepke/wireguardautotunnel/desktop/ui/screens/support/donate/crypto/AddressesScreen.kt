@@ -43,7 +43,7 @@ fun AddressesScreen() {
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         ScrollableColumn(
             horizontalAlignment = Alignment.Start,

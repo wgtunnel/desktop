@@ -41,7 +41,7 @@ nucleus.application {
         headless = true
         maxHeapSize = "32m"
         buildArgs.add(
-            "-Dapp.variant=${findProperty("app.variant") ?: System.getenv("WGTUNNEL_VARIANT") ?: "release"}"
+            "-Dapp.variant=${findProperty("app.variant") ?: System.getenv("WGTUNNEL_VARIANT") ?: "release"}",
         )
         buildArgs.addAll(GraalvmNativeArgs.daemon(System.getProperty("os.name").orEmpty()))
     }

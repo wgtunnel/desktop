@@ -109,7 +109,7 @@ fun StartupScreen(viewModel: SettingsViewModel = koinViewModel()) {
                             enabled = !autoTunnelStartOnBootLocked,
                             reason =
                                 stringResource(
-                                    Res.string.restore_auto_tunnel_at_login_locked_reason
+                                    Res.string.restore_auto_tunnel_at_login_locked_reason,
                                 ),
                         ) {
                             ThemedSwitch(
@@ -121,7 +121,7 @@ fun StartupScreen(viewModel: SettingsViewModel = koinViewModel()) {
                     },
                     description = {
                         DescriptionText(
-                            stringResource(Res.string.restore_auto_tunnel_at_login_desc)
+                            stringResource(Res.string.restore_auto_tunnel_at_login_desc),
                         )
                     },
                     enabled = !autoTunnelStartOnBootLocked,

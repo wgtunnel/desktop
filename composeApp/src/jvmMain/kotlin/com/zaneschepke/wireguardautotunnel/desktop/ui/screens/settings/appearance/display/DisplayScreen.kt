@@ -31,27 +31,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.dokar.sonner.Toast
+import com.dokar.sonner.ToastType
 import com.zaneschepke.wireguardautotunnel.client.data.model.AccentStyle
 import com.zaneschepke.wireguardautotunnel.client.data.model.Theme
 import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.*
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalNavController
+import com.zaneschepke.wireguardautotunnel.desktop.ui.common.LocalToaster
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.SurfaceRow
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.button.ThemedSwitch
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dialog.AccentColorPickerDialog
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.dropdown.LabeledDropdown
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.label.GroupLabel
 import com.zaneschepke.wireguardautotunnel.desktop.ui.common.scroll.ScrollableColumn
+import com.zaneschepke.wireguardautotunnel.desktop.util.FileDialogs
 import com.zaneschepke.wireguardautotunnel.desktop.util.asLabel
 import com.zaneschepke.wireguardautotunnel.desktop.util.decodeImageBitmap
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
-import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import org.orbitmvi.orbit.compose.collectAsState
 
@@ -78,7 +80,7 @@ fun DisplayScreen(appViewModel: AppViewModel) {
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         ScrollableColumn(
             horizontalAlignment = Alignment.Start,
@@ -119,22 +121,29 @@ fun DisplayScreen(appViewModel: AppViewModel) {
 
                 val scope = rememberCoroutineScope()
                 var showColorPickerDialog by remember { mutableStateOf(false) }
-                val imagePickerLauncher =
-                    rememberFilePickerLauncher(
-                        mode = FileKitMode.Single,
-                        type = FileKitType.Image,
-                    ) { platformFile: PlatformFile? ->
-                        platformFile?.let { file ->
-                            scope.launch(Dispatchers.Default) {
+                val toaster = LocalToaster.current
+                val pickImage: () -> Unit = {
+                    scope.launch {
+                        val file =
+                            FileDialogs.pickFile(FileKitType.Image).getOrElse {
+                                toaster.show(
+                                    Toast(
+                                        type = ToastType.Error,
+                                        message = FileDialogs.failureMessage(),
+                                    ),
+                                )
+                                return@launch
+                            } ?: return@launch
+                        withContext(Dispatchers.Default) {
                                 runCatching { decodeImageBitmap(file.readBytes()) }
-                                    .onSuccess { appViewModel.setSeedColorFromImage(it) }
                             }
-                        }
+                            .onSuccess { appViewModel.setSeedColorFromImage(it) }
                     }
+                }
 
                 SurfaceRow(
                     title = stringResource(Res.string.choose_from_image),
-                    onClick = { imagePickerLauncher.launch() },
+                    onClick = pickImage,
                 )
                 SurfaceRow(
                     title = stringResource(Res.string.pick_a_color),
@@ -148,7 +157,7 @@ fun DisplayScreen(appViewModel: AppViewModel) {
                                             uiState.customSeedColor?.let { Color(it) }
                                                 ?: MaterialTheme.colorScheme.primary,
                                         shape = CircleShape,
-                                    )
+                                    ),
                         )
                     },
                 )

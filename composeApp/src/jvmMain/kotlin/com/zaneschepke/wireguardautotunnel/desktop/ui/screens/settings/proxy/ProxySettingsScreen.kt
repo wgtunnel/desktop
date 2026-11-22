@@ -171,14 +171,14 @@ fun ProxySettingsScreen(viewModel: ProxyViewModel = koinViewModel()) {
                             IconButton(
                                 onClick = {
                                     viewModel.onPasswordVisibilityChanged(!uiState.passwordVisible)
-                                }
+                                },
                             ) {
                                 Icon(
                                     Icons.Outlined.RemoveRedEye,
                                     contentDescription =
                                         stringResource(
                                             if (uiState.passwordVisible) Res.string.hide_password
-                                            else Res.string.show_password
+                                            else Res.string.show_password,
                                         ),
                                 )
                             }

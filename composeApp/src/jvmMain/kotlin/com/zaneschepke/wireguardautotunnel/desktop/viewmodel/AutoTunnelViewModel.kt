@@ -78,13 +78,13 @@ class AutoTunnelViewModel(
 
     fun setTunnelOnEthernet(enabled: Boolean) = intent {
         autoTunnelRepository.upsert(
-            state.autoTunnelSettings.copy(isTunnelOnEthernetEnabled = enabled)
+            state.autoTunnelSettings.copy(isTunnelOnEthernetEnabled = enabled),
         )
     }
 
     fun setStopOnNoInternet(enabled: Boolean) = intent {
         autoTunnelRepository.upsert(
-            state.autoTunnelSettings.copy(isStopOnNoInternetEnabled = enabled)
+            state.autoTunnelSettings.copy(isStopOnNoInternetEnabled = enabled),
         )
     }
 
@@ -100,22 +100,22 @@ class AutoTunnelViewModel(
                 AppSideEffect.Toast(
                     getString(Res.string.network_pattern_in_use),
                     ToastType.Error,
-                )
+                ),
             )
             return@intent
         }
         autoTunnelRepository.upsert(
             state.autoTunnelSettings.copy(
-                trustedNetworkSsids = state.autoTunnelSettings.trustedNetworkSsids + trimmed
-            )
+                trustedNetworkSsids = state.autoTunnelSettings.trustedNetworkSsids + trimmed,
+            ),
         )
     }
 
     fun removeTrustedNetworkName(name: String) = intent {
         autoTunnelRepository.upsert(
             state.autoTunnelSettings.copy(
-                trustedNetworkSsids = state.autoTunnelSettings.trustedNetworkSsids - name
-            )
+                trustedNetworkSsids = state.autoTunnelSettings.trustedNetworkSsids - name,
+            ),
         )
     }
 
@@ -124,22 +124,22 @@ class AutoTunnelViewModel(
         if (trimmed.isEmpty()) return@intent
         if (state.autoTunnelSettings.trustedNetworkBssids.contains(trimmed)) {
             postSideEffect(
-                AppSideEffect.Toast(getString(Res.string.bssid_pattern_in_use), ToastType.Error)
+                AppSideEffect.Toast(getString(Res.string.bssid_pattern_in_use), ToastType.Error),
             )
             return@intent
         }
         autoTunnelRepository.upsert(
             state.autoTunnelSettings.copy(
-                trustedNetworkBssids = state.autoTunnelSettings.trustedNetworkBssids + trimmed
-            )
+                trustedNetworkBssids = state.autoTunnelSettings.trustedNetworkBssids + trimmed,
+            ),
         )
     }
 
     fun removeTrustedBssid(bssid: String) = intent {
         autoTunnelRepository.upsert(
             state.autoTunnelSettings.copy(
-                trustedNetworkBssids = state.autoTunnelSettings.trustedNetworkBssids - bssid
-            )
+                trustedNetworkBssids = state.autoTunnelSettings.trustedNetworkBssids - bssid,
+            ),
         )
     }
 
@@ -155,7 +155,7 @@ class AutoTunnelViewModel(
                 AppSideEffect.Toast(
                     getString(Res.string.network_pattern_in_use),
                     ToastType.Error,
-                )
+                ),
             )
             return@intent
         }
@@ -171,7 +171,7 @@ class AutoTunnelViewModel(
         if (trimmed.isEmpty()) return@intent
         if (tunnel.tunnelBssids.contains(trimmed)) {
             postSideEffect(
-                AppSideEffect.Toast(getString(Res.string.bssid_pattern_in_use), ToastType.Error)
+                AppSideEffect.Toast(getString(Res.string.bssid_pattern_in_use), ToastType.Error),
             )
             return@intent
         }

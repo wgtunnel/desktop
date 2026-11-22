@@ -71,7 +71,7 @@ fun DonateScreen(appViewModel: AppViewModel) {
                     }
                 },
             )
-        }
+        },
     ) {
         ScrollableColumn(
             horizontalAlignment = Alignment.Start,

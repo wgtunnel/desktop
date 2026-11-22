@@ -9,7 +9,7 @@ pkgdesc="An advanced, open-source client for WireGuard and AmneziaWG."
 arch=('x86_64')
 url="https://wgtunnel.com"
 license=('MIT')
-depends=('gtk3' 'gcc-libs' 'freetype2' 'fontconfig')
+depends=('gtk3' 'gcc-libs' 'freetype2' 'fontconfig' 'xdg-desktop-portal-gtk')
 optdepends=('systemd: enables automatic daemon startup and management')
 provides=("wgtunnel=${pkgver}")
 conflicts=('wgtunnel' 'wgtunnel-git')

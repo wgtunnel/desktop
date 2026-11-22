@@ -72,7 +72,7 @@ fun LanguageScreen(appViewModel: AppViewModel) {
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize().padding(padding)) {
             item {
