@@ -18,7 +18,7 @@
     <string name="tunnel_state_resolving_dns">Resolving DNS</string>
     <string name="tunnel_state_establishing_connection">Establishing connection</string>
     <string name="tunnel_state_connected">Connected</string>
-    <string name="github_url" translatable="false">https://github.com/wgtunnel/wgtunnel/issues</string>
+    <string name="github_url" translatable="false">https://github.com/wgtunnel/desktop/issues</string>
     <string name="github_sponsors_url" translatable="false">https://github.com/sponsors/zaneschepke</string>
     <string name="kofi_url" translatable="false">https://ko-fi.com/zaneschepke</string>
     <string name="liberapay_url" translatable="false">https://liberapay.com/zaneschepke</string>
