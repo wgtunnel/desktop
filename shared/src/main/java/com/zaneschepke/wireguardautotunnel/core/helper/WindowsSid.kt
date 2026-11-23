@@ -19,7 +19,7 @@ object WindowsSid {
 
     /**
      * SID of the account this process runs as. From the token, so it's the user's own SID even when
-     * elevated (unlike a file owner). Uses `whoami`, not PowerShell. GUI only.
+     * elevated (unlike a file owner). Uses `whoami`, GUI only.
      */
     fun currentUserSid(): String? = runCatching {
         val process =
@@ -34,58 +34,18 @@ object WindowsSid {
         .onFailure { log.w(it) { "Failed to resolve current user SID" } }
         .getOrNull()
 
-    /** [path]'s owning SID, or null if unknown (including owners without a fixed SID). */
-    fun ownerOf(path: Path): String? = runCatching {
-        // Path via environment variable, not a -Command argument as a CLI argument,
-        // powershell.exe drops the quotes and splits "C:\Users\John Smith\x" at the space.
-        // We avoid -EncodedCommand, which some AV apps (like Norton) flag on sight regardless of
-        // the payload.
-        // Owner via .Sddl, not .GetOwner(): Constrained Language Mode blocks method calls but not
-        // property reads.
-        val script = "(Get-Acl -LiteralPath \$env:WGT_SID_PATH).Sddl"
-
-        val builder =
-            ProcessBuilder("powershell", "-NoProfile", "-NonInteractive", "-Command", script)
-                // stderr not merged: PowerShell's error text must never be mistaken for a SID.
-                .redirectError(ProcessBuilder.Redirect.DISCARD)
-        builder.environment()["WGT_SID_PATH"] = path.toString()
-        val process = builder.start()
-
-        if (!process.waitFor(5, TimeUnit.SECONDS)) {
-            process.destroyForcibly()
-            return@runCatching null
-        }
-        if (process.exitValue() != 0) return@runCatching null
-        val lastLine =
-            process.inputStream.bufferedReader().readLines().lastOrNull { it.isNotBlank() }?.trim()
-        lastLine?.let { parseSddlOwner(it) }
-            ?: run {
-                log.w { "SID lookup for $path returned no usable owner" }
-                null
-            }
-    }
-        .onFailure { log.w(it) { "Failed to resolve owning SID of $path" } }
-        .getOrNull()
-
     /**
-     * Owner of an SDDL string (`O:<owner>G:...`) as a SID. Aliases are language-independent and
-     * mapped only when their SID is fixed; anything else is null.
+     * Reads a path's owning SID from the OS. The daemon installs the native backend's lookup at
+     * startup. Left unset elsewhere, so [ownerOf] returns null.
      */
-    internal fun parseSddlOwner(sddl: String): String? {
-        val owner = SDDL_OWNER.find(sddl)?.groupValues?.get(1) ?: return null
-        return if (SID_EXACT.matches(owner)) owner else SDDL_ALIASES[owner]
+    @Volatile var ownerSidLookup: ((Path) -> String?)? = null
+
+    /** [path]'s owning SID, or null if unknown or no lookup is installed. */
+    fun ownerOf(path: Path): String? {
+        val lookup = ownerSidLookup ?: return null
+        return runCatching { lookup(path) }
+            .onFailure { log.w(it) { "Failed to resolve owning SID of $path" } }
+            .getOrNull()
+            ?.takeIf { SID_EXACT.matches(it) }
     }
-
-    private val SDDL_OWNER = Regex("^O:(.+?)(?=G:|D:|S:|$)")
-
-    private val SDDL_ALIASES =
-        mapOf(
-            "BA" to ADMINISTRATORS,
-            "SY" to "S-1-5-18",
-            "LS" to "S-1-5-19",
-            "NS" to "S-1-5-20",
-            "BU" to "S-1-5-32-545",
-            "WD" to "S-1-1-0",
-            "AU" to "S-1-5-11",
-        )
 }

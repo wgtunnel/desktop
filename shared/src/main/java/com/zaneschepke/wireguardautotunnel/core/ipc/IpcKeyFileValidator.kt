@@ -7,6 +7,9 @@ import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.attribute.AclFileAttributeView
+import java.nio.file.attribute.BasicFileAttributes
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Resolves and validates the IPC key file a client claims to be using, without trusting the claimed
@@ -70,19 +73,64 @@ object IpcKeyFileValidator {
         if (!keyFile.isFile) {
             return Result.Rejected("Key file does not exist: $keyPath")
         }
-        if (!PermissionsHelper.isOwnerOnly(keyPath)) {
-            return Result.Rejected("Key file permissions are not 0600: $keyPath")
-        }
 
-        val ownershipFailure =
-            if (isWindows) validateWindowsOwnership(keyPath) else validatePosixOwnership(keyPath)
-        if (ownershipFailure != null) return ownershipFailure
+        // The Windows checks spawn icacls and reg, about 100ms per request.
+        // So we reuse while the file, its owner and its ACL are unchanged.
+        val identity = if (isWindows) windowsFileIdentity(keyPath) else null
+        val cached = identity?.let { verified[keyPath.toString()] }
+        val reuse =
+            cached != null &&
+                cached.identity == identity &&
+                System.currentTimeMillis() - cached.atMillis < VERDICT_TTL_MS
+        if (!reuse) {
+            if (!PermissionsHelper.isOwnerOnly(keyPath)) {
+                return Result.Rejected("Key file permissions are not 0600: $keyPath")
+            }
+            val ownershipFailure =
+                if (isWindows) validateWindowsOwnership(keyPath)
+                else validatePosixOwnership(keyPath)
+            if (ownershipFailure != null) {
+                verified.remove(keyPath.toString())
+                return ownershipFailure
+            }
+            if (identity != null) {
+                verified[keyPath.toString()] = Verdict(identity, System.currentTimeMillis())
+            }
+        }
 
         val secret = keyFile.readText().trim()
         if (secret.isBlank()) return Result.Rejected("Empty key file: $keyPath")
 
         return Result.Trusted(secret)
     }
+
+    private const val VERDICT_TTL_MS = 10 * 60 * 1000L
+
+    private data class FileIdentity(
+        val created: Long,
+        val modified: Long,
+        val size: Long,
+        val owner: String,
+        val acl: String,
+    )
+
+    private class Verdict(val identity: FileIdentity, val atMillis: Long)
+
+    private val verified = ConcurrentHashMap<String, Verdict>()
+
+    // JDK calls only, no subprocess. Null disables reuse, so every request is checked in full.
+    private fun windowsFileIdentity(path: Path): FileIdentity? = runCatching {
+        val attrs = Files.readAttributes(path, BasicFileAttributes::class.java)
+        val view = Files.getFileAttributeView(path, AclFileAttributeView::class.java)
+        FileIdentity(
+            created = attrs.creationTime().toMillis(),
+            modified = attrs.lastModifiedTime().toMillis(),
+            size = attrs.size(),
+            owner = view.owner.name,
+            acl = view.acl.toString(),
+        )
+    }
+        .getOrNull()
 
     private fun validatePosixOwnership(keyPath: Path): Result.Rejected? {
         val ownerAccount =

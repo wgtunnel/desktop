@@ -3,7 +3,9 @@ package com.zaneschepke.wireguardautotunnel.daemon
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
 import com.wgtunnel.backend.TunnelBackend
+import com.wgtunnel.backend.system.FileOwner
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
+import com.zaneschepke.wireguardautotunnel.core.helper.WindowsSid
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.daemon.autotunnel.AutoTunnelSupervisor
 import com.zaneschepke.wireguardautotunnel.daemon.data.SettingsDaemonCacheRepository
@@ -25,6 +27,7 @@ fun main() {
     AppVariant.applyProcessDefaults()
     initLogger()
     log.i { "Daemon variant=${AppVariant.current.id} packaged=${AppVariant.isPackaged()}" }
+    WindowsSid.ownerSidLookup = { path -> FileOwner.sidOf(path.toString()) }
 
     val json = Json {
         ignoreUnknownKeys = true
