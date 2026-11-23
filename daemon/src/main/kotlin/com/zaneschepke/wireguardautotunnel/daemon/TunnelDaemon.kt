@@ -28,7 +28,9 @@ import io.ktor.server.websocket.*
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.system.exitProcess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -48,6 +50,10 @@ class TunnelDaemon(
     private var server: EmbeddedServer<*, *>? = null
     private val running = AtomicBoolean(false)
     private val shutdownLatch = CountDownLatch(1)
+    private val restartRequested = AtomicBoolean(false)
+
+    // launchd, systemd and WinSW all set this and relaunch the daemon when it exits.
+    private val supervised = System.getenv("WG_TUNNEL_SERVICE") == "1"
 
     internal fun run() {
         daemonLog.i { "Daemon starting on ${osName()}" }
@@ -130,6 +136,7 @@ class TunnelDaemon(
                             autoTunnelSupervisor,
                             daemonLogService,
                             networkMonitor,
+                            restart = if (supervised) ::requestRestart else null,
                         )
                         tunnelRoutes(backend, autoTunnelSupervisor, cacheRepository)
                         backendRoutes(backend, cacheRepository)
@@ -149,6 +156,20 @@ class TunnelDaemon(
         }
     }
 
+    /**
+     * Exits so the service manager starts the binary now on disk, after an app update replaced it.
+     * The shutdown hook runs [stop] first. The non-zero code is what makes WinSW restart it.
+     */
+    private fun requestRestart() {
+        if (!restartRequested.compareAndSet(false, true)) return
+        daemonLog.i { "Restart requested, exiting for the service manager to relaunch" }
+        scope.launch {
+            // Lets the HTTP reply reach the client before the server goes down.
+            delay(RESTART_REPLY_GRACE_MS)
+            exitProcess(RESTART_EXIT_CODE)
+        }
+    }
+
     fun stop() {
         if (!running.compareAndSet(true, false)) return
         daemonLog.i { "Daemon stop initiated - closing all tunnels" }
@@ -165,6 +186,9 @@ class TunnelDaemon(
     }
 
     private companion object {
+        const val RESTART_REPLY_GRACE_MS = 300L
+        const val RESTART_EXIT_CODE = 75
+
         fun osName(): String = System.getProperty("os.name").orEmpty()
 
         fun isWindows(): Boolean = osName().startsWith("Windows", ignoreCase = true)

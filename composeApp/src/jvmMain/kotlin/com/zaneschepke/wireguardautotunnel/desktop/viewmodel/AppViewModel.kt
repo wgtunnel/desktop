@@ -21,23 +21,32 @@ import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.app_outdated_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.background_service_name
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_not_running
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_outdated_template
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_restart_action
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_restart_command_label
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_restarted
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_restarting
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_start_command_label
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.donate_action
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.donation_prompt_message
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.mac_service_requires_approval_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.open_system_settings
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.restart_app_action
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.theme_from_image_failed
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.wifi_helper_service_name
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.DaemonInfoDto
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
+import com.zaneschepke.wireguardautotunnel.desktop.service.DaemonRestarter
+import com.zaneschepke.wireguardautotunnel.desktop.service.MacBackgroundServices
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.AppUiState
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.DaemonConnectionStatus
 import com.zaneschepke.wireguardautotunnel.desktop.ui.theme.Aqua
+import com.zaneschepke.wireguardautotunnel.desktop.update.AppRelauncher
 import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
 import com.zaneschepke.wireguardautotunnel.desktop.util.LocaleUtil
 import com.zaneschepke.wireguardautotunnel.desktop.wifi.MacWifiNameCoordinator
@@ -46,9 +55,9 @@ import dev.nucleusframework.servicemanagement.AppService
 import dev.nucleusframework.servicemanagement.AppServiceManager
 import dev.nucleusframework.servicemanagement.AppServiceStatus
 import dev.nucleusframework.updater.UpdateResult
+import dev.nucleusframework.updater.Version
 import io.github.sudarshanmhasrup.localina.api.LocaleUpdater
 import java.io.File
-import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -56,7 +65,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -72,6 +80,7 @@ class AppViewModel(
     private val daemonService: DaemonService,
     private val backendService: BackendService,
     private val appUpdater: AppUpdater,
+    private val daemonRestarter: DaemonRestarter,
     @Suppress("unused") private val autoTunnelCoordinator: AutoTunnelCoordinator,
     @Suppress("unused") private val logCoordinator: LogCoordinator,
     @Suppress("unused") private val dnsSettingsCoordinator: DnsSettingsCoordinator,
@@ -137,7 +146,9 @@ class AppViewModel(
                     .collect { alive ->
                         if (alive) {
                             postSideEffect(AppSideEffect.DismissToast(DAEMON_NOT_RUNNING_TOAST_ID))
-                        } else {
+                        } else if (!daemonRestarter.restarting.value) {
+                            // A Windows restart takes up to 15s, past the grace period, and has its
+                            // own toast.
                             val message = getString(Res.string.daemon_not_running)
                             postSideEffect(
                                 if (isWindows || isSystemdActive) {
@@ -156,33 +167,28 @@ class AppViewModel(
                     }
             }
             intent {
-                daemonService.remoteVersion.filterNotNull().collect { remoteVersion ->
-                    if (remoteVersion == BuildConfig.APP_VERSION) {
+                daemonService.remoteInfo.filterNotNull().collect { info ->
+                    if (info.version == BuildConfig.APP_VERSION) {
                         postSideEffect(AppSideEffect.DismissToast(DAEMON_OUTDATED_TOAST_ID))
                         return@collect
                     }
-                    // Unlike a Windows service or Linux systemd, SMAppService doesn't need a
-                    // privileged shell command to restart. The app can just do it itself, the
-                    // same way register() is already called unconditionally on every launch.
-                    if (isMacOS && restartMacDaemon()) return@collect
-                    val message =
-                        getString(
-                            Res.string.daemon_outdated_template,
-                            remoteVersion,
-                            BuildConfig.APP_VERSION,
-                        )
-                    postSideEffect(
-                        if (isWindows || isSystemdActive) {
-                            AppSideEffect.ActionableToast(
+                    // A package manager upgrade can restart the daemon on the new version while
+                    // this older app is still open. Only restarting the app fixes it.
+                    if (isNewerThanApp(info.version)) {
+                        postSideEffect(
+                            AppSideEffect.TextActionToast(
                                 id = DAEMON_OUTDATED_TOAST_ID,
-                                message = message,
-                                copyText = daemonRestartCommand(),
-                                copyLabel = getString(Res.string.daemon_restart_command_label),
-                            )
-                        } else {
-                            AppSideEffect.Toast(message = message, type = ToastType.Warning)
-                        },
-                    )
+                                message = getString(Res.string.app_outdated_template, info.version),
+                                actionLabel = getString(Res.string.restart_app_action),
+                                onAction = { AppRelauncher.relaunch() },
+                                type = ToastType.Info,
+                            ),
+                        )
+                        return@collect
+                    }
+                    // macOS has no command to hand the user, and the app can restart its own
+                    // SMAppService daemon, so it finishes the update without asking.
+                    if (isMacOS) restartOutdatedDaemon(info) else offerDaemonRestart(info)
                 }
             }
             intent {
@@ -199,7 +205,7 @@ class AppViewModel(
             if (isMacOS) {
                 intent {
                     registerMacService(
-                        AppService.Daemon(daemonServiceName),
+                        MacBackgroundServices.daemon,
                         logLabel = "daemon",
                         displayName = getString(Res.string.background_service_name),
                         toastId = DAEMON_APPROVAL_TOAST_ID,
@@ -208,7 +214,7 @@ class AppViewModel(
                 intent {
                     withContext(Dispatchers.IO) {
                         registerMacService(
-                            AppService.Agent(wifiAgentServiceName),
+                            MacBackgroundServices.wifiAgent,
                             logLabel = "Wi-Fi helper",
                             displayName = getString(Res.string.wifi_helper_service_name),
                             toastId = WIFI_AGENT_APPROVAL_TOAST_ID,
@@ -318,30 +324,77 @@ class AppViewModel(
         }
     }
 
-    /**
-     * Forces launchd to reload the daemon and Wi-Fi helper binaries. Returns true once the daemon
-     * is back and re-registered.
-     */
-    private suspend fun restartMacDaemon(): Boolean {
-        val daemonOk = restartMacService(AppService.Daemon(daemonServiceName), "daemon")
-        // See above registration limitation, same for restart
-        withContext(Dispatchers.IO) {
-            restartMacService(AppService.Agent(wifiAgentServiceName), "Wi-Fi helper")
+    // Unparseable versions count as older, which keeps the daemon restart path.
+    private fun isNewerThanApp(daemonVersion: String): Boolean = runCatching {
+        Version.fromString(daemonVersion) > Version.fromString(BuildConfig.APP_VERSION)
+    }
+        .getOrDefault(false)
+
+    private suspend fun Syntax<AppUiState, AppSideEffect>.restartOutdatedDaemon(
+        info: DaemonInfoDto?,
+    ) {
+        postSideEffect(
+            AppSideEffect.Toast(
+                message = getString(Res.string.daemon_restarting),
+                type = ToastType.Info,
+                id = DAEMON_OUTDATED_TOAST_ID,
+            ),
+        )
+        when (daemonRestarter.restart(info)) {
+            DaemonRestarter.Outcome.RESTARTED ->
+                postSideEffect(
+                    AppSideEffect.Toast(
+                        message = getString(Res.string.daemon_restarted, BuildConfig.APP_VERSION),
+                        type = ToastType.Success,
+                        id = DAEMON_OUTDATED_TOAST_ID,
+                        duration = DAEMON_RESTARTED_TOAST_DURATION,
+                    ),
+                )
+            DaemonRestarter.Outcome.NEEDS_APPROVAL ->
+                postSideEffect(
+                    AppSideEffect.NavigableToast(
+                        id = DAEMON_OUTDATED_TOAST_ID,
+                        message =
+                            getString(
+                                Res.string.mac_service_requires_approval_template,
+                                getString(Res.string.background_service_name),
+                            ),
+                        actionLabel = getString(Res.string.open_system_settings),
+                        onAction = { AppServiceManager.openSystemSettingsLoginItems() },
+                    ),
+                )
+            DaemonRestarter.Outcome.FAILED -> offerDaemonRestart(info)
         }
-        return daemonOk
     }
 
-    private suspend fun restartMacService(service: AppService, label: String): Boolean {
-        val unregisterError = suspendCancellableCoroutine { cont ->
-            AppServiceManager.unregister(service) { error -> cont.resume(error) }
-        }
-        if (unregisterError != null) {
-            log.w { "Failed to unregister outdated macOS $label: $unregisterError" }
-            return false
-        }
-        return AppServiceManager.register(service)
-            .onFailure { log.w(it) { "Failed to re-register macOS $label after update" } }
-            .isSuccess
+    // A restart the user starts, or a copied command when the daemon can't restart itself.
+    private suspend fun Syntax<AppUiState, AppSideEffect>.offerDaemonRestart(info: DaemonInfoDto?) {
+        val message =
+            getString(
+                Res.string.daemon_outdated_template,
+                info?.version ?: "?",
+                BuildConfig.APP_VERSION,
+            )
+        postSideEffect(
+            if (isMacOS || info?.canRestart == true) {
+                AppSideEffect.TextActionToast(
+                    id = DAEMON_OUTDATED_TOAST_ID,
+                    message = message,
+                    actionLabel = getString(Res.string.daemon_restart_action),
+                    onAction = { intent { restartOutdatedDaemon(info) } },
+                    type = ToastType.Warning,
+                )
+            } else if (isWindows || isSystemdActive) {
+                AppSideEffect.ActionableToast(
+                    id = DAEMON_OUTDATED_TOAST_ID,
+                    message = message,
+                    copyText = daemonRestartCommand(),
+                    copyLabel = getString(Res.string.daemon_restart_command_label),
+                )
+            } else {
+                AppSideEffect.Toast(message = message, type = ToastType.Warning)
+            },
+        )
     }
 
     companion object {
@@ -352,11 +405,11 @@ class AppViewModel(
         private const val DONATION_PROMPT_TOAST_ID = "donation_prompt"
         private val DISCONNECT_GRACE_PERIOD = 5.seconds
         private val DONATION_PROMPT_DURATION = 30.seconds
+        private val DAEMON_RESTARTED_TOAST_DURATION = 4.seconds
 
         private val isWindows = Platform.Current == Platform.Windows
         private val isMacOS = Platform.Current == Platform.MacOS
         private val daemonServiceName = "${AppVariant.current.linuxFsName}-daemon"
-        private val wifiAgentServiceName = "${AppVariant.current.linuxFsName}-wifi"
         private val isSystemdActive = File("/run/systemd/system").isDirectory
     }
 }

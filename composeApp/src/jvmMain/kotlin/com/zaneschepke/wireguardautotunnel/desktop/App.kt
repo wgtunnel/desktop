@@ -121,7 +121,18 @@ fun App(uiState: AppUiState, viewModel: AppViewModel, toaster: ToasterState) {
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
             is AppSideEffect.Toast ->
-                toaster.show(Toast(message = sideEffect.message, type = sideEffect.type))
+                if (sideEffect.id == null) {
+                    toaster.show(Toast(message = sideEffect.message, type = sideEffect.type))
+                } else {
+                    toaster.show(
+                        Toast(
+                            message = sideEffect.message,
+                            id = sideEffect.id,
+                            type = sideEffect.type,
+                            duration = sideEffect.duration,
+                        ),
+                    )
+                }
             is AppSideEffect.Navigate -> navController.push(sideEffect.route)
             is AppSideEffect.ActionableToast ->
                 toaster.show(

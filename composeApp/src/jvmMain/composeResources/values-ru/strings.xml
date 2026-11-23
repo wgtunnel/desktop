@@ -9,7 +9,7 @@
     <string name="expand_rail">Развернуть панель</string>
     <string name="failed_to_read_conf_file">Не удалось прочитать файл .conf</string>
     <string name="failed_to_read_zip_archive">Не удалось прочитать архив .zip</string>
-    <string name="only_conf_or_zip_supported">Поддерживаются только файлы \'.conf\' или \'.zip\'</string>
+    <string name="only_conf_or_zip_supported">Поддерживаются только файлы '.conf' или '.zip'</string>
     <string name="multi_import_errors_title">Не удалось обработать %1$d файл(ов). Убедитесь, что файлы являются допустимыми .conf или .zip</string>
     <string name="tunnel_state_starting">запуск</string>
     <string name="tunnel_state_stopping">Останавливается</string>

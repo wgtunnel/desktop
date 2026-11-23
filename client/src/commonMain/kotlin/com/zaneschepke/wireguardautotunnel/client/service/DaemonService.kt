@@ -2,6 +2,7 @@ package com.zaneschepke.wireguardautotunnel.client.service
 
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelConfigDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelStatusDto
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.DaemonInfoDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.LogMessageDto
 import kotlinx.coroutines.flow.Flow
 
@@ -24,8 +25,11 @@ interface DaemonService {
 
     fun logsFlow(): Flow<LogMessageDto>
 
+    /** Asks a supervised daemon to exit so its service manager starts the installed binary. */
+    suspend fun requestRestart(): Result<Unit>
+
     val alive: Flow<Boolean>
 
-    // Version reported by the currently connected daemon, null while disconnected.
-    val remoteVersion: Flow<String?>
+    // Reported by the currently connected daemon, null while disconnected.
+    val remoteInfo: Flow<DaemonInfoDto?>
 }

@@ -4,6 +4,7 @@ object Routes {
     const val DAEMON_BASE = "/daemon"
     const val DAEMON_STATUS = "$DAEMON_BASE/status"
     const val DAEMON_STATUS_WS = "$DAEMON_BASE/status/ws"
+    const val DAEMON_RESTART = "$DAEMON_BASE/restart"
 
     const val DAEMON_RESTORE_KILL_SWITCH = "$DAEMON_BASE/restore/kill-switch"
 

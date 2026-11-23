@@ -296,6 +296,11 @@
     <string name="daemon_start_command_label">Copy Start Command</string>
     <string name="daemon_outdated_template">The running daemon (v%1$s) is older than this app (v%2$s). Restart it to finish updating.</string>
     <string name="daemon_restart_command_label">Copy Restart Command</string>
+    <string name="app_outdated_template">WG Tunnel was updated to v%1$s. Restart the app to finish updating. Your tunnels stay connected.</string>
+    <string name="restart_app_action">Restart now</string>
+    <string name="daemon_restart_action">Restart service</string>
+    <string name="daemon_restarting">Finishing the update, restarting the background service…</string>
+    <string name="daemon_restarted">Background service updated to v%1$s</string>
     <string name="mac_service_requires_approval_template">WG Tunnel needs your approval to run its %1$s.</string>
     <string name="background_service_name">background service</string>
     <string name="wifi_helper_service_name">Wi-Fi helper</string>

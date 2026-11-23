@@ -29,15 +29,27 @@ fun Route.daemonRoutes(
     autoTunnelSupervisor: AutoTunnelSupervisor,
     daemonLogService: DaemonLogService,
     networkMonitor: DesktopNetworkMonitor? = null,
+    restart: (() -> Unit)? = null,
 ) {
     get(Routes.DAEMON_STATUS) { call.response.status(HttpStatusCode.OK) }
     webSocket(Routes.DAEMON_STATUS_WS) {
         // Lets the client detect a stale daemon still running after a binary swap it didn't
         // restart for
-        sendSerialized(DaemonInfoDto(version = BuildConfig.APP_VERSION))
+        sendSerialized(
+            DaemonInfoDto(version = BuildConfig.APP_VERSION, canRestart = restart != null),
+        )
         try {
             awaitCancellation()
         } finally {}
+    }
+
+    post(Routes.DAEMON_RESTART) {
+        if (restart == null) {
+            call.respond(HttpStatusCode.Conflict, "No service manager to relaunch the daemon")
+            return@post
+        }
+        call.respond(HttpStatusCode.Accepted, "Restarting")
+        restart()
     }
 
     put(Routes.DAEMON_RESTORE_KILL_SWITCH) {

@@ -482,6 +482,9 @@ nucleus.application {
 
         macOS {
             packageName = appFsName
+            // Every release has shipped "WG Tunnel.app". We pin it so the path installs live at
+            // (and the SMAppService registrations behind it) never change.
+            bundleName = appDisplayName
             bundleID = "com.wgtunnel.$appFsName"
             dockName = appDisplayName
             appCategory = "public.app-category.utilities"

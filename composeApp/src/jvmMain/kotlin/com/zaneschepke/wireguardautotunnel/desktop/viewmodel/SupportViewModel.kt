@@ -7,20 +7,15 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.backgr
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.background_service_removed
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.up_to_date
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.update_check_failed
-import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
+import com.zaneschepke.wireguardautotunnel.desktop.service.MacBackgroundServices
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
 import com.zaneschepke.wireguardautotunnel.desktop.ui.state.SupportUiState
 import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
 import com.zaneschepke.wireguardautotunnel.desktop.update.UpdateState
-import dev.nucleusframework.servicemanagement.AppService
-import dev.nucleusframework.servicemanagement.AppServiceManager
-import dev.nucleusframework.servicemanagement.AppServiceStatus
 import dev.nucleusframework.updater.UpdateInfo
 import dev.nucleusframework.updater.UpdateResult
 import java.io.File
-import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -68,10 +63,10 @@ class SupportViewModel(private val appUpdater: AppUpdater) :
     // macOS unregisters the daemon and Wi-Fi helper before the app itself is removed. The
     // helper's call must on its own dispatcher or the unregister hangs for the second call.
     fun onRemoveBackgroundService() = intent {
-        val daemonError = unregisterMacService(AppService.Daemon(daemonServiceName))
+        val daemonError = MacBackgroundServices.unregister(MacBackgroundServices.daemon)
         val agentError =
             withContext(Dispatchers.IO) {
-                unregisterMacService(AppService.Agent(wifiAgentServiceName))
+                MacBackgroundServices.unregister(MacBackgroundServices.wifiAgent)
             }
         val error = daemonError ?: agentError
         postSideEffect(
@@ -87,20 +82,5 @@ class SupportViewModel(private val appUpdater: AppUpdater) :
                 )
             },
         )
-    }
-
-    private suspend fun unregisterMacService(service: AppService): String? {
-        val status = AppServiceManager.status(service)
-        if (status == AppServiceStatus.NOT_REGISTERED || status == AppServiceStatus.NOT_FOUND) {
-            return null
-        }
-        return suspendCancellableCoroutine { cont ->
-            AppServiceManager.unregister(service) { cont.resume(it) }
-        }
-    }
-
-    companion object {
-        private val daemonServiceName = "${AppVariant.current.linuxFsName}-daemon"
-        private val wifiAgentServiceName = "${AppVariant.current.linuxFsName}-wifi"
     }
 }

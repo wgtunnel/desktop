@@ -113,7 +113,9 @@ jobs:
           echo -n "$APPLE_NOTARIZATION_API_KEY_BASE64" | base64 --decode -o "$KEY_PATH"
           echo "APPLE_NOTARIZATION_API_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
-      - name: Package, sign, and notarize DMG (GraalVM)
+      # The DMG is for first installs. The ZIP is what the updater prefers, it swaps the app in
+      # place and relaunches it instead of opening a DMG for the user to drag over.
+      - name: Package, sign, and notarize DMG and ZIP (GraalVM)
         working-directory: desktop
         env:
           WGTUNNEL_VARIANT: ${{ inputs.variant }}
@@ -124,7 +126,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           chmod +x gradlew
-          ./gradlew :composeApp:notarizeGraalvmDmg --no-daemon --stacktrace \
+          ./gradlew :composeApp:notarizeGraalvmDmg :composeApp:notarizeGraalvmZip \
+            --no-daemon --stacktrace \
             -Papp.variant=${{ inputs.variant }} \
             -Papp.version=${{ inputs.version }} \
             -Papp.packageVersion=${{ inputs.package_version }}
@@ -150,5 +153,6 @@ jobs:
           if-no-files-found: error
           path: |
             desktop/composeApp/build/compose/binaries/**/*.dmg
+            desktop/composeApp/build/compose/binaries/**/*.zip
             desktop/composeApp/build/compose/binaries/**/*.yml
             desktop/composeApp/build/compose/binaries/**/*.blockmap

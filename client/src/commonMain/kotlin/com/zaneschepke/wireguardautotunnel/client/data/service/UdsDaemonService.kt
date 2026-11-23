@@ -39,8 +39,8 @@ class UdsDaemonService(
     scope: CoroutineScope,
 ) : DaemonService {
 
-    private val _remoteVersion = MutableStateFlow<String?>(null)
-    override val remoteVersion: Flow<String?> = _remoteVersion.asStateFlow()
+    private val _remoteInfo = MutableStateFlow<DaemonInfoDto?>(null)
+    override val remoteInfo: Flow<DaemonInfoDto?> = _remoteInfo.asStateFlow()
 
     override val alive: Flow<Boolean> = callbackFlow {
         var failureCount = 0
@@ -53,7 +53,7 @@ class UdsDaemonService(
                     for (frame in incoming) {
                         if (frame is Frame.Text) {
                             runCatching { json.decodeFromString<DaemonInfoDto>(frame.readText()) }
-                                .onSuccess { _remoteVersion.value = it.version }
+                                .onSuccess { _remoteInfo.value = it }
                         }
                     }
                     trySend(false)
@@ -63,7 +63,7 @@ class UdsDaemonService(
                 if (failureCount == 0) Logger.w(e) { "Daemon status stream failed, retrying" }
                 trySend(false)
             }
-            _remoteVersion.value = null
+            _remoteInfo.value = null
             failureCount = if (connected) 0 else failureCount + 1
             if (isActive) reconnectDelay(failureCount)
         }
@@ -183,6 +183,10 @@ class UdsDaemonService(
     }
 
     override fun logsFlow(): Flow<LogMessageDto> = logs
+
+    override suspend fun requestRestart(): Result<Unit> = safeDaemonCall {
+        client.post(Routes.DAEMON_RESTART)
+    }
 
     companion object {
         const val DAEMON_WS_RECONNECT_DELAY_MILLIS = 3_000L

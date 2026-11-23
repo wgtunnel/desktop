@@ -1,5 +1,6 @@
 package com.zaneschepke.wireguardautotunnel.desktop.di
 
+import com.zaneschepke.wireguardautotunnel.desktop.service.DaemonRestarter
 import com.zaneschepke.wireguardautotunnel.desktop.update.AppUpdater
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AppViewModel
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.AutoTunnelViewModel
@@ -13,12 +14,14 @@ import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.SupportViewModel
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelViewModel
 import com.zaneschepke.wireguardautotunnel.desktop.viewmodel.TunnelsViewModel
 import com.zaneschepke.wireguardautotunnel.desktop.wifi.MacWifiNameCoordinator
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val viewModelModule = module {
     single { AppUpdater() }
+    singleOf(::DaemonRestarter)
     // Created at startup so the permission card follows the helper while the window is hidden.
     single(createdAtStart = true) { MacWifiNameCoordinator(scope = get(), daemonService = get()) }
     viewModelOf(::AppViewModel)

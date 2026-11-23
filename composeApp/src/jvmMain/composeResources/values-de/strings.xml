@@ -9,7 +9,7 @@
     <string name="expand_rail">Gruppe ausklappen</string>
     <string name="failed_to_read_conf_file">Fehler beim Lesen der .conf-Datei</string>
     <string name="failed_to_read_zip_archive">Zip-Archiv konnte nicht gelesen werden</string>
-    <string name="only_conf_or_zip_supported">Nur \'.conf\' oder \'.zip\'-Dateien werden unterstützt</string>
+    <string name="only_conf_or_zip_supported">Nur '.conf' oder '.zip'-Dateien werden unterstützt</string>
     <string name="multi_import_errors_title">%1$d Dateien konnten nicht verarbeitet werden. Stelle sicher, dass Dateien gültige .conf oder .zip Dateien sind.</string>
     <string name="tunnel_state_starting">Wird gestartet</string>
     <string name="tunnel_state_stopping">Wird gestoppt</string>

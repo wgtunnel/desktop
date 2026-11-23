@@ -5,7 +5,13 @@ import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import kotlin.time.Duration
 
 sealed class AppSideEffect {
-    data class Toast(val message: String, val type: ToastType) : AppSideEffect()
+    // An id lets a later toast replace this one, and keeps it up until the replace.
+    data class Toast(
+        val message: String,
+        val type: ToastType,
+        val id: String? = null,
+        val duration: Duration = Duration.INFINITE,
+    ) : AppSideEffect()
 
     data class Navigate(val route: Route) : AppSideEffect()
 
