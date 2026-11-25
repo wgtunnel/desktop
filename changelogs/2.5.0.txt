@@ -1,0 +1,9 @@
+What's new:
+- Kill switch stays enforced across updates, daemon restarts and reboots
+- Automatic daemon restart after app updates, with tunnels restored
+- Import multiple config files and archives at once
+- Tray tunnel status and restore at login fixes
+- Proxy crash, monitoring and suspend recovery fixes
+- Faster tunnel starts on Windows
+- Linux file picker fixes
+- Various other fixes and improvements
