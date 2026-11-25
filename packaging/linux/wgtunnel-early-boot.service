@@ -1,0 +1,18 @@
+# Enforces the kill switch before any network interface is configured, when it is on and set to
+# restore on boot. The daemon starts later (it needs D-Bus and more), so without this the
+# network can come up unprotected. The daemon takes the rules over when it starts.
+[Unit]
+Description=__APP_DISPLAY__ early boot kill switch
+Documentation=https://wgtunnel.com
+DefaultDependencies=no
+# The daemon cache lives on /var.
+After=local-fs.target
+Before=network-pre.target __APP_FSNAME__-daemon.service
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/__APP_FSNAME__/bin/wgtunnel-daemon --early-boot-firewall
+Environment=WG_TUNNEL_SERVICE=1
+StandardOutput=journal
+StandardError=journal

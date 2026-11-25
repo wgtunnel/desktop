@@ -228,6 +228,7 @@ val stagePackagingSidecars =
         macWifiAgentPlist.set(rootProject.file("packaging/macos/com.wgtunnel.wifi-agent.plist"))
         appVariant.set(packagingVariant)
         linuxService.set(rootProject.file("packaging/linux/wgtunnel-daemon.service"))
+        linuxEarlyBootService.set(rootProject.file("packaging/linux/wgtunnel-early-boot.service"))
         linuxInstallScript.set(rootProject.file("packaging/linux/tar-install.sh"))
         linuxUninstallScript.set(rootProject.file("packaging/linux/tar-uninstall.sh"))
         linuxAfterInstallScript.set(rootProject.file("packaging/linux/after-install.sh"))

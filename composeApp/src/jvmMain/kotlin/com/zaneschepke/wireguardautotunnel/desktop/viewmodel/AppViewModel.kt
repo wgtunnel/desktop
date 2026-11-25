@@ -13,9 +13,11 @@ import com.zaneschepke.wireguardautotunnel.client.data.model.TrayIconAppearance
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.AutoTunnelSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.ClientCacheRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.GeneralSettingRepository
+import com.zaneschepke.wireguardautotunnel.client.domain.repository.LockdownSettingsRepository
 import com.zaneschepke.wireguardautotunnel.client.domain.repository.TunnelRepository
 import com.zaneschepke.wireguardautotunnel.client.orchestration.AutoTunnelCoordinator
 import com.zaneschepke.wireguardautotunnel.client.orchestration.DnsSettingsCoordinator
+import com.zaneschepke.wireguardautotunnel.client.orchestration.KillSwitchSync
 import com.zaneschepke.wireguardautotunnel.client.orchestration.LogCoordinator
 import com.zaneschepke.wireguardautotunnel.client.service.BackendService
 import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
@@ -23,6 +25,7 @@ import com.zaneschepke.wireguardautotunnel.composeApp.BuildConfig
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.app_outdated_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.background_service_name
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_down_kill_switch_blocking
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_not_running
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_outdated_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_restart_action
@@ -32,14 +35,18 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.daemon_start_command_label
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.donate_action
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.donation_prompt_message
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.kill_switch_block_remove_failed
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.kill_switch_block_removed
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.mac_service_requires_approval_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.open_system_settings
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.remove_block_action
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.restart_app_action
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.theme_from_image_failed
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.wifi_helper_service_name
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.DaemonInfoDto
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.desktop.service.DaemonRestarter
+import com.zaneschepke.wireguardautotunnel.desktop.service.KillSwitchUnblocker
 import com.zaneschepke.wireguardautotunnel.desktop.service.MacBackgroundServices
 import com.zaneschepke.wireguardautotunnel.desktop.ui.navigation.Route
 import com.zaneschepke.wireguardautotunnel.desktop.ui.sideeffects.AppSideEffect
@@ -81,6 +88,8 @@ class AppViewModel(
     private val backendService: BackendService,
     private val appUpdater: AppUpdater,
     private val daemonRestarter: DaemonRestarter,
+    private val lockdownRepository: LockdownSettingsRepository,
+    private val killSwitchSync: KillSwitchSync,
     @Suppress("unused") private val autoTunnelCoordinator: AutoTunnelCoordinator,
     @Suppress("unused") private val logCoordinator: LogCoordinator,
     @Suppress("unused") private val dnsSettingsCoordinator: DnsSettingsCoordinator,
@@ -146,9 +155,20 @@ class AppViewModel(
                     .collect { alive ->
                         if (alive) {
                             postSideEffect(AppSideEffect.DismissToast(DAEMON_NOT_RUNNING_TOAST_ID))
-                        } else if (!daemonRestarter.restarting.value) {
-                            // A Windows restart takes up to 15s, past the grace period, and has its
-                            // own toast.
+                            // Older daemons reports the kill switch off until the restarter
+                            // puts it back.
+                            if (!daemonRestarter.restarting.value) {
+                                killSwitchSync.syncFromDaemon().onFailure {
+                                    log.w(it) { "Kill switch sync failed" }
+                                }
+                            }
+                        } else if (daemonRestarter.restarting.value) {
+                            // A Windows restart takes up to 15s, past the grace period, and has
+                            // its own toast.
+                        } else if (lockdownRepository.get().enabled) {
+                            // The daemon leaves the kill switch enforced when it stops.
+                            postSideEffect(blockedWhileDaemonDown())
+                        } else {
                             val message = getString(Res.string.daemon_not_running)
                             postSideEffect(
                                 if (isWindows || isSystemdActive) {
@@ -321,6 +341,40 @@ class AppViewModel(
                     onAction = { AppServiceManager.openSystemSettingsLoginItems() },
                 ),
             )
+        }
+    }
+
+    private suspend fun blockedWhileDaemonDown() =
+        AppSideEffect.TextActionToast(
+            id = DAEMON_NOT_RUNNING_TOAST_ID,
+            message = getString(Res.string.daemon_down_kill_switch_blocking),
+            actionLabel = getString(Res.string.remove_block_action),
+            onAction = { intent { removeKillSwitchBlock() } },
+            type = ToastType.Warning,
+        )
+
+    private suspend fun Syntax<AppUiState, AppSideEffect>.removeKillSwitchBlock() {
+        when (KillSwitchUnblocker.removeBlock()) {
+            KillSwitchUnblocker.Outcome.REMOVED -> {
+                // The purge also turned it off in the daemon, so match that here.
+                lockdownRepository.updateEnabled(false)
+                postSideEffect(
+                    AppSideEffect.Toast(
+                        message = getString(Res.string.kill_switch_block_removed),
+                        type = ToastType.Success,
+                        id = DAEMON_NOT_RUNNING_TOAST_ID,
+                        duration = DAEMON_RESTARTED_TOAST_DURATION,
+                    ),
+                )
+            }
+            KillSwitchUnblocker.Outcome.CANCELLED -> postSideEffect(blockedWhileDaemonDown())
+            KillSwitchUnblocker.Outcome.FAILED ->
+                postSideEffect(
+                    AppSideEffect.Toast(
+                        message = getString(Res.string.kill_switch_block_remove_failed),
+                        type = ToastType.Error,
+                    ),
+                )
         }
     }
 

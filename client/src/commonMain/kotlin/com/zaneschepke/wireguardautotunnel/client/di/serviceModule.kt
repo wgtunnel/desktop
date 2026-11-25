@@ -8,6 +8,7 @@ import com.zaneschepke.wireguardautotunnel.client.data.service.UdsTunnelService
 import com.zaneschepke.wireguardautotunnel.client.domain.error.ClientException
 import com.zaneschepke.wireguardautotunnel.client.orchestration.AutoTunnelCoordinator
 import com.zaneschepke.wireguardautotunnel.client.orchestration.DnsSettingsCoordinator
+import com.zaneschepke.wireguardautotunnel.client.orchestration.KillSwitchSync
 import com.zaneschepke.wireguardautotunnel.client.orchestration.LogCoordinator
 import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelBackendCoordinator
 import com.zaneschepke.wireguardautotunnel.client.orchestration.TunnelCoordinator
@@ -161,6 +162,7 @@ fun serviceModule(appVersionLabel: String) = module {
             scope = get(),
         )
     }
+    single { KillSwitchSync(backendService = get(), lockdownRepository = get()) }
     single {
         TunnelBackendCoordinator(
             tunnelCoordinator = get(),

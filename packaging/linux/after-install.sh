@@ -36,6 +36,16 @@ if [ -f "$UNIT_SRC" ]; then
   sed -i "s|^WorkingDirectory=.*|WorkingDirectory=$APP_ROOT|" "$UNIT_DST"
 fi
 
+EARLY_UNIT_SRC="$APP_ROOT/wgtunnel-early-boot.service"
+if [ ! -f "$EARLY_UNIT_SRC" ]; then
+  EARLY_UNIT_SRC="$APP_ROOT/lib/wgtunnel-early-boot.service"
+fi
+EARLY_UNIT_DST="/lib/systemd/system/${executable}-early-boot.service"
+if [ -f "$EARLY_UNIT_SRC" ]; then
+  install -D -m 644 "$EARLY_UNIT_SRC" "$EARLY_UNIT_DST"
+  sed -i "s|^ExecStart=.*|ExecStart=$APP_ROOT/bin/wgtunnel-daemon --early-boot-firewall|" "$EARLY_UNIT_DST"
+fi
+
 if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload >/dev/null 2>&1 || true
   if command -v pacman >/dev/null 2>&1; then

@@ -28,6 +28,12 @@ interface DaemonService {
     /** Asks a supervised daemon to exit so its service manager starts the installed binary. */
     suspend fun requestRestart(): Result<Unit>
 
+    /**
+     * Stops tunnels and removes the kill switch, its rules and the saved session, before the daemon
+     * is unregistered.
+     */
+    suspend fun reset(): Result<Unit>
+
     val alive: Flow<Boolean>
 
     // Reported by the currently connected daemon, null while disconnected.

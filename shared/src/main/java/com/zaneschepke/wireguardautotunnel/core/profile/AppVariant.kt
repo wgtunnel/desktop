@@ -72,6 +72,8 @@ enum class AppVariant(val id: String) {
         const val ENV_NAME = "WGTUNNEL_VARIANT"
         const val PROP_NAME = "app.variant"
         const val IFACE_PREFIX_PROP = "wgtunnel.iface.prefix"
+        // Read by core's DesktopFirewall as INSTANCE_PROP.
+        const val FIREWALL_INSTANCE_PROP = "wgtunnel.instance"
 
         val current: AppVariant by lazy { resolve() }
 
@@ -134,12 +136,14 @@ enum class AppVariant(val id: String) {
 
         /**
          * To be called once from each process entrypoint before opening the DB, IPC, or native
-         * backend so core can pick up the iface prefix.
+         * backend so core can pick up the iface prefix and the firewall instance.
          */
         fun applyProcessDefaults() {
             val variant = current
             System.setProperty(PROP_NAME, variant.id)
             System.setProperty(IFACE_PREFIX_PROP, variant.ifacePrefix)
+            // Release keeps the kill switch rule names it always had, others get their own.
+            System.setProperty(FIREWALL_INSTANCE_PROP, variant.linuxFsName)
         }
     }
 }

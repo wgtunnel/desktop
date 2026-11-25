@@ -1,7 +1,9 @@
 package com.zaneschepke.wireguardautotunnel.desktop.viewmodel
 
 import androidx.lifecycle.ViewModel
+import co.touchlab.kermit.Logger
 import com.dokar.sonner.ToastType
+import com.zaneschepke.wireguardautotunnel.client.service.DaemonService
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.background_service_remove_failed
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.background_service_removed
@@ -21,8 +23,12 @@ import org.jetbrains.compose.resources.getString
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 
-class SupportViewModel(private val appUpdater: AppUpdater) :
-    OrbitContainerHost<SupportUiState, SupportUiState, AppSideEffect>, ViewModel() {
+class SupportViewModel(
+    private val appUpdater: AppUpdater,
+    private val daemonService: DaemonService,
+) : OrbitContainerHost<SupportUiState, SupportUiState, AppSideEffect>, ViewModel() {
+
+    private val log = Logger.withTag("SupportViewModel")
 
     override val container =
         orbitContainer<SupportUiState, AppSideEffect>(
@@ -63,6 +69,9 @@ class SupportViewModel(private val appUpdater: AppUpdater) :
     // macOS unregisters the daemon and Wi-Fi helper before the app itself is removed. The
     // helper's call must on its own dispatcher or the unregister hangs for the second call.
     fun onRemoveBackgroundService() = intent {
+        // The daemon keeps the kill switch enforced when it stops, so clear it first. Fails
+        // harmlessly when the daemon isn't running.
+        daemonService.reset().onFailure { log.w(it) { "Daemon reset before removal failed" } }
         val daemonError = MacBackgroundServices.unregister(MacBackgroundServices.daemon)
         val agentError =
             withContext(Dispatchers.IO) {

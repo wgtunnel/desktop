@@ -2,14 +2,18 @@
 Description=__APP_DISPLAY__ Daemon
 Documentation=https://wgtunnel.com
 Before=network.target network-pre.target
-Wants=network.target
-After=local-fs.target
+# The early boot unit enforces the kill switch before networking. Pulled in here so it runs
+# whenever the daemon is enabled, with nothing extra to enable.
+Wants=network.target network-pre.target __APP_FSNAME__-early-boot.service
+After=local-fs.target __APP_FSNAME__-early-boot.service
 StartLimitBurst=5
 StartLimitIntervalSec=20
 
 [Service]
 Restart=always
 RestartSec=1s
+# The JVM runtime exits 143 after handling SIGTERM, which is a clean stop.
+SuccessExitStatus=143
 ExecStart=/opt/__APP_FSNAME__/bin/wgtunnel-daemon
 Type=exec
 StandardOutput=journal

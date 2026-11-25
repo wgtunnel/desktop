@@ -188,6 +188,8 @@ class UdsDaemonService(
         client.post(Routes.DAEMON_RESTART)
     }
 
+    override suspend fun reset(): Result<Unit> = safeDaemonCall { client.post(Routes.DAEMON_RESET) }
+
     companion object {
         const val DAEMON_WS_RECONNECT_DELAY_MILLIS = 3_000L
         private const val INITIAL_RECONNECT_DELAY_MILLIS = 200L

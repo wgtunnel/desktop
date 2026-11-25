@@ -8,6 +8,7 @@ import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.request.StartTunnelRequest
 import com.zaneschepke.wireguardautotunnel.daemon.autotunnel.AutoTunnelSupervisor
 import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
+import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonSessionStore
 import com.zaneschepke.wireguardautotunnel.daemon.dto.applyForBootstrap
 import com.zaneschepke.wireguardautotunnel.daemon.dto.outerConfigOrNull
 import com.zaneschepke.wireguardautotunnel.daemon.dto.toBackendMode
@@ -25,6 +26,7 @@ fun Route.tunnelRoutes(
     backend: Backend,
     autoTunnelSupervisor: AutoTunnelSupervisor,
     cacheRepository: DaemonCacheRepository,
+    sessionStore: DaemonSessionStore,
 ) {
     post(Routes.Tunnels.START_TEMPLATE) {
         autoTunnelSupervisor.tunnelActionMutex.withLock {
@@ -71,7 +73,10 @@ fun Route.tunnelRoutes(
                     tunnelDnsConfig = dns,
                     outerConfig = outerConfig,
                 )
-                .onSuccess { call.respond(HttpStatusCode.OK, "Tunnel ${request.name} started") }
+                .onSuccess {
+                    sessionStore.putTunnel(id, request)
+                    call.respond(HttpStatusCode.OK, "Tunnel ${request.name} started")
+                }
                 .onFailure { error ->
                     log.e(error) { "Failed to start tunnel ${request.name}" }
                     when (error) {
@@ -100,7 +105,10 @@ fun Route.tunnelRoutes(
 
             backend
                 .stop(id)
-                .onSuccess { call.respond(HttpStatusCode.OK, "Tunnel $id stopped") }
+                .onSuccess {
+                    sessionStore.removeTunnel(id)
+                    call.respond(HttpStatusCode.OK, "Tunnel $id stopped")
+                }
                 .onFailure { error ->
                     log.e(error) { "Failed to stop tunnel $id" }
                     call.respond(

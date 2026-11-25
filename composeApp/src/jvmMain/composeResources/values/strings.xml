@@ -295,6 +295,10 @@
     <string name="daemon_not_running">The WG Tunnel daemon is not running.</string>
     <string name="daemon_start_command_label">Copy Start Command</string>
     <string name="daemon_outdated_template">The running daemon (v%1$s) is older than this app (v%2$s). Restart it to finish updating.</string>
+    <string name="daemon_down_kill_switch_blocking">The background service isn't running, and the kill switch is still blocking all traffic.</string>
+    <string name="remove_block_action">Remove block</string>
+    <string name="kill_switch_block_removed">Kill switch turned off. Traffic is no longer blocked.</string>
+    <string name="kill_switch_block_remove_failed">Couldn't remove the kill switch block</string>
     <string name="daemon_restart_command_label">Copy Restart Command</string>
     <string name="app_outdated_template">WG Tunnel was updated to v%1$s. Restart the app to finish updating. Your tunnels stay connected.</string>
     <string name="restart_app_action">Restart now</string>

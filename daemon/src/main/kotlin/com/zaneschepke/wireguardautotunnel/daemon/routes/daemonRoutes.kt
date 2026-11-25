@@ -1,6 +1,8 @@
 package com.zaneschepke.wireguardautotunnel.daemon.routes
 
 import co.touchlab.kermit.Logger
+import com.wgtunnel.backend.Backend
+import com.wgtunnel.backend.system.DesktopFirewall
 import com.zaneschepke.wireguardautotunnel.core.ipc.Routes
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.AutoTunnelConfigDto
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.DaemonInfoDto
@@ -10,6 +12,7 @@ import com.zaneschepke.wireguardautotunnel.core.wifi.WifiAuthorization
 import com.zaneschepke.wireguardautotunnel.daemon.BuildConfig
 import com.zaneschepke.wireguardautotunnel.daemon.autotunnel.AutoTunnelSupervisor
 import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonCacheRepository
+import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonSessionStore
 import com.zaneschepke.wireguardautotunnel.daemon.log.DaemonLogService
 import com.zaneschepke.wireguardautotunnel.daemon.tunnel.DesktopNetworkMonitor
 import io.ktor.http.*
@@ -28,6 +31,8 @@ fun Route.daemonRoutes(
     daemonCacheRepository: DaemonCacheRepository,
     autoTunnelSupervisor: AutoTunnelSupervisor,
     daemonLogService: DaemonLogService,
+    sessionStore: DaemonSessionStore,
+    backend: Backend,
     networkMonitor: DesktopNetworkMonitor? = null,
     restart: (() -> Unit)? = null,
 ) {
@@ -41,6 +46,22 @@ fun Route.daemonRoutes(
         try {
             awaitCancellation()
         } finally {}
+    }
+
+    // Before the app unregisters the daemon, so nothing outlives it like tunnels, kill switch,
+    // rules, and the saved session with its keys.
+    post(Routes.DAEMON_RESET) {
+        autoTunnelSupervisor.updatePlan(AutoTunnelConfigDto())
+        backend.stopAllActiveTunnels()
+        backend.disableKillSwitch()
+        daemonCacheRepository.updateKillSwitchEnabled(false)
+        val purged = DesktopFirewall.purge()
+        sessionStore.clear()
+        log.i { "Daemon state reset (firewall purged=$purged)" }
+        call.respond(
+            if (purged) HttpStatusCode.OK else HttpStatusCode.InternalServerError,
+            "Daemon state reset",
+        )
     }
 
     post(Routes.DAEMON_RESTART) {
@@ -64,6 +85,7 @@ fun Route.daemonRoutes(
         val plan = call.receive<AutoTunnelConfigDto>()
         log.d { "Updating auto-tunnel plan enabled=${plan.enabled} tunnels=${plan.tunnels.size}" }
         autoTunnelSupervisor.updatePlan(plan)
+        sessionStore.setAutoTunnelPlan(plan)
         call.respond(HttpStatusCode.OK, "Auto-tunnel plan updated")
     }
 

@@ -29,6 +29,14 @@ install -Dm644 "$UNIT_SRC" "$UNIT_DST"
 sed -i "s|^ExecStart=.*|ExecStart=$APP_ROOT/bin/wgtunnel-daemon|" "$UNIT_DST"
 sed -i "s|^WorkingDirectory=.*|WorkingDirectory=$APP_ROOT|" "$UNIT_DST"
 
+EARLY_UNIT_SRC="$APP_ROOT/wgtunnel-early-boot.service"
+[ -f "$EARLY_UNIT_SRC" ] || EARLY_UNIT_SRC="$APP_ROOT/lib/wgtunnel-early-boot.service"
+EARLY_UNIT_DST="/etc/systemd/system/$APP_FSNAME-early-boot.service"
+if [ -f "$EARLY_UNIT_SRC" ]; then
+  install -Dm644 "$EARLY_UNIT_SRC" "$EARLY_UNIT_DST"
+  sed -i "s|^ExecStart=.*|ExecStart=$APP_ROOT/bin/wgtunnel-daemon --early-boot-firewall|" "$EARLY_UNIT_DST"
+fi
+
 if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload
   systemctl enable --now "$UNIT_NAME"

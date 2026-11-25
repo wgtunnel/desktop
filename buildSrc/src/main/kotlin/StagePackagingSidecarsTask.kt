@@ -45,6 +45,10 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val linuxEarlyBootService: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val linuxInstallScript: RegularFileProperty
 
     @get:InputFile
@@ -95,6 +99,15 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
         out.resolve("wgtunnel-daemon.service")
             .writeText(
                 replaceTokens(linuxService.get().asFile.readText(), fsName, display, variant),
+            )
+        out.resolve("wgtunnel-early-boot.service")
+            .writeText(
+                replaceTokens(
+                    linuxEarlyBootService.get().asFile.readText(),
+                    fsName,
+                    display,
+                    variant,
+                ),
             )
         out.resolve("install.sh")
             .writeExecutable(

@@ -94,10 +94,14 @@ class DaemonRestarter(
             return if (needsApproval) Outcome.NEEDS_APPROVAL else Outcome.FAILED
         }
 
-        restoreSession(
-            tunnelIds = before?.activeTunnels?.map { it.id }.orEmpty(),
-            killSwitch = before?.killSwitchEnabled == true,
-        )
+        // A daemon with the restart route saves its session and restores it itself. Older daemons
+        // don't, so the app brings back what they were running.
+        if (info?.canRestart != true) {
+            restoreSession(
+                tunnelIds = before?.activeTunnels?.map { it.id }.orEmpty(),
+                killSwitch = before?.killSwitchEnabled == true,
+            )
+        }
         return Outcome.RESTARTED
     }
 

@@ -54,11 +54,23 @@ sed -i 's|^ExecStart=.*|ExecStart=/opt/wgtunnel/bin/wgtunnel-daemon|' \
 sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/opt/wgtunnel|' \
   %{buildroot}%{_unitdir}/wgtunnel-daemon.service
 
+# Pulled in by the daemon unit, so it needs no enabling.
+early=%{buildroot}/opt/wgtunnel/wgtunnel-early-boot.service
+[ -f "$early" ] || early=%{buildroot}/opt/wgtunnel/lib/wgtunnel-early-boot.service
+install -D -m 644 "$early" %{buildroot}%{_unitdir}/wgtunnel-early-boot.service
+sed -i 's|^ExecStart=.*|ExecStart=/opt/wgtunnel/bin/wgtunnel-daemon --early-boot-firewall|' \
+  %{buildroot}%{_unitdir}/wgtunnel-early-boot.service
+
 %post
 %systemd_post wgtunnel-daemon.service
 
 %preun
 %systemd_preun wgtunnel-daemon.service
+# A stopped daemon leaves the kill switch enforced on purpose. Remove it on uninstall only,
+# since on upgrade the new daemon takes it over.
+if [ $1 -eq 0 ]; then
+  /opt/wgtunnel/bin/wgtunnel-daemon --purge-firewall >/dev/null 2>&1 || :
+fi
 
 %postun
 %systemd_postun_with_restart wgtunnel-daemon.service
@@ -67,6 +79,7 @@ sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/opt/wgtunnel|' \
 /opt/wgtunnel
 %{_bindir}/wgtunnel
 %{_unitdir}/wgtunnel-daemon.service
+%{_unitdir}/wgtunnel-early-boot.service
 %{_datadir}/applications/wgtunnel.desktop
 %{_datadir}/icons/hicolor/*/apps/wgtunnel.png
 

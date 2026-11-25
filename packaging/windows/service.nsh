@@ -108,5 +108,14 @@
 !macro customUnInstall
   DetailPrint "Removing WG Tunnel daemon service"
   !insertmacro StopDaemon
+  ; A stopped daemon leaves the kill switch enforced on purpose. An update runs this
+  ; uninstaller too, and the new daemon takes the rules over, so only a real uninstall
+  ; removes them.
+  ${ifNot} ${isUpdated}
+    IfFileExists "$INSTDIR\wgtunnel-daemon.exe" 0 +4
+      DetailPrint "Removing WG Tunnel kill switch rules"
+      nsExec::ExecToLog '"$INSTDIR\wgtunnel-daemon.exe" --purge-firewall'
+      Pop $0
+  ${endIf}
   !insertmacro UninstallDaemonService
 !macroend

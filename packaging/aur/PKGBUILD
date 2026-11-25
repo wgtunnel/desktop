@@ -36,6 +36,15 @@ package() {
   sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/opt/wgtunnel|' \
     "$pkgdir/usr/lib/systemd/system/wgtunnel-daemon.service"
 
+  # Pulled in by the daemon unit, so it needs no enabling.
+  local early="$pkgdir/opt/wgtunnel/wgtunnel-early-boot.service"
+  [[ -f "$early" ]] || early="$pkgdir/opt/wgtunnel/lib/wgtunnel-early-boot.service"
+  if [[ -f "$early" ]]; then
+    install -Dm644 "$early" "$pkgdir/usr/lib/systemd/system/wgtunnel-early-boot.service"
+    sed -i 's|^ExecStart=.*|ExecStart=/opt/wgtunnel/bin/wgtunnel-daemon --early-boot-firewall|' \
+      "$pkgdir/usr/lib/systemd/system/wgtunnel-early-boot.service"
+  fi
+
   if ! compgen -G "$pkgdir/usr/share/applications/*.desktop" >/dev/null; then
     install -d "$pkgdir/usr/share/applications"
     cat > "$pkgdir/usr/share/applications/com.zaneschepke.wireguardautotunnel.wgtunnel.desktop" <<EOF

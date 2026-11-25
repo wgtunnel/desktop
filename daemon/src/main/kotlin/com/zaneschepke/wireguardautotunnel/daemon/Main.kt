@@ -8,7 +8,10 @@ import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.helper.WindowsSid
 import com.zaneschepke.wireguardautotunnel.core.profile.AppVariant
 import com.zaneschepke.wireguardautotunnel.daemon.autotunnel.AutoTunnelSupervisor
+import com.zaneschepke.wireguardautotunnel.daemon.data.DaemonSessionStore
 import com.zaneschepke.wireguardautotunnel.daemon.data.SettingsDaemonCacheRepository
+import com.zaneschepke.wireguardautotunnel.daemon.firewall.EarlyKillSwitch
+import com.zaneschepke.wireguardautotunnel.daemon.firewall.FirewallCommands
 import com.zaneschepke.wireguardautotunnel.daemon.log.DaemonLogService
 import com.zaneschepke.wireguardautotunnel.daemon.tunnel.DaemonApplicationProvider
 import com.zaneschepke.wireguardautotunnel.daemon.tunnel.DesktopNetworkMonitor
@@ -22,7 +25,16 @@ import kotlinx.serialization.json.Json
 
 private val log = Logger.withTag("Daemon")
 
-fun main() {
+fun main(args: Array<String>) {
+    // A packaged daemon is built for one variant, so its service, the early boot unit, the
+    // uninstallers and "Remove block" all act on that install. An explicit variant still wins.
+    if (
+        System.getProperty("org.graalvm.nativeimage.imagecode") == "runtime" &&
+            System.getProperty(AppVariant.PROP_NAME) == null &&
+            System.getenv(AppVariant.ENV_NAME) == null
+    ) {
+        System.setProperty(AppVariant.PROP_NAME, BuildConfig.VARIANT)
+    }
     Logger.setLogWriters(CommonWriter())
     AppVariant.applyProcessDefaults()
     initLogger()
@@ -33,10 +45,14 @@ fun main() {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+    FirewallCommands.run(args, json)?.let(::exitProcess)
+    // Before anything else is set up, so the kill switch is back as soon as possible.
+    val cacheRepository = SettingsDaemonCacheRepository(json)
+    val earlyKillSwitch = runBlocking { EarlyKillSwitch.apply(cacheRepository) }
+
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val networkMonitor = DesktopNetworkMonitor(scope)
     val backend = TunnelBackend(scope, DaemonApplicationProvider(), networkMonitor)
-    val cacheRepository = SettingsDaemonCacheRepository(json)
     val daemonLogService = DaemonLogService(cacheRepository, scope)
     val autoTunnelSupervisor =
         AutoTunnelSupervisor(
@@ -54,7 +70,9 @@ fun main() {
             autoTunnelSupervisor = autoTunnelSupervisor,
             networkMonitor = networkMonitor,
             daemonLogService = daemonLogService,
+            sessionStore = DaemonSessionStore(json),
             scope = scope,
+            earlyKillSwitch = earlyKillSwitch,
         )
 
     try {

@@ -9,7 +9,17 @@ plugins {
 
 version = (findProperty("app.version") as String?) ?: libs.versions.app.get()
 
-buildConfig { buildConfigField("APP_VERSION", provider { "${project.version}" }) }
+// Same source and default as composeApp's packagingVariant. The daemon binary is built per
+// variant, so a beta daemon never resolves as release.
+val daemonVariant =
+    ((findProperty("app.variant") as String?) ?: System.getenv("WGTUNNEL_VARIANT") ?: "release")
+        .trim()
+        .lowercase()
+
+buildConfig {
+    buildConfigField("APP_VERSION", provider { "${project.version}" })
+    buildConfigField("VARIANT", daemonVariant)
+}
 
 val daemonJvmArgs =
     listOf(

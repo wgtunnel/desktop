@@ -21,7 +21,9 @@ UNIT_NAME="$APP_FSNAME-daemon.service"
 
 systemctl disable --now "$UNIT_NAME" >/dev/null 2>&1 || true
 systemctl stop "$UNIT_NAME" >/dev/null 2>&1 || true
-rm -f "/etc/systemd/system/$UNIT_NAME"
+# A stopped daemon leaves the kill switch enforced on purpose. Remove it with the app.
+"$APP_ROOT/bin/wgtunnel-daemon" --purge-firewall >/dev/null 2>&1 || true
+rm -f "/etc/systemd/system/$UNIT_NAME" "/etc/systemd/system/$APP_FSNAME-early-boot.service"
 systemctl daemon-reload >/dev/null 2>&1 || true
 systemctl reset-failed "$UNIT_NAME" >/dev/null 2>&1 || true
 

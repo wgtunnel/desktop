@@ -12,6 +12,7 @@ import com.wgtunnel.backend.model.dns.TunnelDnsConfig
 import com.wgtunnel.backend.state.ActiveTunnel
 import com.wgtunnel.backend.state.BackendStatus as CoreBackendStatus
 import com.wgtunnel.backend.state.BootstrapState
+import com.wgtunnel.parser.ActiveConfig
 import com.wgtunnel.parser.Config
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendStatus
@@ -163,12 +164,37 @@ fun ActiveTunnel.toDto(id: Int): TunnelStatus {
         name = name,
         state = transportState.toDto(bootstrapState),
         mode = mode.toDto(),
-        activeConfig = activeConfig,
-        activeProxyConfig = activeProxyConfig,
+        activeConfig = activeConfig?.withoutSecrets(),
+        activeProxyConfig = activeProxyConfig?.withoutSecrets(),
         recoveryAttempts = recoveryAttempts,
         uptime = uptime,
     )
 }
+
+// Any local user running the app can read the status, so it should never carry sensitive info
+private const val HIDDEN = "(hidden)"
+
+private fun ActiveConfig.withoutSecrets(): ActiveConfig =
+    copy(
+        interfaceSection =
+            interfaceSection.copy(
+                privateKey = HIDDEN,
+                headerProtectionKey = interfaceSection.headerProtectionKey?.let { HIDDEN },
+            ),
+        peers = peers.map { peer -> peer.copy(presharedKey = peer.presharedKey?.let { HIDDEN }) },
+    )
+
+private fun ProxyConfigDto.withoutSecrets(): ProxyConfigDto =
+    copy(
+        socks5 =
+            socks5?.let {
+                it.copy(password = it.password?.takeIf(String::isNotEmpty)?.let { HIDDEN })
+            },
+        http =
+            http?.let {
+                it.copy(password = it.password?.takeIf(String::isNotEmpty)?.let { HIDDEN })
+            },
+    )
 
 fun CoreBackendStatus.toDto(): BackendStatus {
     val activeList = activeTunnels.map { (id, tunnel) -> tunnel.toDto(id) }
