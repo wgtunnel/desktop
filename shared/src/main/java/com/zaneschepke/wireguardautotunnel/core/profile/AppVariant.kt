@@ -135,6 +135,17 @@ enum class AppVariant(val id: String) {
         }
 
         /**
+         * Uses [builtIn], the variant this binary was built for, when it runs as a packaged native
+         * image. GraalVM applies -D build arguments only while building the image, so without this
+         * a beta binary resolves as release.
+         */
+        fun useBuiltIn(builtIn: String) {
+            if (System.getProperty("org.graalvm.nativeimage.imagecode") != "runtime") return
+            if (System.getProperty(PROP_NAME) != null || System.getenv(ENV_NAME) != null) return
+            parse(builtIn)?.let { System.setProperty(PROP_NAME, it.id) }
+        }
+
+        /**
          * To be called once from each process entrypoint before opening the DB, IPC, or native
          * backend so core can pick up the iface prefix and the firewall instance.
          */

@@ -17,8 +17,4 @@
     <logmode>rotate</logmode>
 
     <onfailure action="restart" delay="10 sec"/>
-
-    <onuninstall>
-        cmd /c if exist "C:\ProgramData\__APP_FSNAME__" rmdir /s /q "C:\ProgramData\__APP_FSNAME__"
-    </onuninstall>
 </service>

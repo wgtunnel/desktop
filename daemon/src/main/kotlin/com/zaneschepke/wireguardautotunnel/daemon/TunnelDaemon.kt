@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -153,6 +154,8 @@ class TunnelDaemon(
                         }
 
                         exception<Throwable> { call, cause ->
+                            // Open websockets are canceled when the server stops, not an error.
+                            if (cause is CancellationException) throw cause
                             daemonLog.e(cause) { "Unhandled exception in daemon" }
                             call.respond(
                                 HttpStatusCode.InternalServerError,

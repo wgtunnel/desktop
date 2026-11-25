@@ -26,15 +26,8 @@ import kotlinx.serialization.json.Json
 private val log = Logger.withTag("Daemon")
 
 fun main(args: Array<String>) {
-    // A packaged daemon is built for one variant, so its service, the early boot unit, the
-    // uninstallers and "Remove block" all act on that install. An explicit variant still wins.
-    if (
-        System.getProperty("org.graalvm.nativeimage.imagecode") == "runtime" &&
-            System.getProperty(AppVariant.PROP_NAME) == null &&
-            System.getenv(AppVariant.ENV_NAME) == null
-    ) {
-        System.setProperty(AppVariant.PROP_NAME, BuildConfig.VARIANT)
-    }
+    // Its service, the early boot unit, uninstallers and "Remove block" all act on this install.
+    AppVariant.useBuiltIn(BuildConfig.VARIANT)
     Logger.setLogWriters(CommonWriter())
     AppVariant.applyProcessDefaults()
     initLogger()

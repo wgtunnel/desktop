@@ -176,6 +176,8 @@ val languagesProvider = providers.provider {
 buildConfig {
     buildConfigField("APP_VERSION", provider { "${project.version}" })
     buildConfigField("LANGUAGES", languagesProvider.map { it.joinToString(",") })
+    // GraalVM drops -Dapp.variant at runtime, so the app reads its variant from here.
+    buildConfigField("VARIANT", packagingVariant)
 }
 
 // Crowdin's Android format exporter always backslash escapes apostrophes/quotes, so we clean these

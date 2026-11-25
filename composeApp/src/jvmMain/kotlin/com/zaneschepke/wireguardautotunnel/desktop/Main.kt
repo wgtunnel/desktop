@@ -175,6 +175,8 @@ private fun loadInitialWindowState(): InitialWindowState {
 }
 
 fun main(args: Array<String>) {
+    // A beta build keeps its own data, lock and daemon socket.
+    AppVariant.useBuiltIn(BuildConfig.VARIANT)
     Logger.setLogWriters(CommonWriter())
     AppVariant.applyProcessDefaults()
     Logger.setLogWriters(platformLogWriter())
@@ -304,7 +306,8 @@ fun main(args: Array<String>) {
                 .collectAsState(emptyList<TunnelStatus>() to false)
             val (trayTunnelStatuses, trayLockdownActive) = trayStatus
             val appIcon = painterResource(Res.drawable.appicon)
-            val appName = stringResource(Res.string.app_name)
+            // "WG Tunnel Beta" for beta, in the tray tooltip as well as the window.
+            val appName = stringResource(Res.string.app_name) + AppVariant.current.displaySuffix
             val trayOpenLabel = stringResource(Res.string.tray_open)
             val trayMinimizeLabel = stringResource(Res.string.tray_minimize_to_tray)
             val trayExitLabel = stringResource(Res.string.tray_exit)
@@ -369,7 +372,7 @@ fun main(args: Array<String>) {
                 MaterialDecoratedWindow(
                     visible = isMainWindowVisible,
                     onCloseRequest = { handleWindowIntent(WindowIntent.HIDE) },
-                    title = appName + AppVariant.current.displaySuffix,
+                    title = appName,
                     resizable = true,
                     icon = appIcon,
                     state = windowState,
