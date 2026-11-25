@@ -9,7 +9,7 @@
     <string name="expand_rail">Rozwiń szynę</string>
     <string name="failed_to_read_conf_file">Nie udało się odczytać pliku .conf</string>
     <string name="failed_to_read_zip_archive">Nie udało się odczytać archiwum .zip</string>
-    <string name="only_conf_or_zip_supported">Tylko pliki '.conf' lub '.zip' obsługiwane</string>
+    <string name="only_conf_or_zip_supported">Tylko pliki \'.conf\' lub \'.zip\' obsługiwane</string>
     <string name="multi_import_errors_title">Nie udało się przetworzyć %1$d plików. Upewnij się, że są to poprawne pliki typu .conf lub .zip.</string>
     <string name="tunnel_state_starting">Uruchamianie</string>
     <string name="tunnel_state_stopping">Zatrzymywanie</string>
@@ -258,6 +258,11 @@
     <string name="daemon_start_command_label">Kopiuj polecenie startowe</string>
     <string name="daemon_outdated_template">Uruchomiony demon (v%1$s) jest starszy niż ta aplikacja (v%2$s). Uruchom go ponownie, aby zakończyć aktualizację.</string>
     <string name="daemon_restart_command_label">Kopiuj polecenie restartu</string>
+    <string name="app_outdated_template">WG Tunnel został zaktualizowany do wersji %1$s. Uruchom ponownie aplikację, aby zakończyć aktualizację. Twoje tunele pozostają połączone.</string>
+    <string name="restart_app_action">Uruchom ponownie teraz</string>
+    <string name="daemon_restart_action">Uruchom ponownie usługę</string>
+    <string name="daemon_restarting">Kończenie aktualizacji, ponowne uruchomienie usługi w tle…</string>
+    <string name="daemon_restarted">Usługa w tle zaktualizowana do wersji %1$s</string>
     <string name="mac_service_requires_approval_template">WG Tunnel wymaga Twojej zgody, aby uruchomić %1$s.</string>
     <string name="background_service_name">usługa działająca w tle</string>
     <string name="wifi_helper_service_name">Pomocnik Wi-Fi</string>
