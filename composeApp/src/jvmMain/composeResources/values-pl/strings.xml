@@ -9,7 +9,7 @@
     <string name="expand_rail">Rozwiń szynę</string>
     <string name="failed_to_read_conf_file">Nie udało się odczytać pliku .conf</string>
     <string name="failed_to_read_zip_archive">Nie udało się odczytać archiwum .zip</string>
-    <string name="only_conf_or_zip_supported">Tylko pliki '.conf' lub '.zip' obsługiwane</string>
+    <string name="only_conf_or_zip_supported">Tylko pliki \'.conf\' lub \'.zip\' obsługiwane</string>
     <string name="multi_import_errors_title">Nie udało się przetworzyć %1$d plików. Upewnij się, że są to poprawne pliki typu .conf lub .zip.</string>
     <string name="tunnel_state_starting">Uruchamianie</string>
     <string name="tunnel_state_stopping">Zatrzymywanie</string>
@@ -257,6 +257,10 @@
     <string name="daemon_not_running">Demon WG Tunnel nie jest uruchomiony.</string>
     <string name="daemon_start_command_label">Kopiuj polecenie startowe</string>
     <string name="daemon_outdated_template">Uruchomiony demon (v%1$s) jest starszy niż ta aplikacja (v%2$s). Uruchom go ponownie, aby zakończyć aktualizację.</string>
+    <string name="daemon_down_kill_switch_blocking">Usługa działająca w tle nie jest uruchomiona, a wyłącznik awaryjny wciąż blokuje cały ruch.</string>
+    <string name="remove_block_action">Usuń blokadę</string>
+    <string name="kill_switch_block_removed">Wyłącznik awaryjny wyłączony. Ruch nie jest już zablokowany.</string>
+    <string name="kill_switch_block_remove_failed">Nie można usunąć blokady wyłącznika awaryjnego</string>
     <string name="daemon_restart_command_label">Kopiuj polecenie restartu</string>
     <string name="app_outdated_template">WG Tunnel został zaktualizowany do wersji %1$s. Uruchom ponownie aplikację, aby zakończyć aktualizację. Twoje tunele pozostają połączone.</string>
     <string name="restart_app_action">Uruchom ponownie teraz</string>
