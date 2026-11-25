@@ -85,13 +85,13 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
 
     @TaskAction
     fun stage() {
-        // appResourcesRootDir requires a common/<os>/<target> layout (Nucleus copies
-        // common/ contents to the app root, next to the native executable for GraalVM
-        // packaging). Everything here is platform-agnostic at the tar/install-script level,
-        // so it all lands under common.
+        // appResourcesRootDir takes common/ plus a folder per OS (linux, macos, windows), copied
+        // next to the native executable. Each OS's files go in its own folder. On macOS, anything
+        // that isn't code in Contents/MacOS is signed through extended attributes, which zip drops,
+        // so a notarized ZIP fails with an invalid signature.
         val root = outputDir.get().asFile
         root.deleteRecursively()
-        val out = root.resolve("common")
+        val out = root.resolve("linux")
         out.mkdirs()
         val fsName = appFsName.get()
         val display = appDisplayName.get()
@@ -161,7 +161,9 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
             )
 
         if (macOS.get()) {
-            val macOut = root.resolve("macos").apply { mkdirs() }
+            // Not "macos", so they stay out of Contents/MacOS. They're embedded under
+            // Contents/Library instead.
+            val macOut = root.resolve(MAC_LAUNCHD_DIR).apply { mkdirs() }
             macDaemonPlist.orNull?.asFile?.let { plist ->
                 macOut
                     .resolve("${fsName}-daemon.plist")
@@ -187,15 +189,17 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
         }
 
         if (!windows.get()) return
+        val winOut = root.resolve("windows").apply { mkdirs() }
         windowsServiceXml.orNull?.asFile?.let { xml ->
-            out.resolve("service-wrapper.xml")
+            winOut
+                .resolve("service-wrapper.xml")
                 .writeText(replaceTokens(xml.readText(), fsName, display, variant))
         }
         val winSw = winSwPublishDir.orNull?.asFile ?: return
         sequenceOf("WinSW.exe", "WinSW-x64.exe")
             .map { winSw.resolve(it) }
             .firstOrNull { it.isFile }
-            ?.copyTo(out.resolve("service-wrapper.exe"), overwrite = true)
+            ?.copyTo(winOut.resolve("service-wrapper.exe"), overwrite = true)
     }
 
     private fun replaceTokens(
@@ -212,5 +216,9 @@ abstract class StagePackagingSidecarsTask @Inject constructor() : DefaultTask() 
     private fun java.io.File.writeExecutable(text: String) {
         writeText(text)
         setExecutable(true, false)
+    }
+
+    companion object {
+        const val MAC_LAUNCHD_DIR = "macos-launchd"
     }
 }

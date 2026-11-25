@@ -597,7 +597,11 @@ if (isMacOS) {
             // THe copy copyGraalvmSidecarDepends equivalent for macOS
             dependsOn("copyGraalvmBinaryToApp", stagePackagingSidecars)
             doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
-            from(stagePackagingSidecars.map { it.outputDir.get().asFile.resolve("macos") }) {
+            from(
+                stagePackagingSidecars.map {
+                    it.outputDir.get().asFile.resolve(StagePackagingSidecarsTask.MAC_LAUNCHD_DIR)
+                },
+            ) {
                 include("*-daemon.plist")
             }
             into(macBundleContents("Library/LaunchDaemons"))
@@ -609,7 +613,11 @@ if (isMacOS) {
                 "Embed the Wi-Fi LaunchAgent plist into the built .app bundle for SMAppService."
             dependsOn("copyGraalvmBinaryToApp", stagePackagingSidecars)
             doNotTrackState("Shared graalvm-app dir is mutated by strip/patchelf")
-            from(stagePackagingSidecars.map { it.outputDir.get().asFile.resolve("macos") }) {
+            from(
+                stagePackagingSidecars.map {
+                    it.outputDir.get().asFile.resolve(StagePackagingSidecarsTask.MAC_LAUNCHD_DIR)
+                },
+            ) {
                 include("*-wifi.plist")
             }
             into(macBundleContents("Library/LaunchAgents"))
