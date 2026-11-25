@@ -2,33 +2,33 @@
 Hash: SHA512
 
 Codename: stable
-Date: Sat, 17 Oct 2026 08:51:44 UTC
+Date: Wed, 25 Nov 2026 09:06:26 UTC
 Architectures: amd64
 Components: main
 Description: WG Tunnel for Debian/Ubuntu (wgtunnel and wgtunnel-beta packages)
 MD5Sum:
- 406c5ee967c8b43ee2a48b0bde6abb65 645 main/binary-amd64/Packages
- d9435bdbe42925b039bfe9e6280e0318 454 main/binary-amd64/Packages.gz
+ 8bfb15b1bbaf70a75fca41811796d362 721 main/binary-amd64/Packages
+ 3ad15e1b64efc508022a2718088ff011 485 main/binary-amd64/Packages.gz
  954648fd10d41eb17ed81a6bc258b721 115 main/binary-amd64/Release
 SHA1:
- c57f24b6e190e0e332b0c62021d1d9c2b230387c 645 main/binary-amd64/Packages
- 266728bf319acfb18a5af7422f198cec678e1e7d 454 main/binary-amd64/Packages.gz
+ e0141e8b87e9d4e019ad3aeb3f6d5e6841c3a654 721 main/binary-amd64/Packages
+ 68a5e35348eb47ec3a4040df0f6e9cc51999f008 485 main/binary-amd64/Packages.gz
  a56a3584af10543e5e8747a28cc6a3a51779d7dc 115 main/binary-amd64/Release
 SHA256:
- d2d3f8a519e96c1aefc3ec01cba181f5b5ef218d54c3a3864229b2af978326e7 645 main/binary-amd64/Packages
- a780fbbc8bdf83715a5eb90e593d351f633c7513b95a0dcb440b5ffb598917c1 454 main/binary-amd64/Packages.gz
+ 82aa8af4e18de4b7ef0a92e1b86f32b3d6654b5bf33b719e06b3f8912e45b51a 721 main/binary-amd64/Packages
+ 704bd30bfe5f550bc1fde760e1214b3c14195686aa0a5cb0cdbb2a4d919eb46e 485 main/binary-amd64/Packages.gz
  57d0ccb9f53ee3679001f420b078d6eea8a15914f54b43593698bcc2629b653e 115 main/binary-amd64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iQGzBAEBCgAdFiEEIadVdb+vkcMEpy2lgiF/BWb5tKUFAmrTNyEACgkQgiF/BWb5
-tKWmIwv7BFVShWWj3pOlni2PUmQbiQYIqubwWH/+s6CCo1p9Bqji3se1OLQZBmgd
-qUabmOj5qoo4gJw2nYl5q4470a40z8e/38l+d8bAfirhGKvHGhwnNg+8H6MeRkMp
-N4GvOCGthfx4pcp3Nv9nvutx4iEwtb4k42KjfunD6zuuOefKFRu3hyWUdG6bOTvO
-5W8cnqxTOJVmZJZx1opnPbQyIMCGpWxtfksgnIMwOgjw8ST8vf3byd203i+3h0hQ
-jWgq+AChivM7Gq6qhhL3XMs3Tu1TjxRv1QUi+Qw0cMliMgJywb3cQZztnbEaFgpa
-oTGzFlEFHayiSxJ17L9TJ/xEVn5PadeJj8RcMpOYeCAM7WIM4/PI97jXzTJammj9
-Qc9jRh2Hakc8K+vBFRaDrgC67XsQ0fd7lBZStx5f2J6L/4sJrxRQ2MSwdWpRMQjh
-zb6j1GeXr5VTv1Mgt5Ts8r9j+EfvkIj5FC2w7MKsSiBYmUy31wOeItPXcKGlJ2q4
-CSOJiHZj
-=B31i
+iQGzBAEBCgAdFiEEIadVdb+vkcMEpy2lgiF/BWb5tKUFAmsGpRQACgkQgiF/BWb5
+tKVn0Av+NDfEO9OHUX+A045t3jvkWtvaMwhKV4qDFWwWegTf/3KrwNpvr2cCH9xc
+rc21BBd6/BZqnpCEPppDynZ4yNNNgAndf7qdFspx2pOyKC8pEu0ODnBQmMU0kOM5
+8SSOUQzEp312VktXRbRH9lpMb411RW2HBJPu2mBNRCcV7qlwlZnIlPp7ay0Gbrkf
+dpFA1WWNecLiuVKpgEmwdC3EsWXkxu6jsHYFWFt9yfKEHGl8YV9VD10PGU56QjbB
+ZwBvSBtO+OtdiJsC55/wYN6jd+q6yQuMbG4F4ABz4vTS6G9Q1k8P7yZ7PLUpkdAG
+HTSsgwTfVlPDj+b+RADY6j2gfKwS8bAAdsyNyX/6KLKWm6veJUeKoB6iW1iQUDTz
+JyTqIFRi+zt/r7D+QJv7wWGDKYSv/bimQNbD2TuXegb6q19b0EQb+CRgPBaQAMwC
+syIqPD9xfa/HNVpfu9+Zj1wpqkKrYyFPDROpMw3mBUnQV0/fD3gHHYzZ99hC3mPm
+GTwMYY9c
+=3yyo
 -----END PGP SIGNATURE-----
