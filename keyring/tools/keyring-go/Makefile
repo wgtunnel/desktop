@@ -20,7 +20,11 @@ JDK_JNI_CFLAGS := -I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/win32" -I"$(J
 ifeq ($(HOST_OS),darwin)
     PLATFORMS := darwin-amd64 darwin-arm64
 else ifeq ($(filter linux,$(HOST_OS)),linux)
-    PLATFORMS := linux-amd64 windows-amd64
+    ifneq ($(filter aarch64 arm64,$(shell uname -m)),)
+        PLATFORMS := linux-arm64
+    else
+        PLATFORMS := linux-amd64 windows-amd64
+    endif
 else
     PLATFORMS := windows-amd64 windows-arm64
 endif
@@ -35,6 +39,11 @@ $(DESTDIR)/libkeyring-linux-amd64.so: $(wildcard *.go)
 	@mkdir -p "$(DESTDIR)"
 	@test -f "$(JAVA_HOME)/include/jni.h" || (echo "jni.h not found; JAVA_HOME=$(JAVA_HOME)"; exit 1)
 	CGO_CFLAGS="$(JDK_JNI_CFLAGS) -O2 -march=x86-64 -mtune=generic" GOOS=linux GOARCH=amd64 GOAMD64=v1 CC=gcc $(GOBUILD) -o "$@" .
+
+$(DESTDIR)/libkeyring-linux-arm64.so: $(wildcard *.go)
+	@mkdir -p "$(DESTDIR)"
+	@test -f "$(JAVA_HOME)/include/jni.h" || (echo "jni.h not found; JAVA_HOME=$(JAVA_HOME)"; exit 1)
+	CGO_CFLAGS="$(JDK_JNI_CFLAGS) -O2 -march=armv8-a" GOOS=linux GOARCH=arm64 CC=gcc $(GOBUILD) -o "$@" .
 
 ifeq ($(OS),Windows_NT)
     WIN_CC := gcc

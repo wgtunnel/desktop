@@ -1,11 +1,28 @@
 object GraalvmNativeArgs {
-    fun gui(osName: String): List<String> = buildList {
-        add("-H:+UnlockExperimentalVMOptions")
-        add("-H:-IncludeMethodData")
-        addAll(excludeForeignNatives(osName))
-    }
+    fun gui(osName: String, osArch: String = System.getProperty("os.arch").orEmpty()): List<String> =
+        buildList {
+            add("-H:+UnlockExperimentalVMOptions")
+            add("-H:-IncludeMethodData")
+            addAll(excludeForeignNatives(osName))
+            addAll(excludeForeignArchNatives(osName, osArch))
+        }
 
-    fun daemon(osName: String): List<String> = gui(osName) + listOf("-H:IncludeLocales=en")
+    fun daemon(osName: String, osArch: String = System.getProperty("os.arch").orEmpty()) =
+        gui(osName, osArch) + listOf("-H:IncludeLocales=en")
+
+    // Linux bundles natives for every arch, so we drop the ones not relevant to this image
+    private fun excludeForeignArchNatives(osName: String, osArch: String): List<String> {
+        val os = osName.lowercase()
+        if (os.startsWith("windows") || os.startsWith("mac") || os.contains("darwin")) {
+            return emptyList()
+        }
+        val isArm = osArch.lowercase().let { it == "aarch64" || it == "arm64" }
+        return if (isArm) {
+            listOf("-H:ExcludeResources=.*linux-(x64|x86-64|x86_64|amd64)[/.].*")
+        } else {
+            listOf("-H:ExcludeResources=.*linux-(aarch64|arm64)[/.].*")
+        }
+    }
 
     private fun excludeForeignNatives(osName: String): List<String> {
         val os = osName.lowercase()

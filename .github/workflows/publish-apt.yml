@@ -47,7 +47,7 @@ jobs:
       - uses: actions/download-artifact@v8.0.2
         if: github.event_name != 'workflow_dispatch'
         with:
-          name: release-assets-Linux-amd64
+          pattern: release-assets-Linux-*
           path: artifacts
 
       - name: Checkout gh-pages (apt.wgtunnel.com root)
@@ -88,21 +88,26 @@ jobs:
           cat > gh-pages/conf/distributions <<EOF
           Codename: stable
           Components: main
-          Architectures: amd64
+          Architectures: amd64 arm64
           SignWith: ${{ steps.gpg.outputs.fingerprint }}
           Description: WG Tunnel for Debian/Ubuntu (wgtunnel and wgtunnel-beta packages)
           EOF
 
-      - name: Add .deb to repo
+      - name: Add .debs to repo
         if: github.event_name != 'workflow_dispatch'
         run: |
           set -euo pipefail
-          DEB_FILE=$(find artifacts -name '*.deb' | head -n1)
-          if [ -z "$DEB_FILE" ]; then
+          mapfile -t DEB_FILES < <(find artifacts -name '*.deb' | sort)
+          if [ "${#DEB_FILES[@]}" -eq 0 ]; then
             echo "No .deb artifact found" >&2
             exit 1
           fi
-          reprepro -b gh-pages includedeb stable "$DEB_FILE"
+          for deb in "${DEB_FILES[@]}"; do
+            echo "Adding $deb ($(dpkg-deb -f "$deb" Architecture))"
+            reprepro -b gh-pages includedeb stable "$deb"
+          done
+          # Writes the arm64 indexes even before the first arm64 package lands
+          reprepro -b gh-pages export stable
 
       - name: Publish signing key
         run: gpg --armor --export "${{ steps.gpg.outputs.fingerprint }}" > gh-pages/wgtunnel-archive-keyring.asc

@@ -10,10 +10,12 @@ Release:        1%{?dist}
 Summary:        WireGuard and AmneziaWG VPN client with auto-tunneling, a kill switch, and proxying
 License:        MIT
 URL:            https://wgtunnel.com
-ExclusiveArch:  x86_64
+ExclusiveArch:  x86_64 aarch64
 
-# RPM artifact: ${name}-${version}-linux-x86_64.rpm
+# RPM artifacts: ${name}-${version}-linux-{x86_64,aarch64}.rpm. Both are listed unconditionally
+# so the SRPM carries both, and %install picks the one for the build arch.
 Source0:        https://github.com/wgtunnel/desktop/releases/download/%{tag}/wgtunnel-%{version}-linux-x86_64.rpm
+Source1:        https://github.com/wgtunnel/desktop/releases/download/%{tag}/wgtunnel-%{version}-linux-aarch64.rpm
 
 BuildRequires:  cpio
 BuildRequires:  rpm
@@ -35,7 +37,11 @@ This COPR package redistributes the GitHub release RPM.
 
 %install
 mkdir -p %{buildroot}
+%ifarch aarch64
+rpm2cpio %{SOURCE1} | cpio -idmv -D %{buildroot}
+%else
 rpm2cpio %{SOURCE0} | cpio -idmv -D %{buildroot}
+%endif
 
 rm -rf %{buildroot}/usr/lib/.build-id
 

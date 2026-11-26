@@ -38,8 +38,16 @@ permissions:
 
 jobs:
   package:
-    name: package-linux
-    runs-on: ubuntu-latest
+    name: package-linux-${{ matrix.arch }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     # Build in a pinned image, not on the runner: GitHub's 26.04 runner uses Ubuntu's amd64v3
     # variant, whose C runtime marks executables as needing x86-64-v3. The image also sets the
     # minimum glibc the app needs.
@@ -74,6 +82,7 @@ jobs:
           go-version: "1.25"
 
       - name: Install keyring cross-compile toolchain
+        if: matrix.arch == 'amd64'
         run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
 
       - name: Package Linux (GraalVM)
@@ -94,13 +103,14 @@ jobs:
             -Papp.packageVersion=${{ inputs.package_version }}
 
       - name: Check binaries run on baseline x86-64
+        if: matrix.arch == 'amd64'
         working-directory: desktop
         run: |
           fail=0
           for f in composeApp/build/compose/tmp/main/graalvm/nativeCompile/wgtunnel* \
                    daemon/build/compose/tmp/main/graalvm/nativeCompile/wgtunnel-daemon \
                    keyring/tools/keyring-go/out/libkeyring-linux-amd64.so; do
-            [ -f "$f" ] || continue
+            [ -f "$f" ] || { echo "::error::missing $f"; fail=1; continue; }
             if readelf -n "$f" | grep -qE 'ISA needed:.*x86-64-v[234]'; then
               echo "::error::$f is marked as needing a newer x86-64 level"; fail=1
             fi
@@ -113,9 +123,39 @@ jobs:
           fi
           exit $fail
 
+      - name: Check binaries and natives are ${{ matrix.arch }}
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          case "${{ matrix.arch }}" in
+            amd64) want='x86-64'; dir='linux-x64'; kr='amd64' ;;
+            arm64) want='aarch64'; dir='linux-aarch64'; kr='arm64' ;;
+          esac
+          fail=0
+          check() {
+            if [ ! -f "$1" ]; then echo "::error::missing $1"; fail=1
+            elif ! file -L "$1" | grep -q "$want"; then echo "::error::$1 is not $want"; file -L "$1"; fail=1
+            fi
+          }
+          gui=(composeApp/build/compose/tmp/main/graalvm/nativeCompile/wgtunnel*)
+          check "${gui[0]}"
+          check daemon/build/compose/tmp/main/graalvm/nativeCompile/wgtunnel-daemon
+          check keyring/tools/keyring-go/out/libkeyring-linux-$kr.so
+          check keyring/src/main/resources/nucleus/native/$dir/libkeyring.so
+          # libwg comes prebuilt in the core jar.
+          core=$(sed -n 's/^core = "\(.*\)"/\1/p' gradle/libs.versions.toml)
+          jar=$(find "${GRADLE_USER_HOME:-$HOME/.gradle}/caches/modules-2/files-2.1/com.wgtunnel/backend-jvm/$core" \
+                  -name "backend-jvm-$core.jar" | head -n1)
+          if [ -z "$jar" ]; then
+            echo "::error::backend-jvm-$core.jar not found"; fail=1
+          elif ! unzip -l "$jar" | grep -q "natives/$dir/libwg.so"; then
+            echo "::error::core $core has no natives/$dir/libwg.so"; fail=1
+          fi
+          exit $fail
+
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: release-assets-Linux-amd64
+          name: release-assets-Linux-${{ matrix.arch }}
           if-no-files-found: error
           path: |
             desktop/composeApp/build/compose/binaries/**/*.deb

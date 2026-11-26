@@ -52,9 +52,11 @@ jobs:
           set -euo pipefail
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" packaging/aur/PKGBUILD
           sed -i "s/^_tag=.*/_tag=\"${TAG}\"/" packaging/aur/PKGBUILD
-          ASSET_URL="https://github.com/wgtunnel/desktop/releases/download/${TAG}/wgtunnel-${VERSION}-linux-x64.pacman"
-          SHA256=$(curl -fsSL "$ASSET_URL" | sha256sum | cut -d' ' -f1)
-          sed -i "s/^sha256sums=.*/sha256sums=('${SHA256}')/" packaging/aur/PKGBUILD
+          BASE="https://github.com/wgtunnel/desktop/releases/download/${TAG}"
+          SHA_X64=$(curl -fsSL "${BASE}/wgtunnel-${VERSION}-linux-x64.pacman" | sha256sum | cut -d' ' -f1)
+          SHA_ARM64=$(curl -fsSL "${BASE}/wgtunnel-${VERSION}-linux-aarch64.pacman" | sha256sum | cut -d' ' -f1)
+          sed -i "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('${SHA_X64}')/" packaging/aur/PKGBUILD
+          sed -i "s/^sha256sums_aarch64=.*/sha256sums_aarch64=('${SHA_ARM64}')/" packaging/aur/PKGBUILD
 
       - name: Publish to AUR
         uses: KSXGitHub/github-actions-deploy-aur@v4.2.0

@@ -154,6 +154,11 @@ winget install -e --id WGTunnel.WGTunnel
 > Direct installations from GitHub releases for `.deb` and `.rpm` packages can use the in-app updater while `.pacman` and tarball direct installs
 > will require manual updates.
 
+> [!Note]
+> Linux builds are available for x86_64 and ARM64. The package managers below pick the right one
+> automatically. For direct downloads, pick the file for your architecture (`uname -m`):
+> `amd64`/`x86_64`/`x64` for x86_64, `arm64`/`aarch64` for ARM64.
+
 #### Debian / Ubuntu
 
 <details open>
@@ -254,8 +259,8 @@ the exact command). See `packaging/linux/tar-install.sh` in the source repo if y
 source script:
 
 ```bash
-tar -xzf wgtunnel*-linux-x64.tar.gz
-cd wgtunnel*-linux-x64/
+tar -xzf wgtunnel*-linux-*.tar.gz
+cd wgtunnel*-linux-*/
 sudo ./install.sh
 ```
 
