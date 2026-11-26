@@ -37,6 +37,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -333,6 +334,8 @@ fun main(args: Array<String>) {
                         )
                 }
 
+            // Tray renders iconContent offscreen and only re-renders when its inputs change
+            val currentTrayBadgeState by rememberUpdatedState(trayBadgeState)
             Tray(
                 iconContent = {
                     val useLightIcon =
@@ -350,7 +353,7 @@ fun main(args: Array<String>) {
                                 ColorFilter.tint(if (useLightIcon) Color.White else Color.Black),
                         )
 
-                        trayBadgeState?.let {
+                        currentTrayBadgeState?.let {
                             Icon(
                                 imageVector = Icons.Filled.Circle,
                                 contentDescription = it.description,
