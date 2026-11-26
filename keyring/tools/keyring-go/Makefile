@@ -34,7 +34,7 @@ default: all
 $(DESTDIR)/libkeyring-linux-amd64.so: $(wildcard *.go)
 	@mkdir -p "$(DESTDIR)"
 	@test -f "$(JAVA_HOME)/include/jni.h" || (echo "jni.h not found; JAVA_HOME=$(JAVA_HOME)"; exit 1)
-	CGO_CFLAGS="$(JDK_JNI_CFLAGS)" GOOS=linux GOARCH=amd64 CC=gcc $(GOBUILD) -o "$@" .
+	CGO_CFLAGS="$(JDK_JNI_CFLAGS) -O2 -march=x86-64 -mtune=generic" GOOS=linux GOARCH=amd64 GOAMD64=v1 CC=gcc $(GOBUILD) -o "$@" .
 
 ifeq ($(OS),Windows_NT)
     WIN_CC := gcc

@@ -40,8 +40,21 @@ jobs:
   package:
     name: package-linux
     runs-on: ubuntu-latest
+    # Build in a pinned image, not on the runner: GitHub's 26.04 runner uses Ubuntu's amd64v3
+    # variant, whose C runtime marks executables as needing x86-64-v3. The image also sets the
+    # minimum glibc the app needs.
+    container: ubuntu:24.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
     timeout-minutes: 120
     steps:
+      - name: Install base build tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends sudo git ca-certificates curl wget unzip zip \
+            xz-utils zstd file procps binutils build-essential zlib1g-dev libfreetype-dev \
+            libfontconfig1 libgl1
+
       - uses: actions/checkout@v7.0.1
         with:
           path: desktop
@@ -79,6 +92,26 @@ jobs:
             -Papp.variant=${{ inputs.variant }} \
             -Papp.version=${{ inputs.version }} \
             -Papp.packageVersion=${{ inputs.package_version }}
+
+      - name: Check binaries run on baseline x86-64
+        working-directory: desktop
+        run: |
+          fail=0
+          for f in composeApp/build/compose/tmp/main/graalvm/nativeCompile/wgtunnel* \
+                   daemon/build/compose/tmp/main/graalvm/nativeCompile/wgtunnel-daemon \
+                   keyring/tools/keyring-go/out/libkeyring-linux-amd64.so; do
+            [ -f "$f" ] || continue
+            if readelf -n "$f" | grep -qE 'ISA needed:.*x86-64-v[234]'; then
+              echo "::error::$f is marked as needing a newer x86-64 level"; fail=1
+            fi
+          done
+          # Go's runtime picks AVX2 paths at runtime, but cgo's C code must stay baseline.
+          if objdump -d keyring/tools/keyring-go/out/libkeyring-linux-amd64.so \
+              | awk '/^[0-9a-f]+ <(x_cgo|_cgo|crosscall)/,/^$/' \
+              | grep -qE '\s(shrx|shlx|sarx|rorx|andn|bzhi|pdep|pext|mulx|v[a-z0-9]+)\s'; then
+            echo "::error::libkeyring cgo code uses instructions newer than baseline x86-64"; fail=1
+          fi
+          exit $fail
 
       - uses: actions/upload-artifact@v7.0.2
         with:
