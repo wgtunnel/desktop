@@ -606,7 +606,7 @@ if (isWindows) {
         )
         environment("WGT_SIGN_ACCOUNT", System.getenv("AZURE_CODE_SIGNING_ACCOUNT") ?: "WG-Tunnel")
         commandLine(
-            "powershell",
+            "pwsh",
             "-NoProfile",
             "-NonInteractive",
             "-ExecutionPolicy",
