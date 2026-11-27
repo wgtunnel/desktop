@@ -125,8 +125,9 @@ jobs:
 
       - name: Check binaries and natives are ${{ matrix.arch }}
         working-directory: desktop
+        # The container's default shell is sh, and the gui glob needs a bash array.
+        shell: bash
         run: |
-          set -euo pipefail
           case "${{ matrix.arch }}" in
             amd64) want='x86-64'; dir='linux-x64'; kr='amd64' ;;
             arm64) want='aarch64'; dir='linux-aarch64'; kr='arm64' ;;
