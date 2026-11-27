@@ -1,0 +1,20 @@
+Package: wgtunnel
+Version: 2.5.1
+License: unknown
+Vendor: WG Tunnel
+Architecture: arm64
+Maintainer: WG Tunnel <support@wgtunnel.com>
+Installed-Size: 300585
+Depends: libgtk-3-0, libc6, libstdc++6, libfreetype6, libfontconfig1, xdg-desktop-portal-gtk | xdg-desktop-portal-kde | xdg-desktop-portal-gnome
+Recommends: libappindicator3-1
+Homepage: https://wgtunnel.com
+Priority: optional
+Section: default
+Filename: pool/main/w/wgtunnel/wgtunnel_2.5.1_arm64.deb
+Size: 96236848
+SHA256: dc2e98c5363ef37e52ff7a80d9fbca7233005123880d9a8dd81550cd040fba24
+SHA1: 20332d397735bc0dd77b92b8bb82f39c8f36631b
+MD5sum: e5cace68ef84fedefcf66178ad801200
+Description: 
+  WG Tunnel: An advanced, open-source client for WireGuard and AmneziaWG.
+
