@@ -10,6 +10,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.Res
+import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.allowed_ips_local_overlap_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.http_proxy_lowercase_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.http_proxy_protected_lowercase_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.recovery_attempts_template
@@ -17,10 +18,15 @@ import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.socks5
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.socks5_proxy_protected_lowercase_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.status_lowercase_template
 import com.zaneschepke.wireguardautotunnel.composeapp.generated.resources.uptime_lowercase_template
+import com.zaneschepke.wireguardautotunnel.core.ipc.dto.BackendMode
 import com.zaneschepke.wireguardautotunnel.core.ipc.dto.TunnelStatus
+import com.zaneschepke.wireguardautotunnel.desktop.util.LocalSubnetOverlap
 import com.zaneschepke.wireguardautotunnel.desktop.util.toUptimeDisplay
+import dev.nucleusframework.core.runtime.Platform
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -69,6 +75,37 @@ fun TunnelStatisticsSection(
             )
         }
 
+        val allowedIps =
+            status.activeConfig
+                ?.peers
+                .orEmpty()
+                .flatMap { it.allowedIPs.orEmpty().split(',') }
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+        val checkOverlap = isMacOS && status.mode == BackendMode.VPN
+        val localOverlaps by
+            produceState(emptyList(), checkOverlap, allowedIps) {
+                if (!checkOverlap) {
+                    value = emptyList()
+                    return@produceState
+                }
+                while (true) {
+                    value = withContext(Dispatchers.IO) { LocalSubnetOverlap.find(allowedIps) }
+                    delay(5.seconds)
+                }
+            }
+        if (localOverlaps.isNotEmpty()) {
+            StatText(
+                text =
+                    stringResource(
+                        Res.string.allowed_ips_local_overlap_template,
+                        localOverlaps.joinToString(", "),
+                    ),
+                style = style,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+
         status.activeConfig?.peers?.forEach { peer ->
             PeerStatisticsSection(peer = peer, now = now)
         }
@@ -106,3 +143,5 @@ fun TunnelStatisticsSection(
         }
     }
 }
+
+private val isMacOS = Platform.Current == Platform.MacOS

@@ -3,6 +3,7 @@ package com.zaneschepke.wireguardautotunnel.daemon
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
 import com.wgtunnel.backend.TunnelBackend
+import com.wgtunnel.backend.system.DesktopFirewall
 import com.wgtunnel.backend.system.FileOwner
 import com.zaneschepke.wireguardautotunnel.core.helper.FilePathsHelper
 import com.zaneschepke.wireguardautotunnel.core.helper.WindowsSid
@@ -42,6 +43,8 @@ fun main(args: Array<String>) {
     // Before anything else is set up, so the kill switch is back as soon as possible.
     val cacheRepository = SettingsDaemonCacheRepository(json)
     val earlyKillSwitch = runBlocking { EarlyKillSwitch.apply(cacheRepository) }
+    // No tunnel runs yet, so any the OS still lists belong to a run that exited without closing them.
+    DesktopFirewall.clearTunnelNetworkState()
 
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val networkMonitor = DesktopNetworkMonitor(scope)

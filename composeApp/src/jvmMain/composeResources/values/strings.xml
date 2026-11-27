@@ -361,6 +361,7 @@
     <string name="status_lowercase_template">status: %1$s</string>
     <string name="recovery_attempts_template">recovery attempts: %1$d</string>
     <string name="uptime_lowercase_template">uptime: %1$s</string>
+    <string name="allowed_ips_local_overlap_template">%1$s is also your local network, so that traffic stays off the tunnel</string>
     <string name="socks5_proxy_lowercase_template">socks5 proxy: %1$s</string>
     <string name="socks5_proxy_protected_lowercase_template">socks5 proxy: %1$s (password protected)</string>
     <string name="http_proxy_lowercase_template">http proxy: %1$s</string>
