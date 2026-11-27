@@ -584,6 +584,62 @@ if (isWindows) {
         into(graalvmLaunchersDir)
     }
     graalvmSidecarTaskNames += "copyGraalvmExtraLaunchersToRoot"
+
+    // electron-builder runs with --prepackaged, which skipssigning of the app's executables,
+    // so it signed only the installer and uninstaller.  Sign our unsigned executables here.
+    // Files already signed are left as they are.
+    val signingTenant = System.getenv("AZURE_TENANT_ID")
+    tasks.register<Exec>("signWindowsExecutables") {
+        group = "nucleus"
+        description = "Sign the app's unsigned executables with Azure Trusted Signing."
+        dependsOn("copyGraalvmExtraLaunchersToRoot")
+        onlyIf { !signingTenant.isNullOrBlank() }
+        doNotTrackState("Signs files in place in the shared graalvm-app dir")
+        environment("WGT_SIGN_DIR", graalvmLaunchersDir.get().asFile.absolutePath)
+        environment(
+            "WGT_SIGN_ENDPOINT",
+            System.getenv("AZURE_CODE_SIGNING_ENDPOINT") ?: "https://eus.codesigning.azure.net",
+        )
+        environment(
+            "WGT_SIGN_PROFILE",
+            System.getenv("AZURE_CODE_SIGNING_CERTIFICATE_PROFILE") ?: "WG-Tunnel",
+        )
+        environment("WGT_SIGN_ACCOUNT", System.getenv("AZURE_CODE_SIGNING_ACCOUNT") ?: "WG-Tunnel")
+        commandLine(
+            "powershell",
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            """
+            ${'$'}ErrorActionPreference = 'Stop'
+            ${'$'}files = @(Get-ChildItem -LiteralPath ${'$'}env:WGT_SIGN_DIR -Recurse -File -Filter *.exe |
+                Where-Object { (Get-AuthenticodeSignature -LiteralPath ${'$'}_.FullName).Status -eq 'NotSigned' } |
+                ForEach-Object FullName)
+            if (${'$'}files.Count -eq 0) { Write-Host 'No unsigned executables'; exit 0 }
+            try { Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser | Out-Null } catch {}
+            if (-not (Get-Module -ListAvailable -Name TrustedSigning)) {
+                Install-Module -Name TrustedSigning -MinimumVersion 0.5.0 -Force -Repository PSGallery -Scope CurrentUser
+            }
+            ${'$'}sign = @{
+                Endpoint = ${'$'}env:WGT_SIGN_ENDPOINT
+                CertificateProfileName = ${'$'}env:WGT_SIGN_PROFILE
+                CodeSigningAccountName = ${'$'}env:WGT_SIGN_ACCOUNT
+                TimestampRfc3161 = 'http://timestamp.acs.microsoft.com'
+                TimestampDigest = 'SHA256'
+                FileDigest = 'SHA256'
+                Files = ${'$'}files -join ','
+            }
+            Invoke-TrustedSigning @sign
+            ${'$'}bad = @(${'$'}files | Where-Object { (Get-AuthenticodeSignature -LiteralPath ${'$'}_).Status -ne 'Valid' })
+            if (${'$'}bad.Count -gt 0) { throw "Not validly signed: ${'$'}(${'$'}bad -join ', ')" }
+            Write-Host "Signed: ${'$'}(${'$'}files -join ', ')"
+            """
+                .trimIndent(),
+        )
+    }
+    graalvmSidecarTaskNames += "signWindowsExecutables"
 }
 
 // SMAppService's .daemon type requires the LaunchDaemon plist embedded at
@@ -776,6 +832,14 @@ afterEvaluate {
     tasks
         .matching { it.name.startsWith("packageGraalvm") }
         .configureEach { dependsOn(graalvmSidecarTaskNames) }
+
+    // Signing comes after everything that writes into the graalvm-app dir, or a later copy
+    // would replace a signed file with an unsigned one.
+    if (isWindows) {
+        tasks.named("signWindowsExecutables") {
+            dependsOn(tasks.matching { it.name.startsWith("copyGraalvm") })
+        }
+    }
 
     // codesignGraalvmBundle currently runs before these, so its ad-hoc signature's seal
     // doesn't cover the plists, the nested helper app, or the Info.plist keys they add
