@@ -1,0 +1,10 @@
+What's new:
+- Linux ARM64 builds (deb, rpm, pacman, tar.gz)
+- Linux builds now run on older x86-64 CPUs
+- Fix IPv6 through full tunnels on macOS
+- Tunnels stay connected through network changes and DHCP renewals on macOS
+- Fix VMs on Apple's shared network (UTM, Tart, Lima, Docker) through the tunnel on macOS
+- AllowedIPs that overlap your local network now go through the tunnel on Linux, with a warning on macOS where the system routes them locally
+- Network settings recover after an unexpected daemon exit on macOS
+- Tray status fixes
+- Translation updates and various other fixes
