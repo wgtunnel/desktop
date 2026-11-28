@@ -195,7 +195,7 @@
     <string name="plain_dns">Zwykły DNS (port 53)</string>
     <string name="plain_dns_desc">Rozwiązuj za pomocą nieszyfrowanego DNS</string>
     <string name="dns_endpoint_label">Punkt końcowy serwera DNS</string>
-    <string name="dns_endpoint_hint">Adres IP, nazwa hosta lub adres URL DoH</string>
+    <string name="dns_endpoint_hint">Adres IP, nazwa hosta lub adres URL DoH (użytkownik:hasło@ do uwierzytelniania)</string>
     <string name="prefer_ipv6">Preferuj IPv6</string>
     <string name="prefer_ipv6_desc">Automatyczne przełączanie pomiędzy IPv6 a IPv4 w zależności od możliwości tunelu.</string>
     <string name="restore_ipv6">Przywróć IPv6</string>
