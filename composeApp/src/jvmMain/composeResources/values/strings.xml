@@ -233,7 +233,7 @@
     <string name="plain_dns">Plain DNS (port 53)</string>
     <string name="plain_dns_desc">Resolve using unencrypted DNS</string>
     <string name="dns_endpoint_label">DNS server endpoint</string>
-    <string name="dns_endpoint_hint">IP, hostname, or DoH URL</string>
+    <string name="dns_endpoint_hint">IP, hostname, or DoH URL (user:pass@ for auth)</string>
     <string name="prefer_ipv6">Prefer IPv6</string>
     <string name="prefer_ipv6_desc">Use IPv6 endpoints when the network supports it, falling back to IPv4 automatically if the tunnel is failing</string>
     <string name="restore_ipv6">Restore IPv6</string>
